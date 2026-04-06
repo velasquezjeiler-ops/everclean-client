@@ -21,7 +21,7 @@ export default function HomePage() {
         : await api.auth.register(email, password);
       localStorage.setItem('token', data.accessToken);
       localStorage.setItem('role', data.role);
-      router.push('/dashboard');
+      if (data.role === 'PROFESSIONAL') router.push('/pro/dashboard'); else router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);
     } finally {
