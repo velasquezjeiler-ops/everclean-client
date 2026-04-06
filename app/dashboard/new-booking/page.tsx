@@ -106,8 +106,20 @@ export default function NewBookingPage() {
           headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: me.email || 'My Home', city: form.city, state: form.state })
         });
-        const compText = await compRes.text();
-        try { const comp = JSON.parse(compText); companyId = comp.id; } catch(e) {}
+        if (compRes.ok) {
+          const comp = await compRes.json();
+          companyId = comp.id;
+        }
+      }
+
+      if (!companyId) {
+        const retryRes = await fetch(API + '/companies/me', {
+          headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }
+        });
+        if (retryRes.ok) {
+          const comp = await retryRes.json();
+          companyId = comp.id;
+        }
       }
 
       if (!companyId) {
