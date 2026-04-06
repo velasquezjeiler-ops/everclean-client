@@ -33,6 +33,9 @@ const addons = [
   { id: 'laundry_iron', label: 'Ironing / pressing', price: 30, icon: '👔' },
 ];
 
+const roomOptions = [1,2,3,4,5,6];
+const bathroomOptions = [1,2,3,4,5];
+
 const petOptions = [
   { id: 'dogs', label: 'Dogs', icon: '🐕' },
   { id: 'cats', label: 'Cats', icon: '🐈' },
@@ -51,6 +54,8 @@ export default function NewBookingPage() {
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
   const [selectedPets, setSelectedPets] = useState<string[]>([]);
   const [hasPets, setHasPets] = useState(false);
+  const [bedrooms, setBedrooms] = useState(0);
+  const [bathrooms, setBathrooms] = useState(0);
   const [form, setForm] = useState({
     serviceType: '',
     frequency: 'ONE_TIME',
@@ -128,7 +133,7 @@ export default function NewBookingPage() {
           city: form.city,
           state: form.state,
           sqft: Number(form.sqft),
-          clientNotes: form.notes + (addonsStr ? ' | Add-ons: ' + addonsStr : ''),
+          clientNotes: form.notes + (addonsStr ? ' | Add-ons: ' + addonsStr : '') + (bedrooms ? ' | Bedrooms: ' + bedrooms : '') + (bathrooms ? ' | Bathrooms: ' + bathrooms : ''),
           totalAmount: totalEstimate,
         })
       });
@@ -201,6 +206,30 @@ export default function NewBookingPage() {
                       {f.label}
                     </button>
                   ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="text-sm text-gray-600 block mb-2">Bedrooms</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {roomOptions.map(n => (
+                      <button key={n} type="button" onClick={() => setBedrooms(n)}
+                        className={"w-9 h-9 rounded-lg border text-sm font-medium " + (bedrooms === n ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 text-gray-600 hover:border-gray-300')}>
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600 block mb-2">Bathrooms</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {bathroomOptions.map(n => (
+                      <button key={n} type="button" onClick={() => setBathrooms(n)}
+                        className={"w-9 h-9 rounded-lg border text-sm font-medium " + (bathrooms === n ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 text-gray-600 hover:border-gray-300')}>
+                        {n}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -314,6 +343,7 @@ export default function NewBookingPage() {
               <div className="bg-emerald-50 rounded-lg p-3">
                 <p className="text-xs text-emerald-700 font-medium mb-1">Booking summary</p>
                 <p className="text-xs text-emerald-600">{serviceTypes.find(s => s.value === form.serviceType)?.label} · {frequencies.find(f => f.value === form.frequency)?.label} · {form.sqft} sqft</p>
+                {bedrooms > 0 && <p className="text-xs text-emerald-600">{bedrooms} bedroom{bedrooms > 1 ? 's' : ''} · {bathrooms} bathroom{bathrooms > 1 ? 's' : ''}</p>}
                 {selectedAddons.length > 0 && <p className="text-xs text-emerald-600">Add-ons: {addons.filter(a => selectedAddons.includes(a.id)).map(a => a.label).join(', ')}</p>}
                 {selectedPets.length > 0 && <p className="text-xs text-emerald-600">Pets: {selectedPets.join(', ')}</p>}
                 <p className="text-xs text-emerald-800 font-medium mt-1">Estimated total: ${totalEstimate}</p>
