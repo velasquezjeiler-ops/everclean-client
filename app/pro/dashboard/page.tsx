@@ -52,7 +52,7 @@ export default function ProDashboard() {
     }
   }
 
-  return (
+  const openInGoogleMaps = (address, city) => { const q = encodeURIComponent(`${address}, ${city}`); window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, "_blank"); }; const sendETAReport = async (id) => { const min = prompt("Minutos para llegar?", "15"); if (min) { await fetch(process.env.NEXT_PUBLIC_API_URL + "/bookings/" + id + "/eta", { method: "PATCH", headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem("token") }, body: JSON.stringify({ etaValue: min + " min" }) }); alert("ETA enviado"); } }; return (
     <div>
       <div className="mb-8"><h1 className="text-2xl font-semibold text-gray-900">Mis Trabajos Asignados</h1></div>
       {error && <div className="bg-red-50 text-red-700 p-4 rounded-xl mb-6 border border-red-200">{error}</div>}
@@ -81,10 +81,10 @@ export default function ProDashboard() {
                   </div>
                   <div className="grid grid-cols-2 gap-4 py-4 border-t border-b border-gray-100 my-4">
                     <div><p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-1">Fecha</p><p className="text-sm font-medium text-gray-900">{new Date(job.scheduledAt).toLocaleString()}</p></div>
-                    <div><p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-1">Dirección</p><p className="text-sm font-medium text-gray-900">{job.address}, {job.city}</p></div>
+                    <div><p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-1">Dirección</p><p onClick={() => openInGoogleMaps(job.address, job.city)} className="text-sm font-medium text-emerald-600 cursor-pointer hover:underline">📍 {job.address}, {job.city}</p></div>
                   </div>
                   <div className="flex gap-3 mt-6">
-                    {job.status === 'CONFIRMED' && (
+                    {job.status === "CONFIRMED" && (<button onClick={() => sendETAReport(job.id)} className="flex-1 bg-blue-600 text-white py-3 rounded-xl text-sm font-medium mb-2">🕒 Reportar ETA</button>)} {job.status === "CONFIRMED" && (
                       <button onClick={() => handleStatusChange(job.id, 'IN_PROGRESS')} disabled={actionLoading === job.id} className="flex-1 bg-emerald-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-emerald-700 disabled:opacity-50">
                         {actionLoading === job.id ? 'Procesando...' : '📍 Hacer Check-in'}
                       </button>
