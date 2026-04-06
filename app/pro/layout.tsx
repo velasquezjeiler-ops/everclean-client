@@ -23,7 +23,12 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
 
   if (!ready) return null;
 
-  const links = [{ href: '/pro/dashboard', label: 'Mis Trabajos', icon: '🧹' }];
+  const links = [
+    { href: '/pro/dashboard', label: 'Mis Trabajos', icon: '🧹' },
+    { href: '/pro/marketplace', label: 'Disponibles', icon: '🔍' },
+    { href: '/pro/history', label: 'Historial', icon: '💰' },
+    { href: '/pro/profile', label: 'Mi Perfil', icon: '👤' }
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
