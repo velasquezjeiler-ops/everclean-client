@@ -52,6 +52,7 @@ export default function ProProfile() {
           maxRadiusMiles: data.maxRadiusMiles || data.max_radius_miles || 50,
           hourlyRate: Number(data.hourlyRate || data.hourly_rate || 45),
           payoutSchedule: data.payoutSchedule || data.payout_schedule || 'WEEKLY',
+          hourlyRateRecurring: Number(data.hourlyRateRecurring || data.hourly_rate_recurring || data.hourlyRate || data.hourly_rate || 45),
           language: data.language || ['English'],
           servicesOffered: data.servicesOffered || data.services_offered || [],
         });
