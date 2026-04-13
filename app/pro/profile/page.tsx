@@ -24,11 +24,11 @@ export default function ProProfile() {
   const [tab, setTab] = useState<'info'|'services'|'payments'>('info');
   const [payments, setPayments] = useState<any[]>([]);
 
-  const [form, setForm] = useState({
+const [form, setForm] = useState({
     fullName: '', phone: '', email: '', bio: '',
     address: '', city: '', state: 'NJ', zipCode: '',
     serviceRadiusMiles: 20, maxRadiusMiles: 50,
-    hourlyRate: 45, payoutSchedule: 'WEEKLY',
+    hourlyRate: 45, hourlyRateRecurring: 45, payoutSchedule: 'WEEKLY',
     language: ['English'] as string[],
     servicesOffered: [] as string[],
   });
