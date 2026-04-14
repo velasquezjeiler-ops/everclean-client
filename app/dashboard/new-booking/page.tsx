@@ -6,19 +6,41 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--
 
 // ─── Architectural sqft standards (NAHB / Census Bureau averages) ─────────────
 // Residential: base unit ~150sqft/bed, ~60sqft/bath, +200 common areas
+// ─── Architectural sqft standards ─────────────────────────────────────────────
+// Source: US Census Bureau 2024 + NJ/NY/CT regional adjustments
+// NJ existing homes avg: ~1,614 sqft (denser/older than national avg 1,792)
+// Formula: base by bedrooms + bathroom factor + common areas
+// Tristate region runs ~10-15% below national new construction averages
+// Sqft standards: US Census 2024 + NJ/Tristate regional data
+// NJ existing homes avg: 1,614 sqft | Northeast new construction: 2,590 sqft
+// Apartments (urban NJ/NYC): 750-1,200 sqft | Suburban NJ houses: 1,500-2,500 sqft
 const RESIDENTIAL_SQFT: Record<string, number> = {
-  '1b1ba': 650,  '1b2ba': 750,
-  '2b1ba': 950,  '2b2ba': 1100, '2b3ba': 1250,
-  '3b1ba': 1200, '3b2ba': 1400, '3b2.5ba': 1550, '3b3ba': 1700,
-  '4b2ba': 1800, '4b3ba': 2100, '4b4ba': 2400,
-  '5b3ba': 2600, '5b4ba': 3000, '5b5ba': 3400,
+  // Studio / efficiency (NYC/NJ urban)
+  '0b1ba': 600,
+  // 1 bedroom (apartment 700-900, condo 850-1,100)
+  '1b1ba': 800,   '1b1.5ba': 900,  '1b2ba': 1000,
+  // 2 bedrooms (NJ apartment 1,000-1,300 | townhouse/house 1,200-1,600)
+  '2b1ba': 1050,  '2b1.5ba': 1200, '2b2ba': 1350, '2b2.5ba': 1500, '2b3ba': 1650,
+  // 3 bedrooms (NJ avg existing ~1,614 | suburban house 1,600-2,000)
+  '3b1ba': 1400,  '3b1.5ba': 1550, '3b2ba': 1700, '3b2.5ba': 1900, '3b3ba': 2100,
+  // 4 bedrooms (NJ suburban 2,000-2,600 | Northeast new 2,590 avg)
+  '4b2ba': 2200,  '4b2.5ba': 2450, '4b3ba': 2700, '4b3.5ba': 2950, '4b4ba': 3200,
+  // 5+ bedrooms (luxury NJ/CT homes)
+  '5b3ba': 3300,  '5b3.5ba': 3600, '5b4ba': 4000, '5b5ba': 4500,
+  '6b4ba': 4800,  '6b5ba': 5500,
 };
 
 function getStandardSqft(beds: number, baths: number): number {
-  const key = `${beds}b${baths}ba`;
+  // Normalize to avoid float precision issues: 1.5 → "1.5", 2 → "2"
+  const bathStr = Number.isInteger(baths) ? String(baths) : baths.toFixed(1);
+  const key = `${beds}b${bathStr}ba`;
   if (RESIDENTIAL_SQFT[key]) return RESIDENTIAL_SQFT[key];
-  // fallback formula: 150*beds + 80*baths + 250 common areas
-  return Math.round(150 * beds + 80 * baths + 250);
+  // Try rounding down (e.g. 2.5 → try 2 and add 8%)
+  const bathFloor = Math.floor(baths);
+  const keyFloor = `${beds}b${bathFloor}ba`;
+  if (RESIDENTIAL_SQFT[keyFloor]) return Math.round(RESIDENTIAL_SQFT[keyFloor] * 1.08);
+  // Fallback: NJ-calibrated formula
+  return Math.round(400 + 220 * beds + 120 * baths + 150);
 }
 
 // ─── Rates ────────────────────────────────────────────────────────────────────
