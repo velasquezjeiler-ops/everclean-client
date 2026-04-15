@@ -38,6 +38,9 @@ export default function ProDashboard() {
   const [weekBase, setWeekBase] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(new Date());
   const [acting, setActing] = useState<string|null>(null);
+  const [editRate, setEditRate] = useState(false);
+  const [newRate, setNewRate] = useState('');
+  const [savingRate, setSavingRate] = useState(false);
 
   const load = useCallback(async () => {
     const token = localStorage.getItem('token') || '';
@@ -69,6 +72,24 @@ export default function ProDashboard() {
       body: JSON.stringify({ isAvailable: !profile?.isAvailable })
     });
     if (res.ok) setProfile((p: any) => ({ ...p, isAvailable: !p?.isAvailable }));
+  }
+
+  async function updateRate() {
+    const rate = parseFloat(newRate);
+    if (isNaN(rate) || rate < 18 || rate > 30) { alert('Rate must be between $18 and $30/h'); return; }
+    setSavingRate(true);
+    const token = localStorage.getItem('token') || '';
+    const res = await fetch(API+'/professionals/me', {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer '+token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hourlyRate: rate })
+    });
+    if (res.ok) {
+      setProfile((p: any) => ({ ...p, hourlyRate: rate }));
+      setEditRate(false);
+      alert('✅ Rate updated. Applies to new jobs only — not retroactive.');
+    } else { alert('Error updating rate'); }
+    setSavingRate(false);
   }
 
   async function checkIn(bookingId: string) {
@@ -383,6 +404,29 @@ export default function ProDashboard() {
             <div className="flex justify-between"><span>Active jobs</span><span className="font-semibold text-gray-900">{confirmed.length+inProgress.length}</span></div>
             <div className="flex justify-between"><span>This month</span><span className="font-semibold text-emerald-700">${monthEarnings.toFixed(0)}</span></div>
           </div>
+
+          {editRate ? (
+            <div className="mb-3">
+              <p className="text-xs text-gray-500 mb-1">New hourly rate ($18–$30/h)</p>
+              <div className="flex gap-2">
+                <input type="number" value={newRate} onChange={e => setNewRate(e.target.value)}
+                  min="18" max="30" step="0.5" placeholder={String(profile?.hourlyRate||25)}
+                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                <button onClick={updateRate} disabled={savingRate}
+                  className="px-3 py-2 bg-emerald-700 text-white rounded-lg text-xs font-medium hover:bg-emerald-800 disabled:opacity-50">
+                  {savingRate ? '...' : 'Save'}
+                </button>
+                <button onClick={() => setEditRate(false)} className="px-3 py-2 border border-gray-200 rounded-lg text-xs text-gray-500">✕</button>
+              </div>
+              <p className="text-xs text-amber-600 mt-1">⚠️ Not retroactive — applies to new jobs only</p>
+            </div>
+          ) : (
+            <button onClick={() => { setEditRate(true); setNewRate(String(profile?.hourlyRate||25)); }}
+              className="w-full py-2 mb-2 border border-gray-200 rounded-lg text-xs text-gray-600 hover:bg-gray-50">
+              ✏️ Edit hourly rate (${profile?.hourlyRate||profile?.hourly_rate||25}/h)
+            </button>
+          )}
+
           <button onClick={toggleAvailability}
             className={`w-full py-2 rounded-lg text-xs font-semibold transition-all ${profile?.isAvailable||profile?.is_available ? 'bg-emerald-700 text-white hover:bg-emerald-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             {profile?.isAvailable||profile?.is_available ? '🟢 Available for jobs' : '⚫ Set as available'}
