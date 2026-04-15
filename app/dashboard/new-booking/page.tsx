@@ -153,6 +153,7 @@ export default function NewBookingPage() {
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('NJ');
+  const [zip, setZip] = useState('');
   const [bedrooms, setBedrooms] = useState(0);
   const [bathrooms, setBathrooms] = useState(0);
   // Commercial sanitary units
@@ -231,6 +232,7 @@ export default function NewBookingPage() {
           scheduledAt: new Date(scheduledAt).toISOString(),
           address, city, state,
           sqft: Number(activeSqft),
+          zip,
           clientNotes,
           totalAmount: price.total,
         })
@@ -505,8 +507,8 @@ export default function NewBookingPage() {
                   placeholder="123 Main St"
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-1">
                   <label className="text-sm text-gray-600 block mb-1">City</label>
                   <input type="text" value={city} onChange={e => setCity(e.target.value)}
                     placeholder="Newark"
@@ -519,6 +521,12 @@ export default function NewBookingPage() {
                     {['NJ','NY','CT','PA','FL','TX','CA'].map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
+                <div>
+                  <label className="text-sm text-gray-600 block mb-1">ZIP code</label>
+                  <input type="text" value={zip} onChange={e => setZip(e.target.value)}
+                    placeholder="07030" maxLength={5}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                </div>
               </div>
             </div>
 
@@ -528,6 +536,7 @@ export default function NewBookingPage() {
                 <div className="flex justify-between"><span>Service</span><span className="font-medium">{RATES[serviceType]?.label}</span></div>
                 <div className="flex justify-between"><span>Frequency</span><span>{FREQ_DISCOUNTS[frequency]?.label}</span></div>
                 <div className="flex justify-between"><span>Size</span><span>{activeSqft} sqft · {price.hours}h</span></div>
+                {zip && <div className="flex justify-between"><span>ZIP</span><span>{zip}</span></div>}
                 {isResidential && bedrooms > 0 && <div className="flex justify-between"><span>Layout</span><span>{bedrooms}bd / {bathrooms}ba</span></div>}
                 {isCommercial && <div className="flex justify-between"><span>Sanitary units</span><span>{toilets} toilet{toilets > 1 ? 's' : ''}{urinals > 0 ? ` · ${urinals} urinal${urinals > 1 ? 's' : ''}` : ''}</span></div>}
                 {addons.length > 0 && <div className="flex justify-between"><span>Add-ons</span><span>{addons.length} selected</span></div>}
