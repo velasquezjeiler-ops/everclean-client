@@ -12,7 +12,7 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/'); return; }
     if (role === 'CLIENT') { router.push('/dashboard'); return; }
     if (role === 'ADMIN') { window.location.href = 'https://everclean-admin.vercel.app'; return; }
     setReady(true);
