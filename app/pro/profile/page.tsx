@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler-ops.replit.app/api';
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
 
 export default function ProProfile() {
   const router = useRouter();
@@ -15,7 +15,7 @@ export default function ProProfile() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [bio, setBio] = useState('');
+  const [bio, setBio] = useState('');F
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('NJ');
