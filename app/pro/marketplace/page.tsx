@@ -3,220 +3,344 @@ import { useState, useEffect, useCallback } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
 
-const SERVICE_LABELS: Record<string, string> = {
-  HOUSE_CLEANING: 'House Cleaning',
-  DEEP_CLEANING: 'Deep Cleaning',
-  MOVE_IN_OUT: 'Move In/Out',
-  OFFICE_CLEANING: 'Office Cleaning',
-  POST_CONSTRUCTION: 'Post Construction',
-  CARPET_CLEANING: 'Carpet Cleaning',
-  WINDOW_CLEANING: 'Window Cleaning',
-};
+const SERVICES_LIST = [
+  'House Cleaning', 'Deep Cleaning', 'Move In/Out', 'Office Cleaning',
+  'Post Construction', 'Carpet Cleaning', 'Medical Facility', 'Industrial'
+];
 
-function getAvailableSlots(scheduledAt: string, hours: number): Date[] {
-  const clientTime = new Date(scheduledAt);
-  const slots: Date[] = [];
-  for (let i = 0; i <= hours + 1; i++) {
-    slots.push(new Date(clientTime.getTime() + i * 3600000));
-  }
-  return slots;
-}
+const LANGUAGES = ['English', 'Spanish', 'Portuguese', 'French', 'Mandarin', 'Hindi', 'Korean', 'Arabic'];
 
-export default function ProMarketplace() {
-  const [jobs, setJobs] = useState<any[]>([]);
+export default function ProProfile() {
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [claiming, setClaiming] = useState<string | null>(null);
-  const [hourlyRate, setHourlyRate] = useState(25);
-  const [bonusMessage, setBonusMessage] = useState('');
-  const [sortBy, setSortBy] = useState<'hours' | 'distance' | 'payout'>('hours');
-  const [modal, setModal] = useState<any>(null);
-  const [selectedSlot, setSelectedSlot] = useState<Date | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    const token = localStorage.getItem('token') || '';
-    try {
-      const res = await fetch(API + '/bookings/available/list', {
-        headers: { Authorization: 'Bearer ' + token }
-      });
-      const data = await res.json();
-      setJobs(data.data || []);
-      setHourlyRate(data.hourlyRate || 25);
-      setBonusMessage(data.bonusMessage || '');
-    } catch (e) {}
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  function openModal(job: any) {
-    setModal(job);
-    const slots = getAvailableSlots(job.scheduledAt, job.hours);
-    setSelectedSlot(slots[0]);
-  }
-
-  async function confirmClaim() {
-    if (!modal || !selectedSlot) return;
-    setClaiming(modal.id);
-    const token = localStorage.getItem('token') || '';
-    try {
-      const res = await fetch(API + '/bookings/' + modal.id + '/claim', {
-        method: 'POST',
-        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scheduledAt: selectedSlot.toISOString() })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setJobs(prev => prev.filter(j => j.id !== modal.id));
-        setModal(null);
-        alert('✅ Job scheduled for ' + selectedSlot.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + '!\nPayout: $' + data.payout);
-      } else {
-        alert(data.error || 'Could not claim job. Try again.');
-      }
-    } catch (e) {
-      alert('Connection error. Try again.');
-    }
-    setClaiming(null);
-  }
-
-  const sorted = [...jobs].sort((a, b) => {
-    if (sortBy === 'hours') return b.hours - a.hours;
-    if (sortBy === 'payout') return b.payout - a.payout;
-    if (sortBy === 'distance') return (a.distanceMiles || 999) - (b.distanceMiles || 999);
-    return 0;
+  const [saving, setSaving] = useState(false);
+  const [editingRate, setEditingRate] = useState(false);
+  const [newRate, setNewRate] = useState(25);
+  const [message, setMessage] = useState('');
+  const [form, setForm] = useState({
+    fullName: '', phone: '', email: '', bio: '',
+    address: '', city: '', state: 'NJ', zipCode: '',
+    serviceRadiusMiles: 25, maxRadiusMiles: 50,
+    hourlyRate: 25, payoutSchedule: 'WEEKLY',
+    language: ['English'] as string[],
+    servicesOffered: [] as string[],
   });
 
-  if (loading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  const loadProfile = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const res = await fetch(`${API}/professionals/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data);
+        setForm({
+          fullName: data.full_name || data.fullName || '',
+          phone: data.phone || '',
+          email: data.email || '',
+          bio: data.bio || '',
+          address: data.address || '',
+          city: data.city || '',
+          state: data.state || 'NJ',
+          zipCode: data.zip_code || data.zipCode || '',
+          serviceRadiusMiles: Number(data.service_radius_miles || data.serviceRadiusMiles || 25),
+          maxRadiusMiles: Number(data.max_radius_miles || data.maxRadiusMiles || 50),
+          hourlyRate: Number(data.hourly_rate || data.hourlyRate || 25),
+          payoutSchedule: data.payout_schedule || data.payoutSchedule || 'WEEKLY',
+          language: data.language || ['English'],
+          servicesOffered: data.services_offered || data.servicesOffered || [],
+        });
+        setNewRate(Number(data.hourly_rate || data.hourlyRate || 25));
+      }
+    } catch (e) { console.error('Load profile error:', e); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { loadProfile(); }, [loadProfile]);
+
+  const saveProfile = async () => {
+    setSaving(true);
+    setMessage('');
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API}/professionals/me`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        setMessage('Profile saved successfully');
+        await loadProfile();
+      } else {
+        const err = await res.json();
+        setMessage(`Error: ${err.error}`);
+      }
+    } catch (e: any) { setMessage(`Error: ${e.message}`); }
+    finally { setSaving(false); }
+  };
+
+  const saveRate = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API}/professionals/me`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ hourlyRate: newRate }),
+      });
+      if (res.ok) {
+        setEditingRate(false);
+        setMessage('Hourly rate updated. Changes apply to new jobs only (not retroactive).');
+        setForm(prev => ({ ...prev, hourlyRate: newRate }));
+        await loadProfile();
+      }
+    } catch (e: any) { setMessage(`Error: ${e.message}`); }
+  };
+
+  const toggleService = (svc: string) => {
+    setForm(prev => ({
+      ...prev,
+      servicesOffered: prev.servicesOffered.includes(svc)
+        ? prev.servicesOffered.filter(s => s !== svc)
+        : [...prev.servicesOffered, svc]
+    }));
+  };
+
+  const toggleLang = (lang: string) => {
+    setForm(prev => ({
+      ...prev,
+      language: prev.language.includes(lang)
+        ? prev.language.filter(l => l !== lang)
+        : [...prev.language, lang]
+    }));
+  };
+
+  if (loading) return <div className="flex items-center justify-center py-20 text-gray-400">Loading profile...</div>;
+
+  const rating = Number(profile?.avg_rating || profile?.avgRating || 0);
+  const services = Number(profile?.total_services || profile?.totalServices || 0);
+  const earnings = Number(profile?.total_earnings || profile?.totalEarnings || 0);
+  const completion = Number(profile?.completion_rate || profile?.completionRate || 100);
 
   return (
-    <div>
-      {modal && (
-        <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50 p-4 sm:items-center">
-          <div className="bg-white rounded-2xl w-full max-w-sm">
-            <div className="p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-1">Choose your start time</h3>
-              <p className="text-sm text-gray-500 mb-1">
-                {SERVICE_LABELS[modal.serviceType] || modal.serviceType} · {modal.hours}h · ${modal.payout.toFixed(2)}
-              </p>
-              <p className="text-xs text-gray-400 mb-5">📍 {modal.city}, {modal.state} · {modal.distanceMiles} mi away</p>
+    <div className="max-w-5xl mx-auto">
+      {message && (
+        <div className={`mb-4 p-3 rounded-xl text-sm ${message.startsWith('Error') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+          {message}
+          <button onClick={() => setMessage('')} className="float-right text-xs opacity-60 hover:opacity-100">dismiss</button>
+        </div>
+      )}
 
-              <div className="space-y-2 mb-6">
-                {getAvailableSlots(modal.scheduledAt, modal.hours).map((slot, i) => {
-                  const isSelected = selectedSlot?.getTime() === slot.getTime();
-                  return (
-                    <button key={i} onClick={() => setSelectedSlot(slot)}
-                      className={'w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-colors ' + (isSelected ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-gray-300')}>
-                      <div className="text-left">
-                        <p className={'font-semibold text-sm ' + (isSelected ? 'text-emerald-700' : 'text-gray-900')}>
-                          {slot.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                          {' – '}
-                          {new Date(slot.getTime() + modal.hours * 3600000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {slot.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {i === 0 && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Client time</span>}
-                        <span className={'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ' + (isSelected ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300')}>
-                          {isSelected && <span className="w-2 h-2 rounded-full bg-white" />}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* LEFT: Editable form */}
+        <div className="lg:col-span-2 space-y-5">
+          {/* Personal Info */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h2 className="text-base font-semibold text-gray-900 mb-4">Personal information</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">Full name</label>
+                <input value={form.fullName} onChange={e => setForm({...form, fullName: e.target.value})}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
               </div>
-
-              <div className="bg-amber-50 rounded-xl p-3 mb-5 text-xs text-amber-800">
-                ⚠️ Once scheduled, this job cannot be cancelled or rescheduled. Cancellations result in account suspension.
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">Phone</label>
+                <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
               </div>
-
-              <button onClick={confirmClaim} disabled={claiming === modal.id || !selectedSlot}
-                className="w-full bg-emerald-700 text-white py-3.5 rounded-xl font-bold text-sm hover:bg-emerald-800 disabled:opacity-50 mb-2">
-                {claiming === modal.id ? 'Scheduling...' : 'Confirm · $' + modal.payout.toFixed(2)}
-              </button>
-              <button onClick={() => setModal(null)} className="w-full py-2 text-sm text-gray-400">Cancel</button>
+              <div className="col-span-2">
+                <label className="text-xs text-gray-500 block mb-1">Email</label>
+                <input value={form.email} onChange={e => setForm({...form, email: e.target.value})}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+              <div className="col-span-2">
+                <label className="text-xs text-gray-500 block mb-1">Bio</label>
+                <textarea value={form.bio} onChange={e => setForm({...form, bio: e.target.value})} rows={3}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                  placeholder="Tell clients about yourself and your experience..." />
+              </div>
             </div>
           </div>
-        </div>
-      )}
 
-      <div className="flex items-center justify-between mb-2">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Find Jobs</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{jobs.length} available · ${hourlyRate}/hr rate</p>
-        </div>
-        <button onClick={load} className="text-sm text-emerald-700 font-medium px-4 py-2 bg-emerald-50 rounded-xl hover:bg-emerald-100">Refresh</button>
-      </div>
+          {/* Address */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h2 className="text-base font-semibold text-gray-900 mb-4">Address</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label className="text-xs text-gray-500 block mb-1">Street address</label>
+                <input value={form.address} onChange={e => setForm({...form, address: e.target.value})}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">City</label>
+                <input value={form.city} onChange={e => setForm({...form, city: e.target.value})}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">State</label>
+                <input value={form.state} onChange={e => setForm({...form, state: e.target.value})}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">ZIP code</label>
+                <input value={form.zipCode} onChange={e => setForm({...form, zipCode: e.target.value})}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">Service radius ({form.serviceRadiusMiles} mi)</label>
+                <input type="range" min={5} max={50} value={form.serviceRadiusMiles}
+                  onChange={e => setForm({...form, serviceRadiusMiles: Number(e.target.value)})}
+                  className="w-full accent-emerald-600" />
+              </div>
+            </div>
+          </div>
 
-      {bonusMessage && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 flex items-center gap-2">
-          <span>🎁</span>
-          <p className="text-sm text-amber-800 font-medium">{bonusMessage}</p>
-        </div>
-      )}
+          {/* Services */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h2 className="text-base font-semibold text-gray-900 mb-4">Services offered</h2>
+            <div className="flex flex-wrap gap-2">
+              {SERVICES_LIST.map(svc => (
+                <button key={svc} onClick={() => toggleService(svc)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    form.servicesOffered.includes(svc)
+                      ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                      : 'bg-gray-50 text-gray-500 border border-gray-200 hover:border-gray-300'
+                  }`}>
+                  {form.servicesOffered.includes(svc) ? '✓ ' : ''}{svc}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {jobs.length > 0 && (
-        <div className="flex gap-2 mb-4">
-          {(['hours', 'payout', 'distance'] as const).map(s => (
-            <button key={s} onClick={() => setSortBy(s)}
-              className={'px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ' + (sortBy === s ? 'bg-emerald-700 text-white border-emerald-700' : 'bg-white text-gray-600 border-gray-200')}>
-              {s === 'hours' ? '⏱ Hours' : s === 'payout' ? '💰 Payout' : '📍 Distance'}
-            </button>
-          ))}
-        </div>
-      )}
+          {/* Languages */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h2 className="text-base font-semibold text-gray-900 mb-4">Languages</h2>
+            <div className="flex flex-wrap gap-2">
+              {LANGUAGES.map(lang => (
+                <button key={lang} onClick={() => toggleLang(lang)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    form.language.includes(lang)
+                      ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                      : 'bg-gray-50 text-gray-500 border border-gray-200 hover:border-gray-300'
+                  }`}>
+                  {form.language.includes(lang) ? '✓ ' : ''}{lang}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {sorted.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-          <p className="text-4xl mb-3">🔍</p>
-          <p className="text-gray-600 font-medium">No jobs available right now</p>
-          <p className="text-sm text-gray-400 mt-1">Check back in a few minutes</p>
-          <button onClick={load} className="mt-4 text-sm text-emerald-700 font-medium">Refresh</button>
+          {/* Save */}
+          <button onClick={saveProfile} disabled={saving}
+            className="w-full bg-emerald-700 text-white rounded-xl py-3 text-sm font-medium hover:bg-emerald-800 disabled:opacity-50 transition-all">
+            {saving ? 'Saving...' : 'Save profile'}
+          </button>
         </div>
-      ) : (
-        <div className="space-y-3">
-          {sorted.map((job: any) => {
-            const serviceLabel = SERVICE_LABELS[job.serviceType] || job.serviceType?.replace(/_/g, ' ') || 'Cleaning';
-            const dateStr = new Date(job.scheduledAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-            return (
-              <div key={job.id} className="bg-white rounded-2xl border border-gray-200 p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="font-bold text-gray-900 text-base">{serviceLabel}</p>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                      <span>📅 {dateStr}</span>
-                      <span>⏱ {job.hours}h</span>
-                      {job.distanceMiles && <span>📍 {job.distanceMiles} mi</span>}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xl font-bold text-emerald-700">${job.payout.toFixed(2)}</p>
-                    <p className="text-xs text-gray-400">${hourlyRate}/hr</p>
-                  </div>
+
+        {/* RIGHT: Stats panel */}
+        <div className="space-y-5">
+          {/* Avatar + Name */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-5 text-center">
+            <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 text-2xl font-bold mx-auto mb-3">
+              {(form.fullName || '?').split(' ').map(n => n[0]).join('').slice(0, 2)}
+            </div>
+            <p className="font-semibold text-gray-900">{form.fullName || 'Professional'}</p>
+            <p className="text-xs text-gray-500 mt-1">{form.city || 'New Jersey'}, {form.state}</p>
+            <div className="flex items-center justify-center gap-1 mt-2">
+              <span className="text-amber-500 text-sm">{'★'.repeat(Math.round(rating))}</span>
+              <span className="text-xs text-gray-500">{rating.toFixed(1)}</span>
+            </div>
+          </div>
+
+          {/* Rate */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-900">Hourly rate</h3>
+              <button onClick={() => setEditingRate(!editingRate)}
+                className="text-xs text-emerald-600 hover:text-emerald-700">
+                {editingRate ? 'Cancel' : 'Edit'}
+              </button>
+            </div>
+            {editingRate ? (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm text-gray-500">$</span>
+                  <input type="number" min={18} max={30} value={newRate}
+                    onChange={e => setNewRate(Number(e.target.value))}
+                    className="w-20 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center" />
+                  <span className="text-sm text-gray-500">/hr</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-sm text-gray-600 mb-3">
-                  <span className="text-emerald-600">📍</span>
-                  <span>{job.city}{job.state ? ', ' + job.state : ''} {job.zip || ''}</span>
-                </div>
-                <div className="flex gap-2 flex-wrap mb-4">
-                  {job.sqft && <span className="text-xs bg-gray-100 text-gray-600 rounded-lg px-2.5 py-1">{job.sqft} sqft</span>}
-                  {job.frequency && <span className="text-xs bg-gray-100 text-gray-600 rounded-lg px-2.5 py-1">{job.frequency.replace(/_/g, ' ')}</span>}
-                  {job.hours >= 4 && <span className="text-xs bg-emerald-50 text-emerald-700 rounded-lg px-2.5 py-1 font-medium">🔥 Big job</span>}
-                </div>
-                <button onClick={() => openModal(job)}
-                  className="w-full bg-emerald-700 text-white py-3 rounded-xl font-semibold text-sm hover:bg-emerald-800 active:scale-95 transition-all">
-                  Schedule this job · ${job.payout.toFixed(2)}
+                <input type="range" min={18} max={30} step={1} value={newRate}
+                  onChange={e => setNewRate(Number(e.target.value))}
+                  className="w-full accent-emerald-600 mb-2" />
+                <p className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2 mb-2">
+                  Changes apply to new jobs only. Already accepted jobs keep the current rate.
+                </p>
+                <button onClick={saveRate}
+                  className="w-full bg-emerald-700 text-white rounded-lg py-2 text-xs font-medium hover:bg-emerald-800">
+                  Save new rate
                 </button>
               </div>
-            );
-          })}
+            ) : (
+              <p className="text-2xl font-bold text-gray-900">${form.hourlyRate}<span className="text-sm font-normal text-gray-400">/hr</span></p>
+            )}
+          </div>
+
+          {/* Performance */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Performance</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Total earnings</span>
+                <span className="font-medium text-gray-900">${earnings.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Services completed</span>
+                <span className="font-medium text-gray-900">{services}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Completion rate</span>
+                <span className="font-medium text-gray-900">{completion}%</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Service radius</span>
+                <span className="font-medium text-gray-900">{form.serviceRadiusMiles} mi</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Payout schedule</span>
+                <span className="font-medium text-gray-900">{form.payoutSchedule}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Verifications */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Verifications</h3>
+            <div className="space-y-2">
+              {[
+                { label: 'Background check', done: profile?.background_checked || profile?.backgroundChecked },
+                { label: 'ID verified', done: profile?.id_verified || profile?.idVerified },
+                { label: 'Payout setup', done: !!profile?.stripe_account_id },
+              ].map(v => (
+                <div key={v.label} className="flex items-center gap-2 text-sm">
+                  <span className={`text-xs ${v.done ? 'text-emerald-500' : 'text-amber-500'}`}>
+                    {v.done ? '✓' : '⏳'}
+                  </span>
+                  <span className={v.done ? 'text-gray-700' : 'text-gray-400'}>{v.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Support */}
+          <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4 text-center">
+            <p className="text-xs text-gray-500 mb-2">Need help?</p>
+            <button className="text-xs text-emerald-600 font-medium hover:text-emerald-700">
+              Contact support
+            </button>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
