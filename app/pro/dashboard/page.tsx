@@ -38,6 +38,7 @@ export default function ProDashboard() {
   const [weekBase, setWeekBase] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(new Date());
   const [acting, setActing] = useState<string|null>(null);
+  const [etaData, setEtaData] = useState<Record<string, any>>({});
   const [editRate, setEditRate] = useState(false);
   const [newRate, setNewRate] = useState('');
   const [savingRate, setSavingRate] = useState(false);
@@ -72,6 +73,17 @@ export default function ProDashboard() {
       body: JSON.stringify({ isAvailable: !profile?.isAvailable })
     });
     if (res.ok) setProfile((p: any) => ({ ...p, isAvailable: !p?.isAvailable }));
+  }
+
+  async function fetchETA(bookingId: string) {
+    const token = localStorage.getItem('token') || '';
+    try {
+      const res = await fetch(API+'/bookings/'+bookingId+'/eta', { headers: { Authorization: 'Bearer '+token } });
+      if (res.ok) {
+        const data = await res.json();
+        setEtaData(prev => ({ ...prev, [bookingId]: data }));
+      }
+    } catch(e) {}
   }
 
   async function updateRate() {
@@ -176,6 +188,30 @@ export default function ProDashboard() {
               {hours > 0 && <span className="text-xs bg-gray-100 text-gray-600 rounded-md px-2 py-1">~{hours}h</span>}
               {payout && <span className="text-xs bg-emerald-50 text-emerald-700 rounded-md px-2 py-1 font-semibold">💰 ${payout}</span>}
             </div>
+
+            {/* Map & ETA for active jobs */}
+            {(b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS') && (
+              <div className="mt-2">
+                {etaData[b.id] ? (
+                  <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg border border-blue-100">
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-blue-700">
+                        📍 {etaData[b.id].distanceMiles} mi · {etaData[b.id].etaText} drive
+                      </p>
+                    </div>
+                    <a href={etaData[b.id].mapsUrl} target="_blank" rel="noopener noreferrer"
+                      className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">
+                      🗺️ Navigate
+                    </a>
+                  </div>
+                ) : (
+                  <button onClick={() => fetchETA(b.id)}
+                    className="w-full py-2 border border-blue-200 text-blue-600 rounded-lg text-xs font-medium hover:bg-blue-50">
+                    📍 Get directions & ETA
+                  </button>
+                )}
+              </div>
+            )}
 
             {(b.clientNotes||b.client_notes) && (
               <p className="text-xs text-gray-500 mt-2 bg-gray-50 rounded-lg px-3 py-2 truncate">
