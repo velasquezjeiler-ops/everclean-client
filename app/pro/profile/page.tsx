@@ -1,90 +1,112 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
 
-function formatService(raw: string): string {
-  const MAP: Record<string,string> = {
-    HOUSE_CLEANING:'House Cleaning', DEEP_CLEANING:'Deep Cleaning', MOVE_IN_OUT:'Move In/Out',
-    OFFICE_CLEANING:'Office Cleaning', COMMERCIAL_CLEANING:'Commercial', POST_CONSTRUCTION:'Post Construction',
-    MEDICAL_CLEANING:'Medical / Clinic', APARTMENT_CLEANING:'Apartment', SAME_DAY_CLEANING:'Same Day',
-    STANDARD_CLEANING:'Standard Cleaning', ONE_TIME:'One-Time', MAID_SERVICES:'Maid Services',
-  };
-  return MAP[raw] || raw?.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()) || 'Service';
-}
-
-export default function ProMarketplace() {
-  const [jobs, setJobs] = useState<any[]>([]);
+export default function ProProfile() {
+  const router = useRouter();
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [hourlyRate, setHourlyRate] = useState(25);
-  const [bonusMsg, setBonusMsg] = useState('');
-  const [sortBy, setSortBy] = useState<'hours'|'payout'|'distance'>('hours');
-  const [claiming, setClaiming] = useState<string|null>(null);
-  const [scheduleModal, setScheduleModal] = useState<any>(null);
-  const [selectedTime, setSelectedTime] = useState<string|null>(null);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{type:'ok'|'err'; text:string} | null>(null);
+
+  // Editable fields
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [bio, setBio] = useState('');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('NJ');
+  const [zipCode, setZipCode] = useState('');
+  const [serviceRadius, setServiceRadius] = useState('25');
+  const [hourlyRate, setHourlyRate] = useState('25');
+  const [newRate, setNewRate] = useState('');
+  const [editingRate, setEditingRate] = useState(false);
+  const [languages, setLanguages] = useState<string[]>(['English']);
+  const [servicesOffered, setServicesOffered] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     const token = localStorage.getItem('token') || '';
+    if (!token) { router.push('/'); return; }
     try {
-      const res = await fetch(API+'/bookings/available', { headers: { Authorization: 'Bearer '+token } });
-      const data = await res.json();
-      setJobs(data.data || []);
-      setHourlyRate(data.hourlyRate || 25);
-      setBonusMsg(data.bonusMessage || '');
-    } catch(e) {}
+      const res = await fetch(API+'/professionals/me', { headers:{ Authorization:'Bearer '+token } });
+      if (!res.ok) throw new Error('Could not load profile');
+      const d = await res.json();
+      setProfile(d);
+      setFullName(d.fullName||d.full_name||'');
+      setPhone(d.phone||'');
+      setEmail(d.email||'');
+      setBio(d.bio||'');
+      setAddress(d.address||'');
+      setCity(d.city||'');
+      setState(d.state||'NJ');
+      setZipCode(d.zipCode||d.zip_code||'');
+      setServiceRadius(String(d.serviceRadiusMiles||d.service_radius_miles||25));
+      setHourlyRate(String(d.hourlyRate||d.hourly_rate||25));
+      setLanguages(d.language||['English']);
+      setServicesOffered(d.servicesOffered||d.services_offered||[]);
+    } catch(e:any) { setMsg({type:'err', text:e.message}); }
     setLoading(false);
-  }, []);
+  }, [router]);
 
   useEffect(() => { load(); }, [load]);
 
-  async function claimJob(jobId: string, scheduledAt?: string) {
-    setClaiming(jobId);
+  async function saveProfile() {
+    setSaving(true); setMsg(null);
     const token = localStorage.getItem('token') || '';
     try {
-      const res = await fetch(API+'/bookings/'+jobId+'/claim', {
-        method: 'POST',
-        headers: { Authorization: 'Bearer '+token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scheduledAt })
+      const res = await fetch(API+'/professionals/me', {
+        method: 'PATCH',
+        headers: { Authorization:'Bearer '+token, 'Content-Type':'application/json' },
+        body: JSON.stringify({
+          fullName, phone, email, bio, address, city, state,
+          zipCode, serviceRadiusMiles: Number(serviceRadius),
+          language: languages, servicesOffered,
+        })
       });
-      const data = await res.json();
-      if (res.ok) {
-        alert(`✅ Job scheduled for ${new Date(data.scheduledAt).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}!\nPayout: $${data.payout}`);
-        setScheduleModal(null);
-        load();
-      } else {
-        alert('Error: ' + (data.error || 'Could not claim'));
-      }
-    } catch(e) { alert('Error claiming job'); }
-    setClaiming(null);
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error||'Save failed'); }
+      setMsg({type:'ok', text:'✅ Profile saved'});
+      await load();
+    } catch(e:any) { setMsg({type:'err', text:e.message}); }
+    setSaving(false);
   }
 
-  function openScheduleModal(job: any) {
-    setScheduleModal(job);
-    setSelectedTime(job.scheduledAt);
-  }
-
-  function getTimeSlots(job: any) {
-    const clientTime = new Date(job.scheduledAt);
-    const hours = job.hours || 2;
-    const slots = [];
-    for (let i = 0; i <= hours + 1; i++) {
-      const t = new Date(clientTime.getTime() + i * 3600000);
-      const end = new Date(t.getTime() + hours * 3600000);
-      slots.push({
-        time: t.toISOString(),
-        label: t.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) + ' – ' + end.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
-        day: t.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}),
-        isClient: i === 0,
-      });
+  async function saveRate() {
+    const rate = parseFloat(newRate);
+    if (isNaN(rate) || rate < 18 || rate > 30) {
+      setMsg({type:'err', text:'Rate must be between $18 and $30/h'});
+      return;
     }
-    return slots;
+    setSaving(true); setMsg(null);
+    const token = localStorage.getItem('token') || '';
+    try {
+      const res = await fetch(API+'/professionals/me', {
+        method: 'PATCH',
+        headers: { Authorization:'Bearer '+token, 'Content-Type':'application/json' },
+        body: JSON.stringify({ hourlyRate: rate })
+      });
+      if (!res.ok) throw new Error('Rate update failed');
+      setHourlyRate(String(rate));
+      setEditingRate(false);
+      setMsg({type:'ok', text:'✅ Rate updated. Applies to new jobs only — not retroactive.'});
+    } catch(e:any) { setMsg({type:'err', text:e.message}); }
+    setSaving(false);
   }
 
-  const sorted = [...jobs].sort((a,b) => {
-    if (sortBy === 'payout') return b.payout - a.payout;
-    if (sortBy === 'distance') return (a.distanceMiles||999) - (b.distanceMiles||999);
-    return b.hours - a.hours;
-  });
+  const SERVICE_OPTIONS = [
+    'HOUSE_CLEANING','DEEP_CLEANING','MOVE_IN_OUT','OFFICE_CLEANING',
+    'COMMERCIAL_CLEANING','POST_CONSTRUCTION','MEDICAL_CLEANING','SAME_DAY_CLEANING'
+  ];
+  const LANG_OPTIONS = ['English','Spanish','Portuguese','French','Haitian Creole'];
+
+  function toggleService(s: string) {
+    setServicesOffered(prev => prev.includes(s) ? prev.filter(x=>x!==s) : [...prev, s]);
+  }
+  function toggleLanguage(l: string) {
+    setLanguages(prev => prev.includes(l) ? prev.filter(x=>x!==l) : [...prev, l]);
+  }
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -92,128 +114,228 @@ export default function ProMarketplace() {
     </div>
   );
 
+  const rating = parseFloat(profile?.avgRating||profile?.avg_rating||0);
+  const totalServices = profile?.totalServices||profile?.total_services||0;
+  const totalEarnings = parseFloat(profile?.totalEarnings||profile?.total_earnings||0);
+  const tipsReceived = parseFloat(profile?.tipsReceived||profile?.tips_received||0);
+  const completionRate = parseFloat(profile?.completionRate||profile?.completion_rate||100);
+
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">Find Jobs</h1>
-          <p className="text-sm text-gray-500">{jobs.length} available · ${hourlyRate}/hr rate</p>
-        </div>
-        <button onClick={load} className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">Refresh</button>
-      </div>
+    <div className="flex gap-6 max-w-6xl mx-auto">
+      {/* ── LEFT: editable form ── */}
+      <div className="flex-1 min-w-0 space-y-4">
 
-      {bonusMsg && (
-        <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-4 text-sm text-amber-700">
-          🎁 {bonusMsg}
-        </div>
-      )}
-
-      {/* Sort buttons */}
-      <div className="flex gap-2 mb-4">
-        {([
-          {id:'hours' as const, label:'Hours', icon:'⏱'},
-          {id:'payout' as const, label:'Payout', icon:'💰'},
-          {id:'distance' as const, label:'Distance', icon:'📍'},
-        ]).map(s => (
-          <button key={s.id} onClick={() => setSortBy(s.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${sortBy===s.id ? 'bg-emerald-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-            {s.icon} {s.label}
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-gray-900">My Profile</h1>
+          <button onClick={saveProfile} disabled={saving}
+            className="bg-emerald-700 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-emerald-800 disabled:opacity-50">
+            {saving ? 'Saving...' : 'Save changes'}
           </button>
-        ))}
-      </div>
-
-      {/* Jobs list */}
-      {sorted.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border border-dashed border-gray-200">
-          <p className="text-4xl mb-3">🔍</p>
-          <p className="text-gray-600 font-medium">No jobs available right now</p>
-          <p className="text-sm text-gray-400 mt-1">Check back soon or expand your service radius</p>
         </div>
-      ) : (
-        <div className="space-y-3">
-          {sorted.map(job => (
-            <div key={job.id} className="bg-white rounded-xl border border-gray-200 p-4">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <p className="font-semibold text-gray-900">{formatService(job.serviceType)}</p>
-                  <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                    📅 {new Date(job.scheduledAt).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
-                    <span className="text-gray-300">·</span>
-                    ⏱ {job.hours}h
-                    {job.distanceMiles != null && <>
-                      <span className="text-gray-300">·</span>
-                      📍 {job.distanceMiles} mi
-                    </>}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-emerald-700">${job.payout?.toFixed(2)}</p>
-                  <p className="text-xs text-gray-400">${hourlyRate}/hr</p>
-                </div>
-              </div>
 
-              <p className="text-sm text-gray-600 mb-1">📍 {job.address}{job.city ? ', '+job.city : ''}{job.state ? ' '+job.state : ''}{job.zip ? ' '+job.zip : ''}</p>
+        {msg && (
+          <div className={`rounded-lg px-4 py-3 text-sm ${msg.type==='ok' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+            {msg.text}
+          </div>
+        )}
 
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                <span className="text-xs bg-gray-100 text-gray-600 rounded-md px-2 py-0.5">{job.sqft?.toFixed(0) || '?'} sqft</span>
-                <span className="text-xs bg-gray-100 text-gray-600 rounded-md px-2 py-0.5">{job.frequency || 'ONE TIME'}</span>
-                {job.hours >= 4 && <span className="text-xs bg-amber-50 text-amber-700 rounded-md px-2 py-0.5">🔥 Big job</span>}
-              </div>
-
-              {job.clientNotes && (
-                <p className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2 mb-3">📝 {job.clientNotes}</p>
-              )}
-
-              <button onClick={() => openScheduleModal(job)} disabled={claiming === job.id}
-                className="w-full bg-emerald-700 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-emerald-800 disabled:opacity-50 transition-all">
-                {claiming === job.id ? 'Scheduling...' : `Schedule this job · $${job.payout?.toFixed(2)}`}
-              </button>
+        {/* Personal info */}
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="text-sm font-semibold text-gray-900 mb-4">Personal Information</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="text-xs text-gray-600 block mb-1">Full name</label>
+              <input type="text" value={fullName} onChange={e=>setFullName(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Schedule modal */}
-      {scheduleModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm max-h-[80vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold mb-1">Choose your start time</h3>
-            <p className="text-sm text-gray-500 mb-1">{formatService(scheduleModal.serviceType)} · {scheduleModal.hours}h · ${scheduleModal.payout?.toFixed(2)}</p>
-            <p className="text-xs text-gray-400 mb-4">📍 {scheduleModal.address}{scheduleModal.city ? ', '+scheduleModal.city : ''}{scheduleModal.distanceMiles != null ? ' · '+scheduleModal.distanceMiles+' mi away' : ''}</p>
-
-            <div className="space-y-2 mb-4">
-              {getTimeSlots(scheduleModal).map((slot,i) => (
-                <button key={i} onClick={() => setSelectedTime(slot.time)}
-                  className={`w-full p-3 rounded-xl border text-left transition-all ${selectedTime === slot.time ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-emerald-300'}`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{slot.label}</p>
-                      <p className="text-xs text-gray-400">{slot.day}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {slot.isClient && <span className="text-xs text-emerald-600 font-medium">Client time</span>}
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedTime === slot.time ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'}`}>
-                        {selectedTime === slot.time && <div className="w-2 h-2 bg-white rounded-full" />}
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              ))}
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">Phone</label>
+              <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             </div>
-
-            <div className="bg-amber-50 rounded-xl p-3 mb-4 text-xs text-amber-700">
-              ⚠️ Once scheduled, this job cannot be cancelled or rescheduled. Cancellations result in account suspension.
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">Email</label>
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             </div>
-
-            <button onClick={() => claimJob(scheduleModal.id, selectedTime || undefined)}
-              disabled={claiming === scheduleModal.id}
-              className="w-full bg-emerald-700 text-white py-3 rounded-xl font-medium hover:bg-emerald-800 disabled:opacity-50">
-              {claiming === scheduleModal.id ? 'Scheduling...' : 'Confirm schedule'}
-            </button>
-            <button onClick={() => setScheduleModal(null)} className="w-full mt-2 text-gray-400 text-sm py-2">Cancel</button>
+            <div className="col-span-2">
+              <label className="text-xs text-gray-600 block mb-1">Bio</label>
+              <textarea value={bio} onChange={e=>setBio(e.target.value)} rows={3}
+                placeholder="Tell clients about your experience and expertise..."
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none" />
+            </div>
           </div>
         </div>
-      )}
+
+        {/* Address */}
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="text-sm font-semibold text-gray-900 mb-4">Address & Service Area</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="text-xs text-gray-600 block mb-1">Street address</label>
+              <input type="text" value={address} onChange={e=>setAddress(e.target.value)}
+                placeholder="123 Main St"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">City</label>
+              <input type="text" value={city} onChange={e=>setCity(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-gray-600 block mb-1">State</label>
+                <select value={state} onChange={e=>setState(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  {['NJ','NY','CT','PA'].map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-600 block mb-1">ZIP</label>
+                <input type="text" value={zipCode} onChange={e=>setZipCode(e.target.value)}
+                  placeholder="07030" maxLength={5}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+            </div>
+            <div className="col-span-2">
+              <label className="text-xs text-gray-600 block mb-1">Service radius (miles): {serviceRadius}</label>
+              <input type="range" value={serviceRadius} onChange={e=>setServiceRadius(e.target.value)}
+                min="5" max="50" className="w-full" />
+              <div className="flex justify-between text-xs text-gray-400 mt-1">
+                <span>5 mi</span><span>25 mi</span><span>50 mi</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Services & languages */}
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="text-sm font-semibold text-gray-900 mb-4">Services I Offer</h2>
+          <div className="grid grid-cols-2 gap-2 mb-5">
+            {SERVICE_OPTIONS.map(s => (
+              <button key={s} onClick={()=>toggleService(s)}
+                className={`px-3 py-2 rounded-lg text-xs font-medium text-left transition-all ${servicesOffered.includes(s) ? 'bg-emerald-50 border-2 border-emerald-500 text-emerald-700' : 'bg-gray-50 border border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                {s.replace(/_/g,' ')}
+              </button>
+            ))}
+          </div>
+
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Languages</h3>
+          <div className="flex flex-wrap gap-2">
+            {LANG_OPTIONS.map(l => (
+              <button key={l} onClick={()=>toggleLanguage(l)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${languages.includes(l) ? 'bg-emerald-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Hourly rate */}
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="text-sm font-semibold text-gray-900 mb-3">Hourly Rate</h2>
+          {editingRate ? (
+            <div>
+              <p className="text-xs text-gray-500 mb-2">New rate ($18–$30/h)</p>
+              <div className="flex gap-2">
+                <input type="number" value={newRate} onChange={e=>setNewRate(e.target.value)}
+                  min="18" max="30" step="0.5" placeholder={hourlyRate}
+                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                <button onClick={saveRate} disabled={saving}
+                  className="px-4 py-2 bg-emerald-700 text-white rounded-lg text-sm font-medium hover:bg-emerald-800 disabled:opacity-50">
+                  {saving ? '...' : 'Save'}
+                </button>
+                <button onClick={()=>setEditingRate(false)}
+                  className="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-500">Cancel</button>
+              </div>
+              <p className="text-xs text-amber-600 mt-2">⚠️ Not retroactive — applies to new jobs only</p>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-3xl font-bold text-emerald-700">${hourlyRate}<span className="text-sm text-gray-500">/h</span></p>
+                <p className="text-xs text-gray-500 mt-1">Active rate for new bookings</p>
+              </div>
+              <button onClick={()=>{setEditingRate(true); setNewRate(hourlyRate);}}
+                className="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+                ✏️ Change rate
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── RIGHT: stats + status ── */}
+      <div className="w-72 flex-shrink-0 space-y-4">
+        {/* Avatar & rating */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+          <div className="w-20 h-20 rounded-full bg-emerald-700 mx-auto mb-3 flex items-center justify-center text-white text-2xl font-bold">
+            {(fullName||'P')[0]}
+          </div>
+          <p className="font-semibold text-gray-900">{fullName}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{email || phone || ''}</p>
+          <div className="flex items-center justify-center gap-2 mt-3 text-sm">
+            <span className="text-amber-500">⭐</span>
+            <span className="font-semibold">{rating ? rating.toFixed(1) : '—'}</span>
+            <span className="text-gray-400 text-xs">({totalServices} services)</span>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Performance</p>
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between"><span className="text-gray-600">Total earnings</span><span className="font-semibold text-emerald-700">${totalEarnings.toFixed(0)}</span></div>
+            <div className="flex justify-between"><span className="text-gray-600">Tips received</span><span className="font-semibold text-gray-900">${tipsReceived.toFixed(0)}</span></div>
+            <div className="flex justify-between"><span className="text-gray-600">Services done</span><span className="font-semibold text-gray-900">{totalServices}</span></div>
+            <div className="flex justify-between"><span className="text-gray-600">Completion rate</span><span className="font-semibold text-gray-900">{completionRate.toFixed(0)}%</span></div>
+            <div className="flex justify-between"><span className="text-gray-600">Service radius</span><span className="font-semibold text-gray-900">{serviceRadius} mi</span></div>
+          </div>
+        </div>
+
+        {/* Verification status */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Verifications</p>
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Background check</span>
+              <span className={profile?.backgroundChecked||profile?.background_checked ? 'text-emerald-600' : 'text-amber-600'}>
+                {profile?.backgroundChecked||profile?.background_checked ? '✓ Verified' : '⏳ Pending'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">ID verified</span>
+              <span className={profile?.idVerified||profile?.id_verified ? 'text-emerald-600' : 'text-amber-600'}>
+                {profile?.idVerified||profile?.id_verified ? '✓ Verified' : '⏳ Pending'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Payout setup</span>
+              <span className={profile?.stripeAccountId ? 'text-emerald-600' : 'text-amber-600'}>
+                {profile?.stripeAccountId ? '✓ Connected' : '⏳ Pending'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Payout info */}
+        <div className="bg-emerald-50 rounded-xl border border-emerald-100 p-4">
+          <p className="text-xs font-semibold text-emerald-700 mb-2">💰 Payout schedule</p>
+          <p className="text-xs text-emerald-600">
+            Payments are sent every {profile?.payoutSchedule?.toLowerCase() || 'weekly'} on Fridays
+            for services completed the previous week.
+          </p>
+        </div>
+
+        {/* Support */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Need help?</p>
+          <div className="space-y-1 text-xs text-gray-600">
+            <p>📧 pros@everclean.com</p>
+            <p>📞 (201) 555-0101</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
