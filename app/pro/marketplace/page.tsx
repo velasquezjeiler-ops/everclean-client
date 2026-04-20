@@ -147,7 +147,7 @@ export default function ProMarketplace() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold text-emerald-700">${job.payout?.toFixed(2)}</p>
+                  <p className="text-lg font-bold text-emerald-700">${Number(job.payout || 0).toFixed(2)}</p>
                   <p className="text-xs text-gray-400">${hourlyRate}/hr</p>
                 </div>
               </div>
@@ -155,7 +155,7 @@ export default function ProMarketplace() {
               <p className="text-sm text-gray-600 mb-1">📍 {job.address}{job.city ? ', '+job.city : ''}{job.state ? ' '+job.state : ''}{job.zip ? ' '+job.zip : ''}</p>
 
               <div className="flex flex-wrap gap-1.5 mb-3">
-                <span className="text-xs bg-gray-100 text-gray-600 rounded-md px-2 py-0.5">{job.sqft?.toFixed(0) || '?'} sqft</span>
+                <span className="text-xs bg-gray-100 text-gray-600 rounded-md px-2 py-0.5">{Number(job.sqft || 0).toFixed(0) || '?'} sqft</span>
                 <span className="text-xs bg-gray-100 text-gray-600 rounded-md px-2 py-0.5">{job.frequency || 'ONE TIME'}</span>
                 {job.hours >= 4 && <span className="text-xs bg-amber-50 text-amber-700 rounded-md px-2 py-0.5">🔥 Big job</span>}
               </div>
@@ -166,7 +166,7 @@ export default function ProMarketplace() {
 
               <button onClick={() => openScheduleModal(job)} disabled={claiming === job.id}
                 className="w-full bg-emerald-700 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-emerald-800 disabled:opacity-50 transition-all">
-                {claiming === job.id ? 'Scheduling...' : `Schedule this job · $${job.payout?.toFixed(2)}`}
+                {claiming === job.id ? 'Scheduling...' : `Schedule this job · $${Number(job.payout || 0).toFixed(2)}`}
               </button>
             </div>
           ))}
@@ -178,7 +178,7 @@ export default function ProMarketplace() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm max-h-[80vh] overflow-y-auto">
             <h3 className="text-lg font-semibold mb-1">Choose your start time</h3>
-            <p className="text-sm text-gray-500 mb-1">{formatService(scheduleModal.serviceType)} · {scheduleModal.hours}h · ${scheduleModal.payout?.toFixed(2)}</p>
+            <p className="text-sm text-gray-500 mb-1">{formatService(scheduleModal.serviceType)} · {scheduleModal.hours}h · ${Number(scheduleModal.payout || 0).toFixed(2)}</p>
             <p className="text-xs text-gray-400 mb-4">📍 {scheduleModal.address}{scheduleModal.city ? ', '+scheduleModal.city : ''}{scheduleModal.distanceMiles != null ? ' · '+scheduleModal.distanceMiles+' mi away' : ''}</p>
 
             <div className="space-y-2 mb-4">
