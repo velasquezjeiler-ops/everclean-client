@@ -173,7 +173,11 @@ export default function ProDashboard() {
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-gray-900 text-sm">{formatService(b.serviceType||b.service_type)}</p>
-                <p className="text-xs text-gray-500 truncate">📍 {b.address}{b.city?', '+b.city:''}{b.zip?' '+b.zip:''}</p>
+                <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((b.address||'')+(b.city?', '+b.city:'')+(b.state?' '+b.state:'')+(b.zip?' '+b.zip:''))}`}
+                target="_blank" rel="noopener noreferrer"
+                className="text-xs text-blue-600 hover:text-blue-800 hover:underline truncate block">
+                📍 {b.address}{b.city?', '+b.city:''}{b.zip?' '+b.zip:''}
+              </a>
               </div>
               <span className={`text-xs px-2 py-0.5 rounded-full border font-medium flex-shrink-0 ${st.color}`}>{st.label}</span>
             </div>
@@ -189,41 +193,25 @@ export default function ProDashboard() {
               {payout && <span className="text-xs bg-emerald-50 text-emerald-700 rounded-md px-2 py-1 font-semibold">💰 ${payout}</span>}
             </div>
 
-            {/* Map & ETA for active jobs */}
+            {/* ETA & Navigate for active jobs */}
             {(b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS') && (
               <div className="mt-2">
                 {etaData[b.id] ? (
-                  <div className="space-y-2">
-                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-                      <p className="text-xs font-medium text-blue-700 mb-2">
-                        📍 {etaData[b.id].distanceMiles} mi away · ETA {etaData[b.id].etaText}
-                      </p>
-                      <a href={etaData[b.id].previewUrl || `https://www.google.com/maps?q=${encodeURIComponent(b.address + ', ' + (b.city||''))}`}
-                        target="_blank" rel="noopener noreferrer"
-                        className="block w-full py-2 bg-white border border-blue-200 rounded-lg text-xs text-blue-700 text-center hover:bg-blue-50 mb-2">
-                        🔎 Preview location on map
-                      </a>
-                      <div className="flex gap-2">
-                        <a href={etaData[b.id].mapsUrl} target="_blank" rel="noopener noreferrer"
-                          className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 text-center">
-                          🗺️ Navigate
-                        </a>
-                      </div>
-                      <p className="text-xs text-emerald-600 mt-2 text-center">✅ ETA sent to client</p>
-                    </div>
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                    <p className="text-xs font-medium text-blue-700 mb-2">
+                      🚗 {etaData[b.id].distanceMiles} mi · ETA {etaData[b.id].etaText}
+                    </p>
+                    <a href={etaData[b.id].mapsUrl} target="_blank" rel="noopener noreferrer"
+                      className="block w-full py-2.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 text-center">
+                      🗺️ Start navigation
+                    </a>
+                    <p className="text-xs text-emerald-600 mt-2 text-center">✅ ETA notification sent to client</p>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    <a href={`https://www.google.com/maps?q=${encodeURIComponent((b.address||'') + ', ' + (b.city||'') + ' ' + (b.state||''))}`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="block w-full py-2 border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50 text-center">
-                      🔎 Preview location
-                    </a>
-                    <button onClick={() => fetchETA(b.id)}
-                      className="w-full py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">
-                      📍 Send ETA & get directions
-                    </button>
-                  </div>
+                  <button onClick={() => fetchETA(b.id)}
+                    className="w-full py-2.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">
+                    🚗 Send ETA to client & navigate
+                  </button>
                 )}
               </div>
             )}
