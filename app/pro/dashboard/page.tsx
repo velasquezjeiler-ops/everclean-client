@@ -193,22 +193,37 @@ export default function ProDashboard() {
             {(b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS') && (
               <div className="mt-2">
                 {etaData[b.id] ? (
-                  <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg border border-blue-100">
-                    <div className="flex-1">
-                      <p className="text-xs font-medium text-blue-700">
-                        📍 {etaData[b.id].distanceMiles} mi · {etaData[b.id].etaText} drive
+                  <div className="space-y-2">
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                      <p className="text-xs font-medium text-blue-700 mb-2">
+                        📍 {etaData[b.id].distanceMiles} mi away · ETA {etaData[b.id].etaText}
                       </p>
+                      <a href={etaData[b.id].previewUrl || `https://www.google.com/maps?q=${encodeURIComponent(b.address + ', ' + (b.city||''))}`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="block w-full py-2 bg-white border border-blue-200 rounded-lg text-xs text-blue-700 text-center hover:bg-blue-50 mb-2">
+                        🔎 Preview location on map
+                      </a>
+                      <div className="flex gap-2">
+                        <a href={etaData[b.id].mapsUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 text-center">
+                          🗺️ Navigate
+                        </a>
+                      </div>
+                      <p className="text-xs text-emerald-600 mt-2 text-center">✅ ETA sent to client</p>
                     </div>
-                    <a href={etaData[b.id].mapsUrl} target="_blank" rel="noopener noreferrer"
-                      className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">
-                      🗺️ Navigate
-                    </a>
                   </div>
                 ) : (
-                  <button onClick={() => fetchETA(b.id)}
-                    className="w-full py-2 border border-blue-200 text-blue-600 rounded-lg text-xs font-medium hover:bg-blue-50">
-                    📍 Get directions & ETA
-                  </button>
+                  <div className="space-y-2">
+                    <a href={`https://www.google.com/maps?q=${encodeURIComponent((b.address||'') + ', ' + (b.city||'') + ' ' + (b.state||''))}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="block w-full py-2 border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50 text-center">
+                      🔎 Preview location
+                    </a>
+                    <button onClick={() => fetchETA(b.id)}
+                      className="w-full py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">
+                      📍 Send ETA & get directions
+                    </button>
+                  </div>
                 )}
               </div>
             )}
