@@ -64,7 +64,7 @@ export default function ClientDashboard() {
         .filter(b => b.professionals?.length > 0)
         .map(b => {
           const pro = b.professionals[0]?.professional || b.professionals[0];
-          return [pro?.id, pro];
+          return [pro?.id, pro] as [string, any];
         })
         .filter(([id]) => id)
     ).values()
