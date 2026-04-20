@@ -1,30 +1,29 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [ready, setReady] = useState(false);
+  const [clientName, setClientName] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
-    if (!token) {
-      router.push('/');
-      return;
-    }
-    // Redirect professionals to their portal
-    if (role === 'PROFESSIONAL') {
-      router.push('/pro/dashboard');
-      return;
-    }
-    // Redirect admins to admin portal
-    if (role === 'ADMIN') {
-      window.location.href = 'https://everclean-admin.vercel.app';
-      return;
-    }
+    if (!token) { router.push('/'); return; }
+    if (role === 'PROFESSIONAL') { router.push('/pro/dashboard'); return; }
+    if (role === 'ADMIN') { window.location.href = 'https://everclean-admin.vercel.app'; return; }
     setReady(true);
+
+    // Get client name
+    fetch(API + '/auth/me', { headers: { Authorization: 'Bearer ' + token } })
+      .then(r => r.json())
+      .then(d => setClientName(d.name || d.email?.split('@')[0] || ''))
+      .catch(() => {});
   }, [router]);
 
   function logout() {
@@ -33,24 +32,58 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     router.push('/');
   }
 
+  const navItems = [
+    { href: '/dashboard',             label: 'Mis Servicios', icon: '🧹' },
+    { href: '/dashboard/new-booking', label: 'Solicitar',     icon: '➕' },
+    { href: '/dashboard/history',     label: 'Historial',     icon: '📋' },
+    { href: '/dashboard/profile',     label: 'Mi Perfil',     icon: '👤' },
+  ];
+
   if (!ready) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-emerald-700 flex items-center justify-center">
-            <span className="text-white text-xs font-bold">EC</span>
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <aside className="w-44 bg-white border-r border-gray-200 flex flex-col min-h-screen flex-shrink-0">
+        <div className="p-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-emerald-700 flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-xs font-bold">EC</span>
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-gray-900 text-sm truncate">EverClean</p>
+              <p className="text-xs text-blue-600 font-medium">CLIENTE</p>
+            </div>
           </div>
-          <span className="font-medium text-gray-900">EverClean</span>
         </div>
-        <nav className="flex items-center gap-4">
-          <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">Mis servicios</Link>
-          <Link href="/dashboard/new-booking" className="text-sm bg-emerald-700 text-white px-4 py-1.5 rounded-lg hover:bg-emerald-800">Solicitar limpieza</Link>
-          <button onClick={logout} className="text-sm text-gray-400 hover:text-gray-600">Salir</button>
+
+        <nav className="flex-1 p-3 space-y-1">
+          {navItems.map(item => {
+            const isActive = pathname === item.href;
+            return (
+              <Link key={item.href} href={item.href}
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all ${isActive ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}>
+                <span className="text-base">{item.icon}</span>
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
         </nav>
-      </header>
-      <main className="max-w-6xl mx-auto p-6">{children}</main>
+
+        <div className="p-3 border-t border-gray-100">
+          {clientName && <p className="text-xs text-gray-500 px-3 mb-2 truncate">{clientName}</p>}
+          <button onClick={logout}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all">
+            <span className="text-base">🚪</span>
+            <span>Cerrar sesión</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <main className="flex-1 p-6 min-w-0 overflow-auto">
+        {children}
+      </main>
     </div>
   );
 }
