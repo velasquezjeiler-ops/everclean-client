@@ -1,106 +1,137 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
+const SERVICES_LIST = ['House Cleaning','Deep Cleaning','Move In/Out','Office Cleaning','Post Construction','Carpet Cleaning','Medical Facility','Industrial'];
+const LANGUAGES = ['English','Spanish','Portuguese','French','Mandarin','Hindi','Korean','Arabic'];
 
-export default function ClientProfile() {
+export default function ProProfile() {
   const { t } = useTranslation();
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<{type:'ok'|'err';text:string}|null>(null);
-  const [user, setUser] = useState<any>(null);
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [billingAddress, setBillingAddress] = useState('');
-  const [billingCity, setBillingCity] = useState('');
-  const [billingState, setBillingState] = useState('NJ');
-  const [billingZip, setBillingZip] = useState('');
-  const [taxId, setTaxId] = useState('');
+  const [editingRate, setEditingRate] = useState(false);
+  const [newRate, setNewRate] = useState(25);
+  const [message, setMessage] = useState('');
+  const [form, setForm] = useState({
+    fullName:'', phone:'', email:'', bio:'', address:'', city:'', state:'NJ', zipCode:'',
+    serviceRadiusMiles:25, hourlyRate:25, payoutSchedule:'WEEKLY',
+    language:['English'] as string[], servicesOffered:[] as string[],
+  });
 
-  const load = useCallback(async () => {
+  const loadProfile = useCallback(async () => {
     const token = localStorage.getItem('token') || '';
     try {
-      const res = await fetch(API+'/auth/me', { headers: { Authorization: 'Bearer '+token } });
-      if (res.ok) { const d = await res.json(); setUser(d); setEmail(d.email||''); setPhone(d.phone||''); setFullName(d.name||d.email?.split('@')[0]||''); }
-      const compRes = await fetch(API+'/companies/me', { headers: { Authorization: 'Bearer '+token } });
-      if (compRes.ok) { const c = await compRes.json(); setCompanyName(c.name||''); setBillingAddress(c.address||''); setBillingCity(c.city||''); setBillingState(c.state||'NJ'); setBillingZip(c.zip||''); setTaxId(c.tax_id||''); }
+      const res = await fetch(API+'/professionals/me', { headers: { Authorization: 'Bearer '+token } });
+      if (res.ok) {
+        const d = await res.json();
+        setProfile(d);
+        setForm({
+          fullName: d.full_name||'', phone: d.phone||'', email: d.email||'', bio: d.bio||'',
+          address: d.address||'', city: d.city||'', state: d.state||'NJ', zipCode: d.zip_code||'',
+          serviceRadiusMiles: Number(d.service_radius_miles||25), hourlyRate: Number(d.hourly_rate||25),
+          payoutSchedule: d.payout_schedule||'WEEKLY',
+          language: d.language ? (typeof d.language === 'string' ? JSON.parse(d.language) : d.language) : ['English'],
+          servicesOffered: d.services_offered ? (typeof d.services_offered === 'string' ? JSON.parse(d.services_offered) : d.services_offered) : [],
+        });
+        setNewRate(Number(d.hourly_rate||25));
+      }
     } catch(e) {}
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { loadProfile(); }, [loadProfile]);
 
   async function saveProfile() {
-    setSaving(true); setMsg(null);
+    setSaving(true); setMessage('');
     const token = localStorage.getItem('token') || '';
-    try {
-      const res = await fetch(API+'/companies/me', { method:'PATCH', headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'}, body:JSON.stringify({name:companyName,billingAddress,billingCity,billingState,billingZip,taxId}) });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
-      setMsg({type:'ok',text:t('common.success')}); load();
-    } catch(e:any) { setMsg({type:'err',text:e.message}); }
+    const res = await fetch(API+'/professionals/me', { method:'PATCH', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token}, body:JSON.stringify(form) });
+    if (res.ok) { setMessage(t('pro.profile.profileSaved')); loadProfile(); }
+    else { const e = await res.json(); setMessage('Error: '+e.error); }
     setSaving(false);
   }
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" /></div>;
+  async function saveRate() {
+    const token = localStorage.getItem('token') || '';
+    const res = await fetch(API+'/professionals/me', { method:'PATCH', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token}, body:JSON.stringify({hourlyRate:newRate}) });
+    if (res.ok) { setEditingRate(false); setForm(p=>({...p,hourlyRate:newRate})); loadProfile(); }
+  }
+
+  if (loading) return <div className="flex items-center justify-center py-20 text-gray-400">{t('common.loading')}</div>;
+
+  const rating = Number(profile?.avg_rating||0);
+  const services = Number(profile?.total_services||0);
+  const earnings = Number(profile?.total_earnings||0);
+  const completion = Number(profile?.completion_rate||100);
 
   return (
-    <div className="flex gap-6 max-w-6xl mx-auto">
-      <div className="flex-1 min-w-0 space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-gray-900">{t('client.profile.title')}</h1>
-          <button onClick={saveProfile} disabled={saving} className="bg-emerald-700 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-emerald-800 disabled:opacity-50">{saving?t('common.loading'):t('client.profile.saveChanges')}</button>
-        </div>
-        {msg && <div className={`rounded-lg px-4 py-3 text-sm ${msg.type==='ok'?'bg-emerald-50 text-emerald-700':'bg-red-50 text-red-600'}`}>{msg.text}</div>}
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-sm font-semibold text-gray-900 mb-4">{t('client.profile.personalInfo')}</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2"><label className="text-xs text-gray-600 block mb-1">{t('client.profile.fullName')}</label><input value={fullName} onChange={e=>setFullName(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
-            <div><label className="text-xs text-gray-600 block mb-1">{t('common.phone')}</label><input value={phone} onChange={e=>setPhone(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
-            <div><label className="text-xs text-gray-600 block mb-1">{t('common.email')}</label><input value={email} readOnly className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500" /></div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-sm font-semibold text-gray-900 mb-4">{t('client.profile.billingInfo')}</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2"><label className="text-xs text-gray-600 block mb-1">{t('client.profile.companyName')}</label><input value={companyName} onChange={e=>setCompanyName(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
-            <div className="col-span-2"><label className="text-xs text-gray-600 block mb-1">{t('client.profile.billingAddress')}</label><input value={billingAddress} onChange={e=>setBillingAddress(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
-            <div><label className="text-xs text-gray-600 block mb-1">{t('common.city')}</label><input value={billingCity} onChange={e=>setBillingCity(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
-            <div className="grid grid-cols-2 gap-2">
-              <div><label className="text-xs text-gray-600 block mb-1">{t('common.state')}</label><select value={billingState} onChange={e=>setBillingState(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">{['NJ','NY','CT','PA','FL','TX','CA'].map(s=><option key={s} value={s}>{s}</option>)}</select></div>
-              <div><label className="text-xs text-gray-600 block mb-1">{t('common.zip')}</label><input value={billingZip} onChange={e=>setBillingZip(e.target.value)} maxLength={5} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
+    <div className="max-w-5xl mx-auto">
+      {message && <div className={`mb-4 p-3 rounded-xl text-sm ${message.startsWith('Error')?'bg-red-50 text-red-700':'bg-emerald-50 text-emerald-700'}`}>{message}<button onClick={()=>setMessage('')} className="float-right text-xs opacity-60">✕</button></div>}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-5">
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h2 className="text-base font-semibold text-gray-900 mb-4">{t('pro.profile.personalInfo')}</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div><label className="text-xs text-gray-500 block mb-1">{t('pro.profile.fullName')}</label><input value={form.fullName} onChange={e=>setForm({...form,fullName:e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
+              <div><label className="text-xs text-gray-500 block mb-1">{t('common.phone')}</label><input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
+              <div className="col-span-2"><label className="text-xs text-gray-500 block mb-1">{t('common.email')}</label><input value={form.email} onChange={e=>setForm({...form,email:e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
+              <div className="col-span-2"><label className="text-xs text-gray-500 block mb-1">{t('pro.profile.bio')}</label><textarea value={form.bio} onChange={e=>setForm({...form,bio:e.target.value})} rows={3} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none" placeholder={t('pro.profile.bioPlaceholder')} /></div>
             </div>
-            <div><label className="text-xs text-gray-600 block mb-1">{t('client.profile.taxId')}</label><input value={taxId} onChange={e=>setTaxId(e.target.value)} placeholder="XX-XXXXXXX" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
           </div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-sm font-semibold text-gray-900 mb-4">{t('client.profile.paymentMethods')}</h2>
-          <div className="bg-gray-50 rounded-lg p-4 text-center">
-            <p className="text-3xl mb-2">💳</p>
-            <p className="text-sm text-gray-600 font-medium">{t('client.profile.stripeIntegration')}</p>
-            <p className="text-xs text-gray-400 mt-1">{t('client.profile.stripeDesc')}</p>
-            <button className="mt-3 bg-emerald-700 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-emerald-800">{t('client.profile.setupPayment')}</button>
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h2 className="text-base font-semibold text-gray-900 mb-4">{t('pro.profile.addressSection')}</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2"><label className="text-xs text-gray-500 block mb-1">{t('pro.profile.streetAddress')}</label><input value={form.address} onChange={e=>setForm({...form,address:e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
+              <div><label className="text-xs text-gray-500 block mb-1">{t('common.city')}</label><input value={form.city} onChange={e=>setForm({...form,city:e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
+              <div><label className="text-xs text-gray-500 block mb-1">{t('common.state')}</label><input value={form.state} onChange={e=>setForm({...form,state:e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
+              <div><label className="text-xs text-gray-500 block mb-1">{t('common.zip')}</label><input value={form.zipCode} onChange={e=>setForm({...form,zipCode:e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
+              <div><label className="text-xs text-gray-500 block mb-1">{t('pro.profile.serviceRadius')} ({form.serviceRadiusMiles} mi)</label><input type="range" min={5} max={50} value={form.serviceRadiusMiles} onChange={e=>setForm({...form,serviceRadiusMiles:Number(e.target.value)})} className="w-full accent-emerald-600" /></div>
+            </div>
           </div>
-        </div>
-      </div>
-      <div className="w-72 flex-shrink-0 space-y-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-          <div className="w-20 h-20 rounded-full bg-emerald-700 mx-auto mb-3 flex items-center justify-center text-white text-2xl font-bold">{(fullName||email||'C')[0].toUpperCase()}</div>
-          <p className="font-semibold text-gray-900">{fullName||'Client'}</p>
-          <p className="text-xs text-gray-500 mt-0.5">{email}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase mb-3">{t('client.profile.account')}</p>
-          <div className="space-y-2 text-xs">
-            <div className="flex justify-between"><span className="text-gray-600">{t('client.profile.memberSince')}</span><span className="font-semibold">{user?.createdAt?new Date(user.createdAt).toLocaleDateString('en-US',{month:'short',year:'numeric'}):'—'}</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">{t('common.status')}</span><span className="font-semibold text-emerald-600">{t('client.profile.active')}</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">{t('client.profile.paymentMethod')}</span><span className="font-semibold text-amber-600">{t('client.profile.pending')}</span></div>
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h2 className="text-base font-semibold text-gray-900 mb-4">{t('pro.profile.servicesOffered')}</h2>
+            <div className="flex flex-wrap gap-2">
+              {SERVICES_LIST.map(svc => (<button key={svc} onClick={()=>setForm(p=>({...p,servicesOffered:p.servicesOffered.includes(svc)?p.servicesOffered.filter(s=>s!==svc):[...p.servicesOffered,svc]}))} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${form.servicesOffered.includes(svc)?'bg-emerald-100 text-emerald-700 border border-emerald-300':'bg-gray-50 text-gray-500 border border-gray-200'}`}>{form.servicesOffered.includes(svc)?'✓ ':''}{svc}</button>))}
+            </div>
           </div>
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h2 className="text-base font-semibold text-gray-900 mb-4">{t('pro.profile.languages')}</h2>
+            <div className="flex flex-wrap gap-2">
+              {LANGUAGES.map(lang => (<button key={lang} onClick={()=>setForm(p=>({...p,language:p.language.includes(lang)?p.language.filter(l=>l!==lang):[...p.language,lang]}))} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${form.language.includes(lang)?'bg-blue-100 text-blue-700 border border-blue-300':'bg-gray-50 text-gray-500 border border-gray-200'}`}>{form.language.includes(lang)?'✓ ':''}{lang}</button>))}
+            </div>
+          </div>
+          <button onClick={saveProfile} disabled={saving} className="w-full bg-emerald-700 text-white rounded-xl py-3 text-sm font-medium hover:bg-emerald-800 disabled:opacity-50">{saving ? t('pro.profile.saving') : t('pro.profile.saveProfile')}</button>
         </div>
-        {companyName && <div className="bg-white rounded-xl border border-gray-200 p-4"><p className="text-xs font-semibold text-gray-500 uppercase mb-3">{t('client.profile.billing')}</p><div className="text-xs text-gray-600"><p className="font-medium text-gray-900">{companyName}</p>{billingAddress&&<p>{billingAddress}</p>}<p>{billingCity}{billingCity&&billingState?', ':''}{billingState} {billingZip}</p></div></div>}
-        <div className="bg-white rounded-xl border border-gray-200 p-4"><p className="text-xs font-semibold text-gray-500 uppercase mb-3">{t('client.profile.support')}</p><div className="text-xs text-gray-600"><p>support@everclean.com</p><p>(201) 555-0100</p></div></div>
+        <div className="space-y-5">
+          <div className="bg-white rounded-2xl border border-gray-200 p-5 text-center">
+            <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 text-2xl font-bold mx-auto mb-3">{(form.fullName||'?').split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+            <p className="font-semibold text-gray-900">{form.fullName||'Professional'}</p>
+            <p className="text-xs text-gray-500 mt-1">{form.city||'NJ'}, {form.state}</p>
+            <div className="flex items-center justify-center gap-1 mt-2"><span className="text-amber-500 text-sm">{'★'.repeat(Math.round(rating))}</span><span className="text-xs text-gray-500">{rating.toFixed(1)}</span></div>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <div className="flex items-center justify-between mb-3"><h3 className="text-sm font-semibold text-gray-900">{t('pro.profile.hourlyRate')}</h3><button onClick={()=>setEditingRate(!editingRate)} className="text-xs text-emerald-600">{editingRate?t('common.cancel'):t('pro.profile.editRate')}</button></div>
+            {editingRate ? (<div><div className="flex items-center gap-2 mb-2"><span className="text-sm text-gray-500">$</span><input type="number" min={18} max={30} value={newRate} onChange={e=>setNewRate(Number(e.target.value))} className="w-20 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center" /><span className="text-sm text-gray-500">/hr</span></div><p className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2 mb-2">{t('pro.profile.rateWarning')}</p><button onClick={saveRate} className="w-full bg-emerald-700 text-white rounded-lg py-2 text-xs font-medium">{t('pro.profile.saveRate')}</button></div>) : (<p className="text-2xl font-bold text-gray-900">${form.hourlyRate}<span className="text-sm font-normal text-gray-400">{t('pro.dashboard.perHour')}</span></p>)}
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">{t('pro.profile.performance')}</h3>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between"><span className="text-gray-500">{t('pro.profile.totalEarnings')}</span><span className="font-medium">${earnings.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">{t('pro.profile.servicesCompleted')}</span><span className="font-medium">{services}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">{t('pro.profile.completionRate')}</span><span className="font-medium">{completion}%</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">{t('pro.profile.serviceRadiusStat')}</span><span className="font-medium">{form.serviceRadiusMiles} mi</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">{t('pro.profile.payoutSchedule')}</span><span className="font-medium">{form.payoutSchedule}</span></div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">{t('pro.profile.verifications')}</h3>
+            <div className="space-y-2">
+              {[{label:t('pro.profile.backgroundCheck'),done:profile?.background_checked},{label:t('pro.profile.idVerified'),done:profile?.id_verified},{label:t('pro.profile.payoutSetup'),done:!!profile?.stripe_account_id}].map(v=>(<div key={v.label} className="flex items-center gap-2 text-sm"><span className={`text-xs ${v.done?'text-emerald-500':'text-amber-500'}`}>{v.done?'✓':'⏳'}</span><span className={v.done?'text-gray-700':'text-gray-400'}>{v.label}</span></div>))}
+            </div>
+          </div>
+          <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4 text-center"><p className="text-xs text-gray-500 mb-2">{t('pro.profile.needHelp')}</p><button className="text-xs text-emerald-600 font-medium">{t('pro.profile.contactSupport')}</button></div>
+        </div>
       </div>
     </div>
   );
