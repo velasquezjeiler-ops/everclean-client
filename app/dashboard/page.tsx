@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { useTranslation } from '../../../lib/i18n/useTranslation';
+import { useTranslation } from '../../lib/i18n/useTranslation';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
 

@@ -13,6 +13,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const { t, lang, setLang } = useTranslation();
   const [ready, setReady] = useState(false);
   const [clientName, setClientName] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -25,11 +26,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       .then(r => r.json()).then(d => setClientName(d.name || d.email?.split('@')[0] || '')).catch(() => {});
   }, [router]);
 
-  function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    router.push('/');
-  }
+  useEffect(() => { setMenuOpen(false); }, [pathname]);
+
+  function logout() { localStorage.removeItem('token'); localStorage.removeItem('role'); router.push('/'); }
 
   const navItems = [
     { href: '/dashboard', label: t('sidebar.myServices'), icon: '🧹' },
@@ -41,42 +40,38 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   if (!ready) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <aside className="w-44 bg-white border-r border-gray-200 flex flex-col min-h-screen flex-shrink-0">
-        <div className="p-4 border-b border-gray-100">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-700 flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-xs font-bold">EC</span>
-            </div>
-            <div className="min-w-0">
-              <p className="font-semibold text-gray-900 text-sm truncate">EverClean</p>
-              <p className="text-xs text-blue-600 font-medium">{t('sidebar.client')}</p>
-            </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+      <header className="md:hidden flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-40">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-emerald-700 flex items-center justify-center"><span className="text-white text-xs font-bold">EC</span></div>
+          <span className="font-semibold text-gray-900 text-sm">EverClean</span>
+          <span className="text-xs text-blue-600 font-medium">{t('sidebar.client')}</span>
+        </div>
+        <button onClick={() => setMenuOpen(!menuOpen)} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-100">
+          <span className="text-xl">{menuOpen ? '✕' : '☰'}</span>
+        </button>
+      </header>
+      {menuOpen && (
+        <div className="md:hidden fixed inset-0 top-[57px] bg-black/50 z-30" onClick={() => setMenuOpen(false)}>
+          <div className="bg-white w-64 h-full p-4 space-y-2" onClick={e => e.stopPropagation()}>
+            {navItems.map(item => (<Link key={item.href} href={item.href} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm ${pathname===item.href?'bg-emerald-50 text-emerald-700 font-medium':'text-gray-600'}`}><span className="text-lg">{item.icon}</span><span>{item.label}</span></Link>))}
+            <div className="border-t border-gray-100 pt-3 mt-3"><LanguageSelector lang={lang} setLang={setLang} /></div>
+            <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-500 hover:bg-red-50"><span className="text-lg">🚪</span><span>{t('common.logout')}</span></button>
           </div>
         </div>
+      )}
+      <aside className="hidden md:flex w-44 bg-white border-r border-gray-200 flex-col min-h-screen flex-shrink-0">
+        <div className="p-4 border-b border-gray-100"><div className="flex items-center gap-2"><div className="w-8 h-8 rounded-lg bg-emerald-700 flex items-center justify-center flex-shrink-0"><span className="text-white text-xs font-bold">EC</span></div><div className="min-w-0"><p className="font-semibold text-gray-900 text-sm truncate">EverClean</p><p className="text-xs text-blue-600 font-medium">{t('sidebar.client')}</p></div></div></div>
         <nav className="flex-1 p-3 space-y-1">
-          {navItems.map(item => {
-            const isActive = pathname === item.href;
-            return (
-              <Link key={item.href} href={item.href}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all ${isActive ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}>
-                <span className="text-base">{item.icon}</span>
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
+          {navItems.map(item => (<Link key={item.href} href={item.href} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all ${pathname===item.href?'bg-emerald-50 text-emerald-700 font-medium':'text-gray-600 hover:bg-gray-50'}`}><span className="text-base">{item.icon}</span><span>{item.label}</span></Link>))}
         </nav>
         <div className="p-3 border-t border-gray-100 space-y-1">
           <LanguageSelector lang={lang} setLang={setLang} />
           {clientName && <p className="text-xs text-gray-500 px-3 truncate">{clientName}</p>}
-          <button onClick={logout}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all">
-            <span className="text-base">🚪</span>
-            <span>{t('common.logout')}</span>
-          </button>
+          <button onClick={logout} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-500 hover:bg-red-50 hover:text-red-600"><span className="text-base">🚪</span><span>{t('common.logout')}</span></button>
         </div>
       </aside>
-      <main className="flex-1 p-6 min-w-0 overflow-auto">{children}</main>
+      <main className="flex-1 p-4 md:p-6 min-w-0 overflow-auto">{children}</main>
     </div>
   );
 }
