@@ -16,10 +16,11 @@ const SERVICES = [
   { id:'MEDICAL_CLEANING', rate:50, unit:'hr', icon:'🏥', min:3 },
   { id:'LAUNDRY_PICKUP', rate:2.25, unit:'lb', icon:'👔', min:10, flat:8.99, flatLabel:'Pickup & delivery' },
   { id:'CAR_WASH', rate:0, unit:'fixed', icon:'🚗', min:1, options:[
-    {label:'Basic Exterior',price:39.99},
-    {label:'Wash + Wax',price:79.99},
-    {label:'Interior Detail',price:129.99},
-    {label:'Full Detail',price:199.99}
+    {label:'🚿 Essential Wash — Exterior wash + dry + tires + windows',price:50},
+    {label:'✨ Shine Combo — Essential + hand wax + dashboard wipe',price:75},
+    {label:'🧹 Interior Combo — Essential + full vacuum + seats + mats',price:95},
+    {label:'💎 Premium Detail — Full exterior + interior + vacuum + wax + leather care',price:149},
+    {label:'👑 VIP Complete — Premium + engine bay + headlight restore + air freshener',price:199},
   ]},
   { id:'DRY_CLEANING', rate:12, unit:'item', icon:'👗', min:3 },
   { id:'PRESSURE_WASHING', rate:45, unit:'hr', icon:'💦', min:2 },
