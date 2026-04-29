@@ -1,6 +1,7 @@
 'use client';
-import { usFeState, useEffect } from 'react';
+'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 // ─── CONSTANTES (mirror del backend) ────────────────────────
 
