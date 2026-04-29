@@ -30,7 +30,7 @@ export default function ProDashboard() {
       ]);
       const jD = await jR.json(); const pD = await pR.json();
       setJobs(jD.data || []); setProfile(pD);
-      setIsAvailable(pD.is_available ?? pD.isAvailable ?? false);
+      setIsAvailable(pD.is_available ?? false);
     } catch(e) {}
     setLoading(false);
   }, []);
@@ -60,107 +60,112 @@ export default function ProDashboard() {
   const completed = jobs.filter(j => j.status === 'COMPLETED');
   const earnings = completed.reduce((s, j) => s + Number(j.total_amount || 0), 0);
 
-  // Calendar - next 7 days
   const today = new Date();
   const days = Array.from({length:7}, (_,i) => { const d = new Date(today); d.setDate(today.getDate()+i); return d; });
-  const jobsByDay = (d: Date) => jobs.filter(j => {
-    const jd = new Date(j.scheduled_at || j.scheduledAt);
-    return jd.toDateString() === d.toDateString();
-  });
+  const jobsByDay = (d: Date) => jobs.filter(j => new Date(j.scheduled_at).toDateString() === d.toDateString());
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg md:text-xl font-semibold text-gray-900">{t('pro.dashboard.title')}</h1>
-        <button onClick={toggleAvail} className={`px-3 py-1.5 rounded-full text-xs font-medium ${isAvailable ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+      <div className="flex items-center justify-between mb-5">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">{t('pro.dashboard.title')}</h1>
+        <button onClick={toggleAvail} className={`px-4 py-2 rounded-full text-xs font-semibold transition-all shadow-sm ${isAvailable ? 'bg-green-500 text-white shadow-green-200' : 'bg-gray-200 text-gray-500'}`}>
+          <span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${isAvailable ? 'bg-white animate-pulse' : 'bg-gray-400'}`} />
           {isAvailable ? t('pro.dashboard.available') : t('pro.dashboard.unavailable')}
         </button>
       </div>
 
-      {/* Stats - horizontal scroll on mobile */}
-      <div className="flex gap-3 mb-4 overflow-x-auto pb-1">
-        <div className="bg-white rounded-xl border border-gray-200 p-3 md:p-4 min-w-[120px] flex-1">
-          <p className="text-xs text-gray-500">{t('pro.dashboard.totalEarnings')}</p>
-          <p className="text-xl md:text-2xl font-bold text-emerald-700">${earnings.toFixed(0)}</p>
+      {/* Gradient stat cards */}
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="ec-stat-green rounded-2xl p-4 text-white shadow-lg shadow-green-900/20">
+          <p className="text-white/70 text-xs">{t('pro.dashboard.totalEarnings')}</p>
+          <p className="text-2xl md:text-3xl font-bold mt-1">${earnings.toFixed(0)}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-3 md:p-4 min-w-[120px] flex-1">
-          <p className="text-xs text-gray-500">{t('pro.dashboard.servicesCompleted')}</p>
-          <p className="text-xl md:text-2xl font-bold text-gray-900">{completed.length}</p>
+        <div className="ec-stat-blue rounded-2xl p-4 text-white shadow-lg shadow-blue-900/20">
+          <p className="text-white/70 text-xs">{t('pro.dashboard.servicesCompleted')}</p>
+          <p className="text-2xl md:text-3xl font-bold mt-1">{completed.length}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-3 md:p-4 min-w-[120px] flex-1">
-          <p className="text-xs text-gray-500">{t('pro.dashboard.activeJobs')}</p>
-          <p className="text-xl md:text-2xl font-bold text-blue-600">{active.length}</p>
+        <div className="ec-stat-purple rounded-2xl p-4 text-white shadow-lg shadow-purple-900/20">
+          <p className="text-white/70 text-xs">{t('pro.dashboard.activeJobs')}</p>
+          <p className="text-2xl md:text-3xl font-bold mt-1">{active.length}</p>
         </div>
       </div>
 
-      {/* Weekly calendar */}
-      <div className="bg-white rounded-xl border border-gray-200 p-3 mb-4">
-        <p className="text-xs font-medium text-gray-500 mb-2">{t('pro.dashboard.calendar')}</p>
-        <div className="flex gap-1 overflow-x-auto">
+      {/* Calendar */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-5">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{t('pro.dashboard.calendar')}</p>
+        <div className="flex gap-1.5 overflow-x-auto">
           {days.map((d,i) => {
             const hasJobs = jobsByDay(d).length > 0;
             const isToday = d.toDateString() === today.toDateString();
             return (
-              <div key={i} className={`flex flex-col items-center p-2 rounded-lg min-w-[48px] ${isToday ? 'bg-emerald-50 border border-emerald-200' : 'bg-gray-50'}`}>
-                <span className="text-[10px] text-gray-400 uppercase">{d.toLocaleDateString('en',{weekday:'short'})}</span>
-                <span className={`text-sm font-semibold ${isToday ? 'text-emerald-700' : 'text-gray-900'}`}>{d.getDate()}</span>
-                {hasJobs && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1" />}
+              <div key={i} className={`flex flex-col items-center py-2 px-3 rounded-xl min-w-[52px] flex-1 transition-all ${isToday ? 'bg-blue-600 text-white shadow-md shadow-blue-300' : hasJobs ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}>
+                <span className={`text-[10px] uppercase ${isToday ? 'text-blue-200' : 'text-gray-400'}`}>{d.toLocaleDateString('en',{weekday:'short'})}</span>
+                <span className={`text-base font-bold ${isToday ? 'text-white' : 'text-gray-900'}`}>{d.getDate()}</span>
+                {hasJobs && !isToday && <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-0.5" />}
+                {hasJobs && isToday && <div className="w-1.5 h-1.5 rounded-full bg-white mt-0.5" />}
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Jobs list */}
-      {active.length === 0 && <div className="text-center py-10 bg-white rounded-xl border border-gray-200"><p className="text-gray-400 text-sm">{t('pro.dashboard.noJobs')}</p></div>}
+      {/* Jobs */}
+      {jobs.filter(j => j.status !== 'CANCELLED').length === 0 && (
+        <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+          </div>
+          <p className="text-gray-500 text-sm">{t('pro.dashboard.noJobs')}</p>
+        </div>
+      )}
 
       <div className="space-y-3">
         {jobs.filter(j => j.status !== 'CANCELLED').slice(0,10).map(b => (
-          <div key={b.id} className="bg-white rounded-xl border border-gray-200 p-3 md:p-4">
+          <div key={b.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-gray-900 text-sm truncate">{t('services.'+(b.service_type||b.serviceType)) || b.service_type}</p>
+                <p className="font-semibold text-gray-900 text-sm">{t('services.'+(b.service_type||b.serviceType)) || b.service_type}</p>
                 <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((b.address||'')+(b.city?', '+b.city:''))}`}
-                  target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate block">
+                  target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate block mt-0.5">
                   📍 {b.address}{b.city?', '+b.city:''}
                 </a>
               </div>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium whitespace-nowrap ${STATUS_STYLE[b.status]||''}`}>
+              <span className={`text-[10px] px-2.5 py-1 rounded-full border font-semibold whitespace-nowrap ${STATUS_STYLE[b.status]||''}`}>
                 {t('statuses.'+b.status)}
               </span>
             </div>
 
-            <div className="flex flex-wrap gap-1 mb-2">
-              {b.scheduled_at && <span className="text-[10px] bg-gray-100 text-gray-600 rounded px-1.5 py-0.5">{new Date(b.scheduled_at).toLocaleDateString('en',{month:'short',day:'numeric'})}</span>}
-              {b.sqft && <span className="text-[10px] bg-gray-100 text-gray-600 rounded px-1.5 py-0.5">{b.sqft} ft²</span>}
-              {b.total_amount && <span className="text-[10px] bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5 font-medium">${b.total_amount}</span>}
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {b.scheduled_at && <span className="text-[10px] bg-gray-100 text-gray-600 rounded-lg px-2 py-1">{new Date(b.scheduled_at).toLocaleDateString('en',{month:'short',day:'numeric'})}</span>}
+              {b.sqft && <span className="text-[10px] bg-gray-100 text-gray-600 rounded-lg px-2 py-1">{b.sqft} ft²</span>}
+              {b.total_amount && <span className="text-[10px] ec-stat-green text-white rounded-lg px-2 py-1 font-semibold">${b.total_amount}</span>}
             </div>
 
             {(b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS') && (
-              <div className="mt-2">
+              <div className="mt-3">
                 {etaData[b.id] ? (
-                  <div className="p-2 bg-blue-50 rounded-lg border border-blue-100">
-                    <p className="text-xs font-medium text-blue-700 mb-2">🚗 {etaData[b.id].distanceMiles} mi · {t('pro.dashboard.etaTime')} {etaData[b.id].etaText}</p>
+                  <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
+                    <p className="text-xs font-semibold text-blue-700 mb-2">🚗 {etaData[b.id].distanceMiles} mi · {t('pro.dashboard.etaTime')} {etaData[b.id].etaText}</p>
                     <a href={etaData[b.id].mapsUrl} target="_blank" rel="noopener noreferrer"
-                      className="block w-full py-2 bg-blue-600 text-white rounded-lg text-xs font-medium text-center">
+                      className="block w-full py-2.5 rounded-xl text-xs font-semibold text-white text-center shadow-md" style={{background:'linear-gradient(135deg, #1a3a5c 0%, #2563eb 100%)'}}>
                       🗺️ {t('pro.dashboard.startNavigation')}
                     </a>
-                    <p className="text-[10px] text-emerald-600 mt-1 text-center">✅ {t('pro.dashboard.etaSent')}</p>
+                    <p className="text-[10px] text-green-600 mt-2 text-center font-medium">✅ {t('pro.dashboard.etaSent')}</p>
                   </div>
                 ) : (
-                  <button onClick={() => fetchETA(b.id)} className="w-full py-2 bg-blue-600 text-white rounded-lg text-xs font-medium">
+                  <button onClick={() => fetchETA(b.id)}
+                    className="w-full py-2.5 rounded-xl text-xs font-semibold text-white shadow-md" style={{background:'linear-gradient(135deg, #1a3a5c 0%, #2563eb 100%)'}}>
                     🚗 {t('pro.dashboard.sendEta')}
                   </button>
                 )}
               </div>
             )}
 
-            <div className="flex gap-2 mt-2">
-              {b.status === 'CONFIRMED' && <button onClick={() => doAction(b.id,'checkin')} disabled={acting===b.id} className="flex-1 py-2 bg-purple-600 text-white rounded-lg text-xs font-medium disabled:opacity-50">{t('pro.dashboard.checkIn')}</button>}
-              {b.status === 'IN_PROGRESS' && <button onClick={() => doAction(b.id,'checkout')} disabled={acting===b.id} className="flex-1 py-2 bg-emerald-600 text-white rounded-lg text-xs font-medium disabled:opacity-50">{t('pro.dashboard.checkOut')}</button>}
+            <div className="flex gap-2 mt-3">
+              {b.status === 'CONFIRMED' && <button onClick={() => doAction(b.id,'checkin')} disabled={acting===b.id} className="flex-1 py-2.5 ec-stat-purple text-white rounded-xl text-xs font-semibold disabled:opacity-50 shadow-md">{t('pro.dashboard.checkIn')}</button>}
+              {b.status === 'IN_PROGRESS' && <button onClick={() => doAction(b.id,'checkout')} disabled={acting===b.id} className="flex-1 py-2.5 ec-stat-green text-white rounded-xl text-xs font-semibold disabled:opacity-50 shadow-md">{t('pro.dashboard.checkOut')}</button>}
             </div>
           </div>
         ))}
