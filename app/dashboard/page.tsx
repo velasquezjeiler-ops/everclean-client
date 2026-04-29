@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useTranslation } from '../../lib/i18n/useTranslation';
+import BookingCalendar from '../../app/components/BookingCalendar';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
 
@@ -9,6 +10,7 @@ export default function ClientDashboard() {
   const { t } = useTranslation();
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
 
   const load = useCallback(async () => {
     const token = localStorage.getItem('token') || '';
@@ -22,18 +24,32 @@ export default function ClientDashboard() {
 
   useEffect(() => { load(); }, [load]);
 
-  const active = bookings.filter(b => !['COMPLETED','CANCELLED'].includes(b.status));
+  const active    = bookings.filter(b => !['COMPLETED','CANCELLED'].includes(b.status));
   const completed = bookings.filter(b => b.status === 'COMPLETED');
 
-  // Calendar
-  const today = new Date();
-  const days = Array.from({length:7}, (_,i) => { const d = new Date(today); d.setDate(today.getDate()+i); return d; });
-  const jobsByDay = (d: Date) => bookings.filter(b => {
-    const jd = new Date(b.scheduled_at || b.scheduledAt);
-    return jd.toDateString() === d.toDateString();
+  // Normalizar bookings para BookingCalendar
+  const calendarBookings = bookings.map(b => ({
+    id: b.id,
+    service_type: b.service_type || b.serviceType || '',
+    scheduled_date: b.scheduled_at ? b.scheduled_at.split('T')[0] : '',
+    scheduled_time: b.scheduled_at ? b.scheduled_at.split('T')[1]?.slice(0,5) : '',
+    address: b.address,
+    status: (b.status || '').toLowerCase(),
+    client_price: parseFloat(b.client_price || b.total_amount || 0),
+    hours: b.hours,
+  }));
+
+  // Bookings del día seleccionado
+  const dayBookings = active.filter(b => {
+    const d = b.scheduled_at ? b.scheduled_at.split('T')[0] : '';
+    return d === selectedDate;
   });
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -56,25 +72,16 @@ export default function ClientDashboard() {
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-3 min-w-[110px] flex-1">
           <p className="text-xs text-gray-500">{t('client.history.totalSpent')}</p>
-          <p className="text-xl font-bold text-blue-600">${completed.reduce((s,b) => s+Number(b.total_amount||0),0).toFixed(0)}</p>
+          <p className="text-xl font-bold text-blue-600">${completed.reduce((s,b) => s+Number(b.total_amount||b.client_price||0),0).toFixed(0)}</p>
         </div>
       </div>
 
-      {/* Weekly calendar */}
-      <div className="bg-white rounded-xl border border-gray-200 p-3 mb-4">
-        <div className="flex gap-1 overflow-x-auto">
-          {days.map((d,i) => {
-            const hasJobs = jobsByDay(d).length > 0;
-            const isToday = d.toDateString() === today.toDateString();
-            return (
-              <div key={i} className={`flex flex-col items-center p-2 rounded-lg min-w-[48px] flex-1 ${isToday ? 'bg-emerald-50 border border-emerald-200' : 'bg-gray-50'}`}>
-                <span className="text-[10px] text-gray-400 uppercase">{d.toLocaleDateString('en',{weekday:'short'})}</span>
-                <span className={`text-sm font-semibold ${isToday ? 'text-emerald-700' : 'text-gray-900'}`}>{d.getDate()}</span>
-                {hasJobs && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1" />}
-              </div>
-            );
-          })}
-        </div>
+      {/* Calendario con días clickeables */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+        <BookingCalendar
+          bookings={calendarBookings}
+          role="client"
+        />
       </div>
 
       {/* Bookings list */}
@@ -103,7 +110,7 @@ export default function ClientDashboard() {
                 </div>
                 <div className="flex flex-wrap gap-1 mb-2">
                   {b.scheduled_at && <span className="text-[10px] bg-gray-100 text-gray-600 rounded px-1.5 py-0.5">{new Date(b.scheduled_at).toLocaleDateString()}</span>}
-                  {b.total_amount && <span className="text-[10px] bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5 font-medium">${b.total_amount}</span>}
+                  {(b.client_price||b.total_amount) && <span className="text-[10px] bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5 font-medium">${b.client_price||b.total_amount}</span>}
                 </div>
                 {pro ? (
                   <div className="flex items-center gap-2 p-2 bg-emerald-50 rounded-lg">
