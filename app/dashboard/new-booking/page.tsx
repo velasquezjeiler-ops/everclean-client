@@ -203,17 +203,18 @@ export default function NewBookingPage() {
     if(!address || !scheduledDate || !scheduledTime){ setError('Completa todos los campos requeridos.'); return; }
     setLoading(true); setError('');
     try {
-      const token = localStorage.getItem('ec_token');
+      const token = localStorage.getItem('token');
       const body: Record<string,unknown> = {
         service_type: serviceType, address, city, state, zip_code: zipCode,
-        scheduled_date: scheduledDate, scheduled_time: scheduledTime, notes, frequency,
+        scheduledAt: `${scheduledDate}T${scheduledTime}:00`, notes, frequency,
       };
       if(isCleaning){ body.sqft=parseInt(sqft)||0; body.bedrooms=beds?parseInt(beds):null; body.bathrooms=baths?parseInt(baths):null; }
       if(isCarWash){ body.vehicle_code=vehicleCode; body.package=carPkg; body.car_wash_addons=selectedAddons; }
       if(isLaundry) body.weight_lbs=parseFloat(weightLbs)||10;
       if(isDry)     body.item_count=parseInt(itemCount)||1;
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/bookings`, {
+      const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
+      const res = await fetch(`${API}/bookings`, {
         method:'POST',
         headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
         body: JSON.stringify(body),
