@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
+import BookingCalendar from '../../../app/components/BookingCalendar';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
 
@@ -56,15 +57,27 @@ export default function ProDashboard() {
     setIsAvailable(!isAvailable);
   }
 
-  const active = jobs.filter(j => ['CONFIRMED','IN_PROGRESS'].includes(j.status));
+  const active    = jobs.filter(j => ['CONFIRMED','IN_PROGRESS'].includes(j.status));
   const completed = jobs.filter(j => j.status === 'COMPLETED');
-  const earnings = completed.reduce((s, j) => s + Number(j.total_amount || 0), 0);
+  const earnings  = completed.reduce((s, j) => s + Number(j.payout_amount || j.total_amount || 0), 0);
 
-  const today = new Date();
-  const days = Array.from({length:7}, (_,i) => { const d = new Date(today); d.setDate(today.getDate()+i); return d; });
-  const jobsByDay = (d: Date) => jobs.filter(j => new Date(j.scheduled_at).toDateString() === d.toDateString());
+  // Normalizar bookings para BookingCalendar
+  const calendarBookings = jobs.map(b => ({
+    id: b.id,
+    service_type: b.service_type || b.serviceType || '',
+    scheduled_date: b.scheduled_at ? b.scheduled_at.split('T')[0] : '',
+    scheduled_time: b.scheduled_at ? b.scheduled_at.split('T')[1]?.slice(0,5) : '',
+    address: b.address,
+    status: (b.status || '').toLowerCase(),
+    payout_amount: parseFloat(b.payout_amount || 0),
+    hours: b.hours,
+  }));
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -76,7 +89,7 @@ export default function ProDashboard() {
         </button>
       </div>
 
-      {/* Gradient stat cards */}
+      {/* Stat cards */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="ec-stat-green rounded-2xl p-4 text-white shadow-lg shadow-green-900/20">
           <p className="text-white/70 text-xs">{t('pro.dashboard.totalEarnings')}</p>
@@ -92,23 +105,12 @@ export default function ProDashboard() {
         </div>
       </div>
 
-      {/* Calendar */}
+      {/* Calendario con días clickeables */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-5">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{t('pro.dashboard.calendar')}</p>
-        <div className="flex gap-1.5 overflow-x-auto">
-          {days.map((d,i) => {
-            const hasJobs = jobsByDay(d).length > 0;
-            const isToday = d.toDateString() === today.toDateString();
-            return (
-              <div key={i} className={`flex flex-col items-center py-2 px-3 rounded-xl min-w-[52px] flex-1 transition-all ${isToday ? 'bg-blue-600 text-white shadow-md shadow-blue-300' : hasJobs ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}>
-                <span className={`text-[10px] uppercase ${isToday ? 'text-blue-200' : 'text-gray-400'}`}>{d.toLocaleDateString('en',{weekday:'short'})}</span>
-                <span className={`text-base font-bold ${isToday ? 'text-white' : 'text-gray-900'}`}>{d.getDate()}</span>
-                {hasJobs && !isToday && <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-0.5" />}
-                {hasJobs && isToday && <div className="w-1.5 h-1.5 rounded-full bg-white mt-0.5" />}
-              </div>
-            );
-          })}
-        </div>
+        <BookingCalendar
+          bookings={calendarBookings}
+          role="professional"
+        />
       </div>
 
       {/* Jobs */}
@@ -140,7 +142,7 @@ export default function ProDashboard() {
             <div className="flex flex-wrap gap-1.5 mb-2">
               {b.scheduled_at && <span className="text-[10px] bg-gray-100 text-gray-600 rounded-lg px-2 py-1">{new Date(b.scheduled_at).toLocaleDateString('en',{month:'short',day:'numeric'})}</span>}
               {b.sqft && <span className="text-[10px] bg-gray-100 text-gray-600 rounded-lg px-2 py-1">{b.sqft} ft²</span>}
-              {b.total_amount && <span className="text-[10px] ec-stat-green text-white rounded-lg px-2 py-1 font-semibold">${b.total_amount}</span>}
+              {b.payout_amount && <span className="text-[10px] ec-stat-green text-white rounded-lg px-2 py-1 font-semibold">+${b.payout_amount}</span>}
             </div>
 
             {(b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS') && (
