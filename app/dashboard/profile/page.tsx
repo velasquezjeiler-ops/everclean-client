@@ -1,15 +1,44 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
+const API =
+  process.env.NEXT_PUBLIC_API_URL ||
+  'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
+
+const C = {
+  navy: '#0D3781',
+  blue: '#1565C0',
+  green: '#4CAF50',
+  greenDk: '#388E3C',
+  bg: '#F5F7FA',
+  text: '#0D1B2A',
+  muted: '#64748B',
+  border: '#E2E8F0',
+  danger: '#DC2626',
+};
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="client-profile-field">
+      <span>{label}</span>
+      {children}
+    </label>
+  );
+}
 
 export default function ClientProfile() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
-  const [user, setUser] = useState<any>(null);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -22,78 +51,447 @@ export default function ClientProfile() {
 
   const load = useCallback(async () => {
     const token = localStorage.getItem('token') || '';
+
     try {
       const [uRes, cRes] = await Promise.all([
-        fetch(API+'/auth/me', { headers: { Authorization: 'Bearer '+token } }),
-        fetch(API+'/companies/me', { headers: { Authorization: 'Bearer '+token } }),
+        fetch(API + '/auth/me', { headers: { Authorization: 'Bearer ' + token } }),
+        fetch(API + '/companies/me', { headers: { Authorization: 'Bearer ' + token } }),
       ]);
-      if (uRes.ok) { const d = await uRes.json(); setUser(d); setEmail(d.email||''); setPhone(d.phone||''); setFullName(d.name||''); }
-      if (cRes.ok) { const c = await cRes.json(); setCompanyName(c.name||''); setBillingAddress(c.address||''); setBillingCity(c.city||''); setBillingState(c.state||'NJ'); setBillingZip(c.zip||''); setTaxId(c.tax_id||''); }
-    } catch(e) {}
-    setLoading(false);
+
+      if (uRes.ok) {
+        const d = await uRes.json();
+        setEmail(d.email || '');
+        setPhone(d.phone || '');
+        setFullName(d.name || d.fullName || '');
+      }
+
+      if (cRes.ok) {
+        const c = await cRes.json();
+        setCompanyName(c.name || '');
+        setBillingAddress(c.address || c.billingAddress || '');
+        setBillingCity(c.city || c.billingCity || '');
+        setBillingState(c.state || c.billingState || 'NJ');
+        setBillingZip(c.zip || c.billingZip || '');
+        setTaxId(c.tax_id || c.taxId || '');
+      }
+    } catch {
+      setMsg('Error: Unable to load profile');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   async function saveProfile() {
-    setSaving(true); setMsg('');
+    setSaving(true);
+    setMsg('');
+
     const token = localStorage.getItem('token') || '';
+
     try {
-      const res = await fetch(API+'/companies/me', { method:'PATCH', headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'}, body:JSON.stringify({name:companyName,billingAddress,billingCity,billingState,billingZip,taxId}) });
-      if (res.ok) { setMsg(t('common.success')); load(); } else { const e = await res.json(); setMsg('Error: '+e.error); }
-    } catch(e:any) { setMsg('Error: '+e.message); }
-    setSaving(false);
+      const res = await fetch(API + '/companies/me', {
+        method: 'PATCH',
+        headers: {
+          Authorization: 'Bearer ' + token,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: companyName,
+          billingAddress,
+          billingCity,
+          billingState,
+          billingZip,
+          taxId,
+        }),
+      });
+
+      if (res.ok) {
+        setMsg(t('common.success'));
+        load();
+      } else {
+        const e = await res.json();
+        setMsg('Error: ' + (e.error || 'Unable to save changes'));
+      }
+    } catch (e: any) {
+      setMsg('Error: ' + (e.message || 'Unable to save changes'));
+    } finally {
+      setSaving(false);
+    }
   }
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div
+          className="w-9 h-9 rounded-full animate-spin"
+          style={{
+            border: `3px solid ${C.border}`,
+            borderTopColor: C.blue,
+          }}
+        />
+      </div>
+    );
+  }
+
+  const initial = (fullName || email || 'C')[0].toUpperCase();
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg md:text-xl font-semibold text-gray-900">{t('client.profile.title')}</h1>
-        <button onClick={saveProfile} disabled={saving} className="bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50">{saving?t('common.loading'):t('client.profile.saveChanges')}</button>
-      </div>
-      {msg && <div className={`rounded-lg px-3 py-2 text-xs mb-3 ${msg.startsWith('Error')?'bg-red-50 text-red-600':'bg-emerald-50 text-emerald-700'}`}>{msg}</div>}
+    <div className="client-profile-page">
+      <style>{`
+        .client-profile-page {
+          width: 100%;
+        }
 
-      {/* Avatar card */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-3 flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-emerald-700 flex items-center justify-center text-white text-lg font-bold flex-shrink-0">{(fullName||email||'C')[0].toUpperCase()}</div>
-        <div className="min-w-0"><p className="font-semibold text-gray-900 text-sm truncate">{fullName||'Client'}</p><p className="text-xs text-gray-500 truncate">{email}</p></div>
-      </div>
+        .client-profile-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 18px;
+        }
 
-      <div className="space-y-3">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3">{t('client.profile.personalInfo')}</h2>
-          <div className="space-y-3">
-            <div><label className="text-xs text-gray-600 block mb-1">{t('client.profile.fullName')}</label><input value={fullName} onChange={e=>setFullName(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-xs text-gray-600 block mb-1">{t('common.phone')}</label><input value={phone} onChange={e=>setPhone(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" /></div>
-              <div><label className="text-xs text-gray-600 block mb-1">{t('common.email')}</label><input value={email} readOnly className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 text-gray-500" /></div>
-            </div>
-          </div>
+        .client-profile-title {
+          font-size: 28px;
+          font-weight: 900;
+          line-height: 1.05;
+          color: ${C.text};
+          margin: 0 0 5px;
+        }
+
+        .client-profile-subtitle {
+          margin: 0;
+          color: ${C.muted};
+          font-size: 14px;
+        }
+
+        .client-profile-save {
+          border: 0;
+          border-radius: 12px;
+          background: linear-gradient(135deg, ${C.navy}, ${C.blue});
+          color: #fff;
+          min-height: 40px;
+          padding: 0 16px;
+          font-size: 13px;
+          font-weight: 900;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+
+        .client-profile-save:disabled {
+          opacity: 0.55;
+          cursor: not-allowed;
+        }
+
+        .client-profile-message {
+          border-radius: 14px;
+          padding: 11px 14px;
+          font-size: 13px;
+          font-weight: 800;
+          margin-bottom: 14px;
+        }
+
+        .client-profile-message.success {
+          background: #ECFDF5;
+          color: ${C.greenDk};
+          border: 1px solid #BBF7D0;
+        }
+
+        .client-profile-message.error {
+          background: #FEF2F2;
+          color: ${C.danger};
+          border: 1px solid #FECACA;
+        }
+
+        .client-profile-card {
+          background: #fff;
+          border: 1px solid ${C.border};
+          border-radius: 18px;
+          box-shadow: 0 2px 14px rgba(13, 55, 129, 0.05);
+          margin-bottom: 14px;
+          overflow: hidden;
+        }
+
+        .client-profile-hero {
+          padding: 16px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          background: linear-gradient(135deg, #F8FBFF, #FFFFFF);
+        }
+
+        .client-profile-avatar {
+          width: 52px;
+          height: 52px;
+          border-radius: 999px;
+          background: linear-gradient(135deg, ${C.green}, ${C.blue});
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 20px;
+          font-weight: 900;
+          flex-shrink: 0;
+          box-shadow: 0 8px 20px rgba(21, 101, 192, 0.18);
+        }
+
+        .client-profile-hero strong {
+          display: block;
+          color: ${C.text};
+          font-size: 15px;
+          font-weight: 900;
+          margin-bottom: 3px;
+        }
+
+        .client-profile-hero p {
+          margin: 0;
+          color: ${C.muted};
+          font-size: 12px;
+        }
+
+        .client-profile-section {
+          padding: 16px;
+        }
+
+        .client-profile-section h2 {
+          font-size: 15px;
+          font-weight: 900;
+          color: ${C.text};
+          margin: 0 0 13px;
+        }
+
+        .client-profile-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+        }
+
+        .client-profile-grid.three {
+          grid-template-columns: 1.2fr 0.8fr 0.8fr;
+        }
+
+        .client-profile-field {
+          display: block;
+          min-width: 0;
+        }
+
+        .client-profile-field.span-2 {
+          grid-column: span 2;
+        }
+
+        .client-profile-field span {
+          display: block;
+          color: ${C.muted};
+          font-size: 12px;
+          font-weight: 700;
+          margin-bottom: 7px;
+        }
+
+        .client-profile-field input,
+        .client-profile-field select {
+          width: 100%;
+          min-height: 40px;
+          border: 1px solid ${C.border};
+          border-radius: 12px;
+          background: #fff;
+          color: ${C.text};
+          font-size: 14px;
+          outline: none;
+          padding: 0 12px;
+          transition: border 0.15s, box-shadow 0.15s;
+        }
+
+        .client-profile-field input:focus,
+        .client-profile-field select:focus {
+          border-color: ${C.blue};
+          box-shadow: 0 0 0 4px rgba(21, 101, 192, 0.1);
+        }
+
+        .client-profile-field input[readonly] {
+          background: #F8FAFC;
+          color: ${C.muted};
+        }
+
+        .client-payment-empty {
+          text-align: center;
+          padding: 30px 16px 32px;
+          background: #F8FBFF;
+          border-radius: 16px;
+          border: 1px dashed ${C.border};
+        }
+
+        .client-payment-empty div {
+          font-size: 34px;
+          margin-bottom: 8px;
+        }
+
+        .client-payment-empty strong {
+          display: block;
+          font-size: 14px;
+          font-weight: 900;
+          color: ${C.text};
+          margin-bottom: 5px;
+        }
+
+        .client-payment-empty p {
+          color: ${C.muted};
+          font-size: 12px;
+          margin: 0 0 14px;
+        }
+
+        .client-payment-empty button {
+          border: 0;
+          border-radius: 12px;
+          background: ${C.greenDk};
+          color: #fff;
+          min-height: 38px;
+          padding: 0 16px;
+          font-size: 12px;
+          font-weight: 900;
+          cursor: pointer;
+        }
+
+        @media (max-width: 760px) {
+          .client-profile-header {
+            flex-direction: column;
+          }
+
+          .client-profile-save {
+            width: 100%;
+          }
+
+          .client-profile-grid,
+          .client-profile-grid.three {
+            grid-template-columns: 1fr;
+          }
+
+          .client-profile-field.span-2 {
+            grid-column: auto;
+          }
+        }
+      `}</style>
+
+      <div className="client-profile-header">
+        <div>
+          <h1 className="client-profile-title">{t('client.profile.title')}</h1>
+          <p className="client-profile-subtitle">
+            Manage contact details, billing information and payment setup.
+          </p>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3">{t('client.profile.billingInfo')}</h2>
-          <div className="space-y-3">
-            <div><label className="text-xs text-gray-600 block mb-1">{t('client.profile.companyName')}</label><input value={companyName} onChange={e=>setCompanyName(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" /></div>
-            <div><label className="text-xs text-gray-600 block mb-1">{t('client.profile.billingAddress')}</label><input value={billingAddress} onChange={e=>setBillingAddress(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" /></div>
-            <div className="grid grid-cols-3 gap-2">
-              <div><label className="text-xs text-gray-600 block mb-1">{t('common.city')}</label><input value={billingCity} onChange={e=>setBillingCity(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" /></div>
-              <div><label className="text-xs text-gray-600 block mb-1">{t('common.state')}</label><select value={billingState} onChange={e=>setBillingState(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm">{['NJ','NY','CT','PA','FL','TX','CA'].map(s=><option key={s}>{s}</option>)}</select></div>
-              <div><label className="text-xs text-gray-600 block mb-1">{t('common.zip')}</label><input value={billingZip} onChange={e=>setBillingZip(e.target.value)} maxLength={5} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" /></div>
-            </div>
-            <div><label className="text-xs text-gray-600 block mb-1">{t('client.profile.taxId')}</label><input value={taxId} onChange={e=>setTaxId(e.target.value)} placeholder="XX-XXXXXXX" className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" /></div>
+        <button
+          onClick={saveProfile}
+          disabled={saving}
+          className="client-profile-save"
+          type="button"
+        >
+          {saving ? t('common.loading') : t('client.profile.saveChanges')}
+        </button>
+      </div>
+
+      {msg && (
+        <div
+          className={`client-profile-message ${
+            msg.startsWith('Error') ? 'error' : 'success'
+          }`}
+        >
+          {msg}
+        </div>
+      )}
+
+      <div className="client-profile-card">
+        <div className="client-profile-hero">
+          <div className="client-profile-avatar">{initial}</div>
+          <div style={{ minWidth: 0 }}>
+            <strong>{fullName || 'Client'}</strong>
+            <p>{email || 'Email unavailable'}</p>
           </div>
         </div>
+      </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3">{t('client.profile.paymentMethods')}</h2>
-          <div className="text-center py-4">
-            <p className="text-2xl mb-1">💳</p>
-            <p className="text-xs text-gray-600 font-medium">{t('client.profile.stripeIntegration')}</p>
-            <p className="text-[10px] text-gray-400 mt-1">{t('client.profile.stripeDesc')}</p>
-            <button className="mt-3 bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-medium">{t('client.profile.setupPayment')}</button>
+      <div className="client-profile-card">
+        <div className="client-profile-section">
+          <h2>{t('client.profile.personalInfo')}</h2>
+
+          <div className="client-profile-grid">
+            <Field label={t('client.profile.fullName')}>
+              <input value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            </Field>
+
+            <Field label={t('common.email')}>
+              <input value={email} readOnly />
+            </Field>
+
+            <Field label={t('common.phone')}>
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </Field>
+          </div>
+        </div>
+      </div>
+
+      <div className="client-profile-card">
+        <div className="client-profile-section">
+          <h2>{t('client.profile.billingInfo')}</h2>
+
+          <div className="client-profile-grid">
+            <Field label={t('client.profile.companyName')}>
+              <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+            </Field>
+
+            <label className="client-profile-field span-2">
+              <span>{t('client.profile.billingAddress')}</span>
+              <input
+                value={billingAddress}
+                onChange={(e) => setBillingAddress(e.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="client-profile-grid three" style={{ marginTop: 12 }}>
+            <Field label={t('common.city')}>
+              <input value={billingCity} onChange={(e) => setBillingCity(e.target.value)} />
+            </Field>
+
+            <Field label={t('common.state')}>
+              <select value={billingState} onChange={(e) => setBillingState(e.target.value)}>
+                {['NJ', 'NY', 'CT', 'PA', 'FL', 'TX', 'CA'].map((state) => (
+                  <option key={state}>{state}</option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label={t('common.zip')}>
+              <input
+                value={billingZip}
+                onChange={(e) => setBillingZip(e.target.value)}
+                maxLength={5}
+              />
+            </Field>
+          </div>
+
+          <div style={{ marginTop: 12 }}>
+            <Field label={t('client.profile.taxId')}>
+              <input
+                value={taxId}
+                onChange={(e) => setTaxId(e.target.value)}
+                placeholder="XX-XXXXXXX"
+              />
+            </Field>
+          </div>
+        </div>
+      </div>
+
+      <div className="client-profile-card">
+        <div className="client-profile-section">
+          <h2>{t('client.profile.paymentMethods')}</h2>
+
+          <div className="client-payment-empty">
+            <div>💳</div>
+            <strong>{t('client.profile.stripeIntegration')}</strong>
+            <p>{t('client.profile.stripeDesc')}</p>
+            <button type="button">{t('client.profile.setupPayment')}</button>
           </div>
         </div>
       </div>
