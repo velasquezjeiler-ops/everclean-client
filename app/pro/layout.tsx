@@ -1,4 +1,4 @@
-// v2.3 - Pro Layout with mobile-ready right panel
+// v2.3 - Pro layout with compact right panel and map
 'use client';
 
 import type { ChangeEvent, ReactNode } from 'react';
@@ -179,144 +179,119 @@ function PhotoUpload({ initials }: { initials: string }) {
   );
 }
 
-function proAddress(booking: any) {
-  return [booking?.address, booking?.city, booking?.state].filter(Boolean).join(', ');
+function bookingAddress(booking: any) {
+  return [booking.address, booking.city, booking.state].filter(Boolean).join(', ');
 }
 
-function proMapsUrl(booking: any) {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(proAddress(booking))}`;
+function mapsUrl(booking: any) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bookingAddress(booking))}`;
 }
 
-function RightPanel({
-  bookings,
-  selectedBooking,
-  onSelectBooking,
-}: {
-  bookings: any[];
-  selectedBooking: any;
-  onSelectBooking: (b: any) => void;
-}) {
+function RightPanel({ bookings }: { bookings: any[] }) {
   const active = bookings.filter((b) => !['COMPLETED', 'CANCELLED'].includes(b.status));
   const completed = bookings.filter((b) => b.status === 'COMPLETED');
   const pending = bookings.filter((b) => b.status === 'PENDING_ASSIGNMENT');
   const earnings = completed.reduce((s, b) => s + Number(b.payout_amount || b.total_amount || 0), 0);
-  const featured = selectedBooking || active[0];
+  const mapBooking = active.find((b) => b.address) || bookings.find((b) => b.address);
 
   return (
     <div className="pro-right-stack">
       <div className="pro-earnings-card">
-        <div className="pro-panel-title light">Earnings Summary</div>
+        <div className="pro-panel-kicker light">Earnings Summary</div>
         <div className="pro-earnings-total">${earnings.toFixed(2)}</div>
 
         <div className="pro-earnings-grid">
           {[
-            { label: 'Active', val: active.length, icon: '⚡' },
-            { label: 'Done', val: completed.length, icon: '✅' },
-            { label: 'Rating', val: '5.0★', icon: '⭐' },
-            { label: 'Pending', val: pending.length, icon: '⏳' },
+            { label: 'Active', value: active.length, icon: '⚡' },
+            { label: 'Done', value: completed.length, icon: '✅' },
+            { label: 'Rating', value: '5.0★', icon: '⭐' },
+            { label: 'Pending', value: pending.length, icon: '⏳' },
           ].map((item) => (
-            <div key={item.label} className="pro-earnings-mini">
+            <div key={item.label} className="pro-earnings-tile">
               <div>{item.icon} {item.label}</div>
-              <strong>{item.val}</strong>
+              <strong>{item.value}</strong>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="pro-side-card">
-        <div className="pro-panel-title">Status</div>
+      <section className="pro-side-card">
+        <div className="pro-panel-kicker">Status</div>
         {[
-          { label: 'Background Verified', bg: '#D1FAE5', color: C.greenDk, href: '/pro/profile' },
-          { label: 'ID Confirmed', bg: '#D1FAE5', color: C.greenDk, href: '/pro/profile' },
-          { label: 'Payout Active', bg: '#DBEAFE', color: C.blue, href: '/pro/earnings' },
+          { label: 'Background Verified', bg: '#D1FAE5', color: C.greenDk, icon: <IC.Shield c={C.greenDk} s={14} />, href: '/pro/profile' },
+          { label: 'ID Confirmed', bg: '#D1FAE5', color: C.greenDk, icon: <IC.Check c={C.greenDk} s={14} />, href: '/pro/profile' },
+          { label: 'Payout Active', bg: '#DBEAFE', color: C.blue, icon: <IC.Card c={C.blue} s={14} />, href: '/pro/earnings' },
         ].map((item) => (
           <Link key={item.label} href={item.href} className="pro-status-row" style={{ background: item.bg, color: item.color }}>
-            <span style={{ background: item.color }} />
-            <p>{item.label}</p>
+            {item.icon}
+            <span>{item.label}</span>
             <IC.Arrow c={item.color} s={12} />
           </Link>
         ))}
-      </div>
+      </section>
 
-      <div className="pro-side-card">
-        <div className="pro-panel-title">Active Jobs</div>
+      <section className="pro-side-card">
+        <div className="pro-panel-kicker">Active Jobs</div>
         {active.length === 0 ? (
-          <div className="pro-empty-mini">
-            <div>🧹</div>
-            <p>No active jobs</p>
-          </div>
+          <div className="pro-empty-side">No active jobs</div>
         ) : (
-          <div className="pro-active-list">
+          <div className="pro-side-list">
             {active.slice(0, 5).map((b) => {
               const s = STATUS[b.status] || STATUS.PENDING_ASSIGNMENT;
               const date = b.scheduled_at ? new Date(b.scheduled_at) : null;
-              const isSel = featured?.id === b.id;
 
               return (
-                <button
-                  key={b.id}
-                  onClick={() => onSelectBooking(b)}
-                  type="button"
-                  className={`pro-active-card ${isSel ? 'selected' : ''}`}
-                >
-                  <div className="pro-active-head">
-                    <div className="pro-active-name">
+                <a key={b.id} href={b.address ? mapsUrl(b) : '#'} target={b.address ? '_blank' : undefined} rel="noopener noreferrer" className="pro-job-mini">
+                  <div className="pro-job-mini-top">
+                    <div className="pro-job-mini-title">
                       <span>{SVC_ICONS[b.service_type] || '🧹'}</span>
-                      <div>
-                        <strong>{(b.service_type || '').replace(/_/g, ' ')}</strong>
-                        {date && <small>{date.toLocaleDateString()}</small>}
-                      </div>
+                      <strong>{(b.service_type || '').replace(/_/g, ' ')}</strong>
                     </div>
-
-                    <em style={{ background: s.bg, color: s.color }}>
-                      <i style={{ background: s.dot }} />
+                    <span className="pro-mini-badge" style={{ background: s.bg, color: s.color }}>
+                      <span style={{ background: s.dot }} />
                       {s.label}
-                    </em>
+                    </span>
                   </div>
-
-                  {proAddress(b) && (
-                    <div className="pro-active-address">
+                  {date && <div className="pro-job-mini-date">{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>}
+                  {b.address && (
+                    <div className="pro-job-mini-address">
                       <IC.Map c={C.blue} s={11} />
-                      <span>{proAddress(b)}</span>
+                      {bookingAddress(b)}
                     </div>
                   )}
-                </button>
+                </a>
               );
             })}
           </div>
         )}
-      </div>
+      </section>
 
-      <div className="pro-side-card">
-        <div className="pro-panel-title">Quick Access</div>
+      <section className="pro-side-card">
+        <div className="pro-panel-kicker">Quick Access</div>
         {[
           { label: 'Find Jobs', href: '/pro/marketplace', icon: <IC.Market c={C.blue} s={16} />, bg: '#DBEAFE' },
           { label: 'My Earnings', href: '/pro/earnings', icon: <IC.Dollar c={C.greenDk} s={16} />, bg: '#D1FAE5' },
           { label: 'Edit Profile', href: '/pro/profile', icon: <IC.Profile c={C.navy} s={16} />, bg: `${C.navy}15` },
         ].map((item) => (
-          <Link key={item.href} href={item.href} className="pro-quick-link">
-            <div style={{ background: item.bg }}>{item.icon}</div>
-            <p>{item.label}</p>
+          <Link key={item.href} href={item.href} className="pro-quick-row">
+            <span style={{ background: item.bg }}>{item.icon}</span>
+            <strong>{item.label}</strong>
             <IC.Arrow c={C.muted} s={13} />
           </Link>
         ))}
-      </div>
+      </section>
 
-      {featured && proAddress(featured) && (
-        <div className="pro-side-card">
-          <div className="pro-panel-title">Location</div>
+      {mapBooking && (
+        <section className="pro-side-card">
+          <div className="pro-panel-kicker">Location</div>
           <div className="pro-map-box">
-            <iframe
-              title="Job location"
-              loading="lazy"
-              src={`https://maps.google.com/maps?q=${encodeURIComponent(proAddress(featured))}&output=embed&z=14`}
-            />
+            <iframe title="job location" width="100%" height="100%" loading="lazy" src={`https://maps.google.com/maps?q=${encodeURIComponent(bookingAddress(mapBooking))}&output=embed&z=15`} />
           </div>
-
-          <a className="pro-map-link" href={proMapsUrl(featured)} target="_blank" rel="noopener noreferrer">
+          <a href={mapsUrl(mapBooking)} target="_blank" rel="noopener noreferrer" className="pro-map-button">
+            <IC.Map c="#fff" s={14} />
             Open in Google Maps
           </a>
-        </div>
+        </section>
       )}
     </div>
   );
@@ -331,7 +306,6 @@ export default function ProLayout({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isAvailable, setIsAvailable] = useState(false);
   const [bookings, setBookings] = useState<any[]>([]);
-  const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [rating, setRating] = useState<number | null>(null);
 
   useEffect(() => {
@@ -374,7 +348,6 @@ export default function ProLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMenuOpen(false);
-    setSelectedBooking(null);
   }, [pathname]);
 
   function logout() {
@@ -411,7 +384,7 @@ export default function ProLayout({ children }: { children: ReactNode }) {
         <div style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 13, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
           <PhotoUpload initials={proInitials} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {proName || 'Professional'}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
@@ -422,7 +395,7 @@ export default function ProLayout({ children }: { children: ReactNode }) {
                 </>
               )}
               <IC.Shield c={C.green} s={10} />
-              <span style={{ fontSize: 9, color: `${C.green}cc`, fontWeight: 600 }}>VERIFIED</span>
+              <span style={{ fontSize: 9, color: `${C.green}cc`, fontWeight: 700 }}>VERIFIED</span>
             </div>
           </div>
           <div style={{ width: 7, height: 7, borderRadius: '50%', background: isAvailable ? C.green : C.muted, boxShadow: isAvailable ? `0 0 6px ${C.green}` : 'none', flexShrink: 0 }} />
@@ -438,7 +411,7 @@ export default function ProLayout({ children }: { children: ReactNode }) {
               <Link key={href} href={href} style={{ textDecoration: 'none' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '11px 12px', borderRadius: 12, background: active ? 'rgba(255,255,255,0.16)' : 'transparent', border: active ? '1px solid rgba(255,255,255,0.16)' : '1px solid transparent', color: '#fff' }}>
                   <Icon c={active ? '#fff' : 'rgba(255,255,255,0.72)'} s={19} />
-                  <span style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? '#fff' : 'rgba(255,255,255,0.72)' }}>
+                  <span style={{ fontSize: 13, fontWeight: active ? 800 : 600, color: active ? '#fff' : 'rgba(255,255,255,0.72)' }}>
                     {label}
                   </span>
                 </div>
@@ -449,7 +422,7 @@ export default function ProLayout({ children }: { children: ReactNode }) {
       </nav>
 
       <div style={{ padding: 12, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        <button onClick={logout} style={{ width: '100%', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.08)', color: '#fff', borderRadius: 12, padding: '11px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13, fontWeight: 700 }}>
+        <button onClick={logout} style={{ width: '100%', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.08)', color: '#fff', borderRadius: 12, padding: '11px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13, fontWeight: 800 }}>
           <IC.Logout s={16} />
           Logout
         </button>
@@ -464,6 +437,7 @@ export default function ProLayout({ children }: { children: ReactNode }) {
           min-height: 100vh;
           background: ${C.bg};
           color: ${C.text};
+          font-family: Poppins, DM Sans, system-ui, sans-serif;
         }
 
         .pro-sidebar-desktop {
@@ -493,7 +467,7 @@ export default function ProLayout({ children }: { children: ReactNode }) {
           margin: 0 auto;
           padding: 24px 20px 40px;
           display: grid;
-          grid-template-columns: 300px minmax(0, 1fr);
+          grid-template-columns: minmax(0, 1fr) 300px;
           gap: 20px;
           align-items: start;
         }
@@ -515,31 +489,32 @@ export default function ProLayout({ children }: { children: ReactNode }) {
           gap: 14px;
         }
 
-        .pro-panel-title {
-          font-size: 10px;
-          font-weight: 900;
-          color: ${C.muted};
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          margin-bottom: 10px;
-        }
-
-        .pro-panel-title.light {
-          color: rgba(255,255,255,0.62);
-        }
-
         .pro-earnings-card {
           background: linear-gradient(135deg, ${C.navy}, ${C.blue});
           border-radius: 18px;
           padding: 18px;
           color: #fff;
-          box-shadow: 0 10px 30px rgba(13,55,129,0.24);
+          box-shadow: 0 8px 26px rgba(13, 55, 129, 0.26);
+        }
+
+        .pro-panel-kicker {
+          font-size: 11px;
+          font-weight: 900;
+          color: ${C.muted};
+          text-transform: uppercase;
+          letter-spacing: 1.6px;
+          margin-bottom: 10px;
+        }
+
+        .pro-panel-kicker.light {
+          color: rgba(255,255,255,0.55);
         }
 
         .pro-earnings-total {
-          font-size: 34px;
+          font-size: 32px;
           font-weight: 900;
           margin-bottom: 14px;
+          line-height: 1;
         }
 
         .pro-earnings-grid {
@@ -548,19 +523,19 @@ export default function ProLayout({ children }: { children: ReactNode }) {
           gap: 8px;
         }
 
-        .pro-earnings-mini {
+        .pro-earnings-tile {
           background: rgba(255,255,255,0.12);
-          border-radius: 12px;
-          padding: 9px 10px;
+          border-radius: 11px;
+          padding: 8px 10px;
         }
 
-        .pro-earnings-mini div {
+        .pro-earnings-tile div {
           font-size: 10px;
-          opacity: 0.7;
+          opacity: 0.72;
+          margin-bottom: 4px;
         }
 
-        .pro-earnings-mini strong {
-          display: block;
+        .pro-earnings-tile strong {
           font-size: 17px;
           font-weight: 900;
         }
@@ -570,156 +545,35 @@ export default function ProLayout({ children }: { children: ReactNode }) {
           border-radius: 16px;
           border: 1px solid ${C.border};
           padding: 14px;
-          box-shadow: 0 2px 12px rgba(13,55,129,0.05);
+          box-shadow: 0 2px 12px rgba(13, 55, 129, 0.05);
         }
 
-        .pro-status-row {
+        .pro-status-row,
+        .pro-quick-row {
+          text-decoration: none;
           display: flex;
           align-items: center;
-          gap: 9px;
-          padding: 9px 10px;
-          border-radius: 10px;
-          margin-bottom: 6px;
-          text-decoration: none;
+          gap: 10px;
+          min-height: 40px;
+          border-radius: 11px;
+          margin-bottom: 7px;
+          padding: 8px 10px;
         }
 
-        .pro-status-row span {
-          width: 8px;
-          height: 8px;
-          border-radius: 999px;
-        }
-
-        .pro-status-row p {
-          margin: 0;
+        .pro-status-row span,
+        .pro-quick-row strong {
           flex: 1;
           font-size: 12px;
           font-weight: 800;
         }
 
-        .pro-empty-mini {
-          text-align: center;
-          padding: 18px 0;
-          background: ${C.bg};
-          border-radius: 12px;
-          border: 1px dashed ${C.border};
-        }
-
-        .pro-empty-mini div {
-          font-size: 24px;
-          margin-bottom: 5px;
-        }
-
-        .pro-empty-mini p {
-          margin: 0;
-          font-size: 11px;
-          color: ${C.muted};
-        }
-
-        .pro-active-list {
-          display: flex;
-          flex-direction: column;
-          gap: 9px;
-          max-height: 360px;
-          overflow-y: auto;
-          padding-right: 2px;
-        }
-
-        .pro-active-card {
-          width: 100%;
-          text-align: left;
-          background: #fff;
+        .pro-quick-row {
           border: 1px solid ${C.border};
-          border-radius: 13px;
-          padding: 11px 12px;
-          cursor: pointer;
-        }
-
-        .pro-active-card.selected {
-          background: #F8FBFF;
-          border-color: ${C.blue};
-          box-shadow: 0 0 0 3px rgba(21,101,192,0.08);
-        }
-
-        .pro-active-head {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          gap: 8px;
-          margin-bottom: 6px;
-        }
-
-        .pro-active-name {
-          display: flex;
-          align-items: flex-start;
-          gap: 8px;
-          min-width: 0;
-        }
-
-        .pro-active-name > span {
-          font-size: 16px;
-        }
-
-        .pro-active-name strong {
-          display: block;
           color: ${C.text};
-          font-size: 11px;
-          font-weight: 900;
-          text-transform: uppercase;
-        }
-
-        .pro-active-name small {
-          display: block;
-          color: ${C.muted};
-          font-size: 10px;
-          margin-top: 2px;
-        }
-
-        .pro-active-head em {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          border-radius: 999px;
-          padding: 3px 7px;
-          font-size: 9px;
-          font-style: normal;
-          font-weight: 900;
-          white-space: nowrap;
-        }
-
-        .pro-active-head i {
-          width: 5px;
-          height: 5px;
-          border-radius: 999px;
-        }
-
-        .pro-active-address {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          color: ${C.blue};
-          font-size: 10px;
-          line-height: 1.3;
-        }
-
-        .pro-active-address span {
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .pro-quick-link {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 10px;
-          border-radius: 12px;
-          margin-bottom: 7px;
-          border: 1px solid ${C.border};
           background: #fff;
-          text-decoration: none;
         }
 
-        .pro-quick-link div {
+        .pro-quick-row > span:first-child {
           width: 32px;
           height: 32px;
           border-radius: 9px;
@@ -729,37 +583,117 @@ export default function ProLayout({ children }: { children: ReactNode }) {
           flex-shrink: 0;
         }
 
-        .pro-quick-link p {
-          margin: 0;
+        .pro-empty-side {
+          text-align: center;
+          padding: 18px 0;
+          border-radius: 12px;
+          border: 1px dashed ${C.border};
+          background: ${C.bg};
+          color: ${C.muted};
           font-size: 12px;
-          font-weight: 800;
+          font-weight: 700;
+        }
+
+        .pro-side-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          max-height: 390px;
+          overflow-y: auto;
+          padding-right: 3px;
+        }
+
+        .pro-job-mini {
+          text-decoration: none;
           color: ${C.text};
-          flex: 1;
+          background: ${C.bg};
+          border: 1px solid ${C.border};
+          border-radius: 13px;
+          padding: 10px 11px;
+          display: block;
+        }
+
+        .pro-job-mini-top {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 8px;
+          margin-bottom: 5px;
+        }
+
+        .pro-job-mini-title {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          min-width: 0;
+        }
+
+        .pro-job-mini-title strong {
+          font-size: 11px;
+          font-weight: 900;
+          text-transform: uppercase;
+          line-height: 1.15;
+        }
+
+        .pro-mini-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 2px 7px;
+          border-radius: 999px;
+          font-size: 9px;
+          font-weight: 900;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+
+        .pro-mini-badge span {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          display: inline-block;
+        }
+
+        .pro-job-mini-date {
+          font-size: 10px;
+          color: ${C.muted};
+          margin-left: 22px;
+          margin-bottom: 5px;
+        }
+
+        .pro-job-mini-address {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          color: ${C.blue};
+          font-size: 10px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .pro-map-box {
           height: 150px;
-          overflow: hidden;
-          border-radius: 12px;
+          border-radius: 14px;
           border: 1px solid ${C.border};
+          overflow: hidden;
           background: ${C.bg};
+          margin-bottom: 10px;
         }
 
         .pro-map-box iframe {
-          width: 100%;
-          height: 100%;
           border: 0;
         }
 
-        .pro-map-link {
-          margin-top: 10px;
-          min-height: 38px;
-          border-radius: 11px;
-          background: linear-gradient(135deg, ${C.navy}, ${C.blue});
-          color: #fff;
+        .pro-map-button {
           display: flex;
           align-items: center;
           justify-content: center;
+          gap: 8px;
+          min-height: 40px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, ${C.navy}, ${C.blue});
+          color: #fff;
           text-decoration: none;
           font-size: 12px;
           font-weight: 900;
@@ -774,7 +708,9 @@ export default function ProLayout({ children }: { children: ReactNode }) {
           .pro-right-desktop {
             width: 100%;
             position: static;
-            display: block;
+          }
+
+          .pro-right-stack {
             margin-bottom: 18px;
           }
         }
@@ -808,6 +744,11 @@ export default function ProLayout({ children }: { children: ReactNode }) {
             padding: 72px 14px 80px;
             display: block;
             max-width: none;
+          }
+
+          .pro-earnings-card,
+          .pro-side-card {
+            border-radius: 16px;
           }
 
           .pro-mobile-drawer-backdrop {
@@ -871,11 +812,10 @@ export default function ProLayout({ children }: { children: ReactNode }) {
 
       <div className="pro-page-frame">
         <div className="pro-content-shell">
-          <aside className="pro-right-desktop">
-            <RightPanel bookings={bookings} selectedBooking={selectedBooking} onSelectBooking={setSelectedBooking} />
-          </aside>
-
           <main className="pro-main">{children}</main>
+          <aside className="pro-right-desktop">
+            <RightPanel bookings={bookings} />
+          </aside>
         </div>
       </div>
     </div>
