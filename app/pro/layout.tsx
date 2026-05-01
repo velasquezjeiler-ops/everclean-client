@@ -1,4 +1,4 @@
-// v2.2 - Rebuilt Pro Layout
+// v2.3 - Pro Layout with mobile-ready right panel
 'use client';
 
 import type { ChangeEvent, ReactNode } from 'react';
@@ -88,11 +88,6 @@ const IC = {
       <path d="M4 6h16M4 12h16M4 18h16" stroke={c} strokeWidth="2" strokeLinecap="round" />
     </svg>
   ),
-  X: ({ c = '#fff', s = 22 }: any) => (
-    <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
-      <path d="M18 6L6 18M6 6l12 12" stroke={c} strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  ),
   Camera: ({ c = '#fff', s = 18 }: any) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
       <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke={c} strokeWidth="1.7" strokeLinejoin="round" />
@@ -119,12 +114,6 @@ const IC = {
   Star: ({ s = 14 }: any) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill={C.warning}>
       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-    </svg>
-  ),
-  Clock: ({ c = C.muted, s = 13 }: any) => (
-    <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="9" stroke={c} strokeWidth="1.7" />
-      <path d="M12 7v5l3 3" stroke={c} strokeWidth="1.7" strokeLinecap="round" />
     </svg>
   ),
   Check: ({ c = '#fff', s = 16 }: any) => (
@@ -190,180 +179,145 @@ function PhotoUpload({ initials }: { initials: string }) {
   );
 }
 
-function AddressMapCard({ booking, onClose }: { booking: any; onClose: () => void }) {
-  const addr = encodeURIComponent(`${booking.address || ''} ${booking.city || ''} ${booking.state || ''}`);
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${addr}`;
-  const s = STATUS[booking.status] || STATUS.PENDING_ASSIGNMENT;
-  const date = booking.scheduled_at ? new Date(booking.scheduled_at) : null;
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', pointerEvents: 'none' }}>
-      <div style={{ width: 320, margin: '0 16px 16px 0', background: '#fff', borderRadius: 18, boxShadow: '0 12px 48px rgba(13,55,129,0.22)', overflow: 'hidden', pointerEvents: 'all', border: `1px solid ${C.border}` }}>
-        <div style={{ position: 'relative', height: 160, overflow: 'hidden' }}>
-          <iframe title="map" width="100%" height="100%" style={{ border: 0 }} loading="lazy" src={`https://maps.google.com/maps?q=${addr}&output=embed&z=15`} />
-          <button onClick={onClose} style={{ position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <IC.X c="#fff" s={14} />
-          </button>
-        </div>
-
-        <div style={{ padding: '14px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: 20 }}>{SVC_ICONS[booking.service_type] || '🧹'}</span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 13, color: C.text }}>
-                {(booking.service_type || '').replace(/_/g, ' ')}
-              </div>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: s.bg, color: s.color, padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700 }}>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: s.dot, display: 'inline-block' }} />
-                {s.label}
-              </span>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginBottom: 8 }}>
-            <IC.Map c={C.blue} s={13} />
-            <span style={{ fontSize: 12, color: C.muted, lineHeight: 1.4 }}>
-              {booking.address}
-              {booking.city ? `, ${booking.city}` : ''}
-              {booking.state ? `, ${booking.state}` : ''}
-            </span>
-          </div>
-
-          {date && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-              <IC.Clock c={C.muted} s={13} />
-              <span style={{ fontSize: 12, color: C.muted }}>
-                {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} ·{' '}
-                {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-          )}
-
-          <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 0', borderRadius: 12, textDecoration: 'none', background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`, color: '#fff', fontSize: 12, fontWeight: 700 }}>
-            <IC.Map c="#fff" s={14} />
-            Open in Google Maps
-          </a>
-        </div>
-      </div>
-    </div>
-  );
+function proAddress(booking: any) {
+  return [booking?.address, booking?.city, booking?.state].filter(Boolean).join(', ');
 }
 
-function RightPanel({ bookings, selectedBooking, onSelectBooking }: { bookings: any[]; selectedBooking: any; onSelectBooking: (b: any) => void }) {
+function proMapsUrl(booking: any) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(proAddress(booking))}`;
+}
+
+function RightPanel({
+  bookings,
+  selectedBooking,
+  onSelectBooking,
+}: {
+  bookings: any[];
+  selectedBooking: any;
+  onSelectBooking: (b: any) => void;
+}) {
   const active = bookings.filter((b) => !['COMPLETED', 'CANCELLED'].includes(b.status));
   const completed = bookings.filter((b) => b.status === 'COMPLETED');
+  const pending = bookings.filter((b) => b.status === 'PENDING_ASSIGNMENT');
   const earnings = completed.reduce((s, b) => s + Number(b.payout_amount || b.total_amount || 0), 0);
+  const featured = selectedBooking || active[0];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <div style={{ background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`, borderRadius: 16, padding: '16px 18px', color: '#fff', boxShadow: '0 6px 24px rgba(13,55,129,0.25)' }}>
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', opacity: 0.6, marginBottom: 8 }}>
-          Earnings Summary
-        </div>
-        <div style={{ fontSize: 30, fontWeight: 800, marginBottom: 12 }}>${earnings.toFixed(2)}</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+    <div className="pro-right-stack">
+      <div className="pro-earnings-card">
+        <div className="pro-panel-title light">Earnings Summary</div>
+        <div className="pro-earnings-total">${earnings.toFixed(2)}</div>
+
+        <div className="pro-earnings-grid">
           {[
             { label: 'Active', val: active.length, icon: '⚡' },
             { label: 'Done', val: completed.length, icon: '✅' },
             { label: 'Rating', val: '5.0★', icon: '⭐' },
-            { label: 'Pending', val: 0, icon: '⏳' },
+            { label: 'Pending', val: pending.length, icon: '⏳' },
           ].map((item) => (
-            <div key={item.label} style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 10, padding: '7px 10px' }}>
-              <div style={{ fontSize: 10, opacity: 0.6 }}>{item.icon} {item.label}</div>
-              <div style={{ fontSize: 16, fontWeight: 700 }}>{item.val}</div>
+            <div key={item.label} className="pro-earnings-mini">
+              <div>{item.icon} {item.label}</div>
+              <strong>{item.val}</strong>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '12px 14px' }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>
-          Status
-        </div>
+      <div className="pro-side-card">
+        <div className="pro-panel-title">Status</div>
         {[
-          { label: 'Background Verified', bg: '#D1FAE5', color: C.greenDk, icon: <IC.Shield c={C.greenDk} s={14} />, href: '/pro/profile' },
-          { label: 'ID Confirmed', bg: '#D1FAE5', color: C.greenDk, icon: <IC.Check c={C.greenDk} s={14} />, href: '/pro/profile' },
-          { label: 'Payout Active', bg: '#DBEAFE', color: C.blue, icon: <IC.Card c={C.blue} s={14} />, href: '/pro/earnings' },
+          { label: 'Background Verified', bg: '#D1FAE5', color: C.greenDk, href: '/pro/profile' },
+          { label: 'ID Confirmed', bg: '#D1FAE5', color: C.greenDk, href: '/pro/profile' },
+          { label: 'Payout Active', bg: '#DBEAFE', color: C.blue, href: '/pro/earnings' },
         ].map((item) => (
-          <Link key={item.label} href={item.href} style={{ textDecoration: 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 9px', borderRadius: 9, marginBottom: 5, background: item.bg }}>
-              {item.icon}
-              <span style={{ fontSize: 11, fontWeight: 600, color: item.color, flex: 1 }}>{item.label}</span>
-              <IC.Arrow c={item.color} s={12} />
-            </div>
+          <Link key={item.label} href={item.href} className="pro-status-row" style={{ background: item.bg, color: item.color }}>
+            <span style={{ background: item.color }} />
+            <p>{item.label}</p>
+            <IC.Arrow c={item.color} s={12} />
           </Link>
         ))}
       </div>
 
-      <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '12px 14px' }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>
-          Active Jobs
-        </div>
-
+      <div className="pro-side-card">
+        <div className="pro-panel-title">Active Jobs</div>
         {active.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '16px 0', background: C.bg, borderRadius: 12, border: `1px dashed ${C.border}` }}>
-            <div style={{ fontSize: 22, marginBottom: 4 }}>🧹</div>
-            <div style={{ fontSize: 11, color: C.muted }}>No active jobs</div>
+          <div className="pro-empty-mini">
+            <div>🧹</div>
+            <p>No active jobs</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+          <div className="pro-active-list">
             {active.slice(0, 5).map((b) => {
               const s = STATUS[b.status] || STATUS.PENDING_ASSIGNMENT;
               const date = b.scheduled_at ? new Date(b.scheduled_at) : null;
-              const isSel = selectedBooking?.id === b.id;
+              const isSel = featured?.id === b.id;
 
               return (
-                <div key={b.id} onClick={() => onSelectBooking(isSel ? null : b)} style={{ background: isSel ? `${C.blue}08` : C.bg, borderRadius: 11, border: `1px solid ${isSel ? C.blue : C.border}`, padding: '9px 11px', cursor: 'pointer' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6, marginBottom: 5 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                      <span style={{ fontSize: 14 }}>{SVC_ICONS[b.service_type] || '🧹'}</span>
+                <button
+                  key={b.id}
+                  onClick={() => onSelectBooking(b)}
+                  type="button"
+                  className={`pro-active-card ${isSel ? 'selected' : ''}`}
+                >
+                  <div className="pro-active-head">
+                    <div className="pro-active-name">
+                      <span>{SVC_ICONS[b.service_type] || '🧹'}</span>
                       <div>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: C.text }}>{(b.service_type || '').replace(/_/g, ' ')}</div>
-                        {date && <div style={{ fontSize: 10, color: C.muted }}>{date.toLocaleDateString('en', { month: 'short', day: 'numeric' })}</div>}
+                        <strong>{(b.service_type || '').replace(/_/g, ' ')}</strong>
+                        {date && <small>{date.toLocaleDateString()}</small>}
                       </div>
                     </div>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: s.bg, color: s.color, padding: '2px 7px', borderRadius: 999, fontSize: 9, fontWeight: 700, flexShrink: 0 }}>
-                      <span style={{ width: 4, height: 4, borderRadius: '50%', background: s.dot, display: 'inline-block' }} />
+
+                    <em style={{ background: s.bg, color: s.color }}>
+                      <i style={{ background: s.dot }} />
                       {s.label}
-                    </span>
+                    </em>
                   </div>
 
-                  {b.address && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: C.blue, fontSize: 10 }}>
+                  {proAddress(b) && (
+                    <div className="pro-active-address">
                       <IC.Map c={C.blue} s={11} />
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {b.address}
-                        {b.city ? `, ${b.city}` : ''}
-                      </span>
+                      <span>{proAddress(b)}</span>
                     </div>
                   )}
-                </div>
+                </button>
               );
             })}
           </div>
         )}
       </div>
 
-      <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '12px 14px' }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>
-          Quick Access
-        </div>
+      <div className="pro-side-card">
+        <div className="pro-panel-title">Quick Access</div>
         {[
           { label: 'Find Jobs', href: '/pro/marketplace', icon: <IC.Market c={C.blue} s={16} />, bg: '#DBEAFE' },
           { label: 'My Earnings', href: '/pro/earnings', icon: <IC.Dollar c={C.greenDk} s={16} />, bg: '#D1FAE5' },
           { label: 'Edit Profile', href: '/pro/profile', icon: <IC.Profile c={C.navy} s={16} />, bg: `${C.navy}15` },
         ].map((item) => (
-          <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, marginBottom: 5, border: `1px solid ${C.border}` }}>
-              <div style={{ width: 30, height: 30, borderRadius: 8, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                {item.icon}
-              </div>
-              <span style={{ fontSize: 12, fontWeight: 500, color: C.text, flex: 1 }}>{item.label}</span>
-              <IC.Arrow c={C.muted} s={13} />
-            </div>
+          <Link key={item.href} href={item.href} className="pro-quick-link">
+            <div style={{ background: item.bg }}>{item.icon}</div>
+            <p>{item.label}</p>
+            <IC.Arrow c={C.muted} s={13} />
           </Link>
         ))}
       </div>
+
+      {featured && proAddress(featured) && (
+        <div className="pro-side-card">
+          <div className="pro-panel-title">Location</div>
+          <div className="pro-map-box">
+            <iframe
+              title="Job location"
+              loading="lazy"
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(proAddress(featured))}&output=embed&z=14`}
+            />
+          </div>
+
+          <a className="pro-map-link" href={proMapsUrl(featured)} target="_blank" rel="noopener noreferrer">
+            Open in Google Maps
+          </a>
+        </div>
+      )}
     </div>
   );
 }
@@ -539,7 +493,7 @@ export default function ProLayout({ children }: { children: ReactNode }) {
           margin: 0 auto;
           padding: 24px 20px 40px;
           display: grid;
-          grid-template-columns: minmax(0, 1fr) 300px;
+          grid-template-columns: 300px minmax(0, 1fr);
           gap: 20px;
           align-items: start;
         }
@@ -555,6 +509,262 @@ export default function ProLayout({ children }: { children: ReactNode }) {
           top: 20px;
         }
 
+        .pro-right-stack {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+
+        .pro-panel-title {
+          font-size: 10px;
+          font-weight: 900;
+          color: ${C.muted};
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-bottom: 10px;
+        }
+
+        .pro-panel-title.light {
+          color: rgba(255,255,255,0.62);
+        }
+
+        .pro-earnings-card {
+          background: linear-gradient(135deg, ${C.navy}, ${C.blue});
+          border-radius: 18px;
+          padding: 18px;
+          color: #fff;
+          box-shadow: 0 10px 30px rgba(13,55,129,0.24);
+        }
+
+        .pro-earnings-total {
+          font-size: 34px;
+          font-weight: 900;
+          margin-bottom: 14px;
+        }
+
+        .pro-earnings-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+
+        .pro-earnings-mini {
+          background: rgba(255,255,255,0.12);
+          border-radius: 12px;
+          padding: 9px 10px;
+        }
+
+        .pro-earnings-mini div {
+          font-size: 10px;
+          opacity: 0.7;
+        }
+
+        .pro-earnings-mini strong {
+          display: block;
+          font-size: 17px;
+          font-weight: 900;
+        }
+
+        .pro-side-card {
+          background: #fff;
+          border-radius: 16px;
+          border: 1px solid ${C.border};
+          padding: 14px;
+          box-shadow: 0 2px 12px rgba(13,55,129,0.05);
+        }
+
+        .pro-status-row {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          padding: 9px 10px;
+          border-radius: 10px;
+          margin-bottom: 6px;
+          text-decoration: none;
+        }
+
+        .pro-status-row span {
+          width: 8px;
+          height: 8px;
+          border-radius: 999px;
+        }
+
+        .pro-status-row p {
+          margin: 0;
+          flex: 1;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .pro-empty-mini {
+          text-align: center;
+          padding: 18px 0;
+          background: ${C.bg};
+          border-radius: 12px;
+          border: 1px dashed ${C.border};
+        }
+
+        .pro-empty-mini div {
+          font-size: 24px;
+          margin-bottom: 5px;
+        }
+
+        .pro-empty-mini p {
+          margin: 0;
+          font-size: 11px;
+          color: ${C.muted};
+        }
+
+        .pro-active-list {
+          display: flex;
+          flex-direction: column;
+          gap: 9px;
+          max-height: 360px;
+          overflow-y: auto;
+          padding-right: 2px;
+        }
+
+        .pro-active-card {
+          width: 100%;
+          text-align: left;
+          background: #fff;
+          border: 1px solid ${C.border};
+          border-radius: 13px;
+          padding: 11px 12px;
+          cursor: pointer;
+        }
+
+        .pro-active-card.selected {
+          background: #F8FBFF;
+          border-color: ${C.blue};
+          box-shadow: 0 0 0 3px rgba(21,101,192,0.08);
+        }
+
+        .pro-active-head {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 8px;
+          margin-bottom: 6px;
+        }
+
+        .pro-active-name {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          min-width: 0;
+        }
+
+        .pro-active-name > span {
+          font-size: 16px;
+        }
+
+        .pro-active-name strong {
+          display: block;
+          color: ${C.text};
+          font-size: 11px;
+          font-weight: 900;
+          text-transform: uppercase;
+        }
+
+        .pro-active-name small {
+          display: block;
+          color: ${C.muted};
+          font-size: 10px;
+          margin-top: 2px;
+        }
+
+        .pro-active-head em {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          border-radius: 999px;
+          padding: 3px 7px;
+          font-size: 9px;
+          font-style: normal;
+          font-weight: 900;
+          white-space: nowrap;
+        }
+
+        .pro-active-head i {
+          width: 5px;
+          height: 5px;
+          border-radius: 999px;
+        }
+
+        .pro-active-address {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          color: ${C.blue};
+          font-size: 10px;
+          line-height: 1.3;
+        }
+
+        .pro-active-address span {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .pro-quick-link {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px;
+          border-radius: 12px;
+          margin-bottom: 7px;
+          border: 1px solid ${C.border};
+          background: #fff;
+          text-decoration: none;
+        }
+
+        .pro-quick-link div {
+          width: 32px;
+          height: 32px;
+          border-radius: 9px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .pro-quick-link p {
+          margin: 0;
+          font-size: 12px;
+          font-weight: 800;
+          color: ${C.text};
+          flex: 1;
+        }
+
+        .pro-map-box {
+          height: 150px;
+          overflow: hidden;
+          border-radius: 12px;
+          border: 1px solid ${C.border};
+          background: ${C.bg};
+        }
+
+        .pro-map-box iframe {
+          width: 100%;
+          height: 100%;
+          border: 0;
+        }
+
+        .pro-map-link {
+          margin-top: 10px;
+          min-height: 38px;
+          border-radius: 11px;
+          background: linear-gradient(135deg, ${C.navy}, ${C.blue});
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-decoration: none;
+          font-size: 12px;
+          font-weight: 900;
+        }
+
         @media (max-width: 1180px) {
           .pro-content-shell {
             grid-template-columns: minmax(0, 1fr);
@@ -562,7 +772,10 @@ export default function ProLayout({ children }: { children: ReactNode }) {
           }
 
           .pro-right-desktop {
-            display: none;
+            width: 100%;
+            position: static;
+            display: block;
+            margin-bottom: 18px;
           }
         }
 
@@ -658,14 +871,13 @@ export default function ProLayout({ children }: { children: ReactNode }) {
 
       <div className="pro-page-frame">
         <div className="pro-content-shell">
-          <main className="pro-main">{children}</main>
           <aside className="pro-right-desktop">
             <RightPanel bookings={bookings} selectedBooking={selectedBooking} onSelectBooking={setSelectedBooking} />
           </aside>
+
+          <main className="pro-main">{children}</main>
         </div>
       </div>
-
-      {selectedBooking && <AddressMapCard booking={selectedBooking} onClose={() => setSelectedBooking(null)} />}
     </div>
   );
 }
