@@ -1,5 +1,3 @@
-~/workspace$ cd /home/runner/workspace/everclean-client || exit 1
-sed -n '1,340p' app/pro/layout.tsx
 // v2.1 - Quick Access enabled
 'use client';
 import { useEffect, useState, useRef } from 'react';
