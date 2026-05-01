@@ -1,3 +1,4 @@
+// v2.1 - Quick Access enabled
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
