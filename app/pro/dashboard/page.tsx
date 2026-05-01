@@ -122,6 +122,7 @@ function StatusBadge({ status }: { status: string }) {
 function CalendarStrip({ jobs }: { jobs: any[] }) {
   const [selected, setSelected] = useState(new Date().toISOString().split('T')[0]);
   const today = new Date();
+
   const days = Array.from({ length: 14 }, (_, i) => {
     const d = new Date(today);
     d.setDate(today.getDate() + i - 2);
