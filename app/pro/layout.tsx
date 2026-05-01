@@ -389,14 +389,55 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <main className="pro-main" style={{ marginLeft: 248, flex: 1, padding: '24px', minWidth: 0, maxWidth: 'calc(100vw - 248px - 300px)' }}>
-        {children}
-      </main>
+         <div
+        className="pro-content-shell"
+        style={{
+          marginLeft: 248,
+          flex: 1,
+          minWidth: 0,
+          padding: '20px 24px',
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 1460,
+            margin: '0 auto',
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1fr) 300px',
+            gap: 20,
+            alignItems: 'start',
+          }}
+        >
+          <main
+            className="pro-main"
+            style={{
+              minWidth: 0,
+              width: '100%',
+            }}
+          >
+            {children}
+          </main>
 
-      {/* Right Panel — con padding interno y max-width correcta */}
-      <aside className="pro-right-desktop" style={{ width: 300, flexShrink: 0, padding: '20px 16px 20px 12px', borderLeft: `1px solid ${C.border}`, background: C.bg, overflowY: 'auto', minHeight: '100vh' }}>
-        <RightPanel bookings={bookings} selectedBooking={selectedBooking} onSelectBooking={setSelectedBooking}/>
-      </aside>
+          <aside
+            className="pro-right-desktop"
+            style={{
+              width: '100%',
+              minWidth: 0,
+              position: 'sticky',
+              top: 20,
+              alignSelf: 'start',
+            }}
+          >
+            <RightPanel
+              bookings={bookings}
+              selectedBooking={selectedBooking}
+              onSelectBooking={setSelectedBooking}
+            />
+          </aside>
+        </div>
+      </div>
+
 
       {selectedBooking && <AddressMapCard booking={selectedBooking} onClose={() => setSelectedBooking(null)}/>}
 
