@@ -1,24 +1,36 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
-import { useTranslation } from '../../../lib/i18n/useTranslation';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
+const C = { navy:'#0D3781', blue:'#1565C0', green:'#4CAF50', greenDk:'#388E3C', bg:'#F5F7FA', text:'#0D1B2A', muted:'#64748B', border:'#E2E8F0', warning:'#F59E0B' };
 const SERVICES_LIST = ['House Cleaning','Deep Cleaning','Move In/Out','Office Cleaning','Post Construction','Carpet Cleaning','Medical Facility','Industrial'];
 const LANGUAGES = ['English','Spanish','Portuguese','French','Mandarin','Hindi','Korean','Arabic'];
 
 export default function ProProfile() {
-  const { t } = useTranslation();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingRate, setEditingRate] = useState(false);
   const [newRate, setNewRate] = useState(25);
   const [message, setMessage] = useState('');
+  const [photo, setPhoto] = useState<string|null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     fullName:'', phone:'', email:'', bio:'', address:'', city:'', state:'NJ', zipCode:'',
     serviceRadiusMiles:25, hourlyRate:25, payoutSchedule:'WEEKLY',
     language:['English'] as string[], servicesOffered:[] as string[],
   });
+
+  useEffect(() => { const s = localStorage.getItem('pro_photo'); if (s) setPhoto(s); }, []);
+
+  function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { alert('Max 2MB'); return; }
+    const reader = new FileReader();
+    reader.onload = ev => { const r = ev.target?.result as string; localStorage.setItem('pro_photo', r); setPhoto(r); };
+    reader.readAsDataURL(file);
+  }
 
   const loadProfile = useCallback(async () => {
     const token = localStorage.getItem('token') || '';
@@ -32,8 +44,8 @@ export default function ProProfile() {
           address: d.address||'', city: d.city||'', state: d.state||'NJ', zipCode: d.zip_code||'',
           serviceRadiusMiles: Number(d.service_radius_miles||25), hourlyRate: Number(d.hourly_rate||25),
           payoutSchedule: d.payout_schedule||'WEEKLY',
-          language: d.language ? (typeof d.language === 'string' ? JSON.parse(d.language) : d.language) : ['English'],
-          servicesOffered: d.services_offered ? (typeof d.services_offered === 'string' ? JSON.parse(d.services_offered) : d.services_offered) : [],
+          language: d.language ? (typeof d.language==='string' ? JSON.parse(d.language) : d.language) : ['English'],
+          servicesOffered: d.services_offered ? (typeof d.services_offered==='string' ? JSON.parse(d.services_offered) : d.services_offered) : [],
         });
         setNewRate(Number(d.hourly_rate||25));
       }
@@ -47,7 +59,7 @@ export default function ProProfile() {
     setSaving(true); setMessage('');
     const token = localStorage.getItem('token') || '';
     const res = await fetch(API+'/professionals/me', { method:'PATCH', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token}, body:JSON.stringify(form) });
-    if (res.ok) { setMessage(t('pro.profile.profileSaved')); loadProfile(); }
+    if (res.ok) { setMessage('Profile saved successfully!'); loadProfile(); }
     else { const e = await res.json(); setMessage('Error: '+e.error); }
     setSaving(false);
   }
@@ -58,81 +70,204 @@ export default function ProProfile() {
     if (res.ok) { setEditingRate(false); setForm(p=>({...p,hourlyRate:newRate})); loadProfile(); }
   }
 
-  if (loading) return <div className="flex items-center justify-center py-20 text-gray-400">{t('common.loading')}</div>;
+  if (loading) return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh' }}>
+      <div style={{ width:36, height:36, border:`3px solid ${C.border}`, borderTopColor:C.green, borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
 
   const rating = Number(profile?.avg_rating||0);
   const services = Number(profile?.total_services||0);
   const earnings = Number(profile?.total_earnings||0);
-  const completion = Number(profile?.completion_rate||100);
+  const initials = (form.fullName||'P').split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase();
+
+  const inputStyle = { width:'100%', border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 12px', fontSize:13, color:C.text, outline:'none', fontFamily:'Poppins, sans-serif', background:'#fff' };
+  const labelStyle = { fontSize:11, fontWeight:600, color:C.muted, display:'block', marginBottom:5, textTransform:'uppercase' as const, letterSpacing:'0.5px' };
+  const cardStyle = { background:'#fff', borderRadius:16, border:`1px solid ${C.border}`, padding:'20px 22px', boxShadow:'0 2px 12px rgba(13,55,129,0.06)' };
 
   return (
-    <div className="max-w-5xl mx-auto">
-      {message && <div className={`mb-4 p-3 rounded-xl text-sm ${message.startsWith('Error')?'bg-red-50 text-red-700':'bg-emerald-50 text-emerald-700'}`}>{message}<button onClick={()=>setMessage('')} className="float-right text-xs opacity-60">✕</button></div>}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-5">
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">{t('pro.profile.personalInfo')}</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div><label className="text-xs text-gray-500 block mb-1">{t('pro.profile.fullName')}</label><input value={form.fullName} onChange={e=>setForm({...form,fullName:e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
-              <div><label className="text-xs text-gray-500 block mb-1">{t('common.phone')}</label><input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
-              <div className="col-span-2"><label className="text-xs text-gray-500 block mb-1">{t('common.email')}</label><input value={form.email} onChange={e=>setForm({...form,email:e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
-              <div className="col-span-2"><label className="text-xs text-gray-500 block mb-1">{t('pro.profile.bio')}</label><textarea value={form.bio} onChange={e=>setForm({...form,bio:e.target.value})} rows={3} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none" placeholder={t('pro.profile.bioPlaceholder')} /></div>
-            </div>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">{t('pro.profile.addressSection')}</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2"><label className="text-xs text-gray-500 block mb-1">{t('pro.profile.streetAddress')}</label><input value={form.address} onChange={e=>setForm({...form,address:e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
-              <div><label className="text-xs text-gray-500 block mb-1">{t('common.city')}</label><input value={form.city} onChange={e=>setForm({...form,city:e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
-              <div><label className="text-xs text-gray-500 block mb-1">{t('common.state')}</label><input value={form.state} onChange={e=>setForm({...form,state:e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
-              <div><label className="text-xs text-gray-500 block mb-1">{t('common.zip')}</label><input value={form.zipCode} onChange={e=>setForm({...form,zipCode:e.target.value})} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
-              <div><label className="text-xs text-gray-500 block mb-1">{t('pro.profile.serviceRadius')} ({form.serviceRadiusMiles} mi)</label><input type="range" min={5} max={50} value={form.serviceRadiusMiles} onChange={e=>setForm({...form,serviceRadiusMiles:Number(e.target.value)})} className="w-full accent-emerald-600" /></div>
-            </div>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">{t('pro.profile.servicesOffered')}</h2>
-            <div className="flex flex-wrap gap-2">
-              {SERVICES_LIST.map(svc => (<button key={svc} onClick={()=>setForm(p=>({...p,servicesOffered:p.servicesOffered.includes(svc)?p.servicesOffered.filter(s=>s!==svc):[...p.servicesOffered,svc]}))} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${form.servicesOffered.includes(svc)?'bg-emerald-100 text-emerald-700 border border-emerald-300':'bg-gray-50 text-gray-500 border border-gray-200'}`}>{form.servicesOffered.includes(svc)?'✓ ':''}{svc}</button>))}
-            </div>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">{t('pro.profile.languages')}</h2>
-            <div className="flex flex-wrap gap-2">
-              {LANGUAGES.map(lang => (<button key={lang} onClick={()=>setForm(p=>({...p,language:p.language.includes(lang)?p.language.filter(l=>l!==lang):[...p.language,lang]}))} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${form.language.includes(lang)?'bg-blue-100 text-blue-700 border border-blue-300':'bg-gray-50 text-gray-500 border border-gray-200'}`}>{form.language.includes(lang)?'✓ ':''}{lang}</button>))}
-            </div>
-          </div>
-          <button onClick={saveProfile} disabled={saving} className="w-full bg-emerald-700 text-white rounded-xl py-3 text-sm font-medium hover:bg-emerald-800 disabled:opacity-50">{saving ? t('pro.profile.saving') : t('pro.profile.saveProfile')}</button>
+    <div style={{ maxWidth:900, fontFamily:'Poppins, sans-serif' }}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} input:focus,textarea:focus{border-color:${C.blue}!important; box-shadow:0 0 0 3px ${C.blue}15;}`}</style>
+      <input ref={inputRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handlePhoto}/>
+
+      {message && (
+        <div style={{ marginBottom:16, padding:'10px 14px', borderRadius:10, fontSize:13, background: message.startsWith('Error') ? '#FEE2E2' : '#D1FAE5', color: message.startsWith('Error') ? '#991B1B' : C.greenDk, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          {message}
+          <button onClick={()=>setMessage('')} style={{ background:'none', border:'none', cursor:'pointer', fontSize:14, opacity:0.6 }}>✕</button>
         </div>
-        <div className="space-y-5">
-          <div className="bg-white rounded-2xl border border-gray-200 p-5 text-center">
-            <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 text-2xl font-bold mx-auto mb-3">{(form.fullName||'?').split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
-            <p className="font-semibold text-gray-900">{form.fullName||'Professional'}</p>
-            <p className="text-xs text-gray-500 mt-1">{form.city||'NJ'}, {form.state}</p>
-            <div className="flex items-center justify-center gap-1 mt-2"><span className="text-amber-500 text-sm">{'★'.repeat(Math.round(rating))}</span><span className="text-xs text-gray-500">{rating.toFixed(1)}</span></div>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
-            <div className="flex items-center justify-between mb-3"><h3 className="text-sm font-semibold text-gray-900">{t('pro.profile.hourlyRate')}</h3><button onClick={()=>setEditingRate(!editingRate)} className="text-xs text-emerald-600">{editingRate?t('common.cancel'):t('pro.profile.editRate')}</button></div>
-            {editingRate ? (<div><div className="flex items-center gap-2 mb-2"><span className="text-sm text-gray-500">$</span><input type="number" min={18} max={30} value={newRate} onChange={e=>setNewRate(Number(e.target.value))} className="w-20 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center" /><span className="text-sm text-gray-500">/hr</span></div><p className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2 mb-2">{t('pro.profile.rateWarning')}</p><button onClick={saveRate} className="w-full bg-emerald-700 text-white rounded-lg py-2 text-xs font-medium">{t('pro.profile.saveRate')}</button></div>) : (<p className="text-2xl font-bold text-gray-900">${form.hourlyRate}<span className="text-sm font-normal text-gray-400">{t('pro.dashboard.perHour')}</span></p>)}
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">{t('pro.profile.performance')}</h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between"><span className="text-gray-500">{t('pro.profile.totalEarnings')}</span><span className="font-medium">${earnings.toFixed(2)}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">{t('pro.profile.servicesCompleted')}</span><span className="font-medium">{services}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">{t('pro.profile.completionRate')}</span><span className="font-medium">{completion}%</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">{t('pro.profile.serviceRadiusStat')}</span><span className="font-medium">{form.serviceRadiusMiles} mi</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">{t('pro.profile.payoutSchedule')}</span><span className="font-medium">{form.payoutSchedule}</span></div>
+      )}
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:20 }}>
+
+        {/* Left Column */}
+        <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+
+          {/* Personal Info */}
+          <div style={cardStyle}>
+            <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:16 }}>Personal Information</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+              <div><label style={labelStyle}>Full name</label><input value={form.fullName} onChange={e=>setForm({...form,fullName:e.target.value})} style={inputStyle}/></div>
+              <div><label style={labelStyle}>Phone</label><input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} style={inputStyle}/></div>
+              <div style={{ gridColumn:'1/-1' }}><label style={labelStyle}>Email</label><input value={form.email} onChange={e=>setForm({...form,email:e.target.value})} style={inputStyle}/></div>
+              <div style={{ gridColumn:'1/-1' }}><label style={labelStyle}>Bio</label><textarea value={form.bio} onChange={e=>setForm({...form,bio:e.target.value})} rows={3} placeholder="Tell clients about yourself and your experience..." style={{ ...inputStyle, resize:'none' }}/></div>
             </div>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">{t('pro.profile.verifications')}</h3>
-            <div className="space-y-2">
-              {[{label:t('pro.profile.backgroundCheck'),done:profile?.background_checked},{label:t('pro.profile.idVerified'),done:profile?.id_verified},{label:t('pro.profile.payoutSetup'),done:!!profile?.stripe_account_id}].map(v=>(<div key={v.label} className="flex items-center gap-2 text-sm"><span className={`text-xs ${v.done?'text-emerald-500':'text-amber-500'}`}>{v.done?'✓':'⏳'}</span><span className={v.done?'text-gray-700':'text-gray-400'}>{v.label}</span></div>))}
+
+          {/* Address */}
+          <div style={cardStyle}>
+            <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:16 }}>Address</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+              <div style={{ gridColumn:'1/-1' }}><label style={labelStyle}>Street address</label><input value={form.address} onChange={e=>setForm({...form,address:e.target.value})} style={inputStyle}/></div>
+              <div><label style={labelStyle}>City</label><input value={form.city} onChange={e=>setForm({...form,city:e.target.value})} style={inputStyle}/></div>
+              <div><label style={labelStyle}>State</label><input value={form.state} onChange={e=>setForm({...form,state:e.target.value})} style={inputStyle}/></div>
+              <div><label style={labelStyle}>ZIP code</label><input value={form.zipCode} onChange={e=>setForm({...form,zipCode:e.target.value})} style={inputStyle}/></div>
+              <div>
+                <label style={labelStyle}>Service radius ({form.serviceRadiusMiles} mi)</label>
+                <input type="range" min={5} max={50} value={form.serviceRadiusMiles} onChange={e=>setForm({...form,serviceRadiusMiles:Number(e.target.value)})} style={{ width:'100%', accentColor:C.green }}/>
+              </div>
             </div>
           </div>
-          <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4 text-center"><p className="text-xs text-gray-500 mb-2">{t('pro.profile.needHelp')}</p><button className="text-xs text-emerald-600 font-medium">{t('pro.profile.contactSupport')}</button></div>
+
+          {/* Services */}
+          <div style={cardStyle}>
+            <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:14 }}>Services offered</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+              {SERVICES_LIST.map(svc => {
+                const sel = form.servicesOffered.includes(svc);
+                return (
+                  <button key={svc} onClick={()=>setForm(p=>({...p,servicesOffered:sel?p.servicesOffered.filter(s=>s!==svc):[...p.servicesOffered,svc]}))}
+                    style={{ padding:'6px 14px', borderRadius:999, fontSize:12, fontWeight:600, cursor:'pointer', border:`1.5px solid ${sel?C.green:C.border}`, background:sel?`${C.green}15`:'#fff', color:sel?C.greenDk:C.muted, transition:'all 0.15s' }}>
+                    {sel?'✓ ':''}{svc}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Languages */}
+          <div style={cardStyle}>
+            <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:14 }}>Languages</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+              {LANGUAGES.map(lang => {
+                const sel = form.language.includes(lang);
+                return (
+                  <button key={lang} onClick={()=>setForm(p=>({...p,language:sel?p.language.filter(l=>l!==lang):[...p.language,lang]}))}
+                    style={{ padding:'6px 14px', borderRadius:999, fontSize:12, fontWeight:600, cursor:'pointer', border:`1.5px solid ${sel?C.blue:C.border}`, background:sel?`${C.blue}12`:'#fff', color:sel?C.blue:C.muted, transition:'all 0.15s' }}>
+                    {sel?'✓ ':''}{lang}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Save Button */}
+          <button onClick={saveProfile} disabled={saving} style={{
+            width:'100%', padding:'13px 0', borderRadius:12, border:'none', cursor:'pointer',
+            background:`linear-gradient(135deg, ${C.navy}, ${C.blue})`,
+            color:'#fff', fontSize:14, fontWeight:700,
+            boxShadow:'0 4px 16px rgba(13,55,129,0.3)',
+            opacity:saving?0.7:1, transition:'all 0.2s',
+            fontFamily:'Poppins, sans-serif',
+          }}>
+            {saving ? 'Saving...' : 'Save profile'}
+          </button>
+        </div>
+
+        {/* Right Column */}
+        <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+
+          {/* Avatar with photo upload */}
+          <div style={{ ...cardStyle, textAlign:'center' }}>
+            <div style={{ position:'relative', display:'inline-block', marginBottom:12, cursor:'pointer' }} onClick={()=>inputRef.current?.click()}>
+              {photo
+                ? <img src={photo} alt="Profile" style={{ width:80, height:80, borderRadius:'50%', objectFit:'cover', border:`3px solid ${C.green}`, boxShadow:'0 4px 16px rgba(76,175,80,0.3)' }}/>
+                : <div style={{ width:80, height:80, borderRadius:'50%', background:`linear-gradient(135deg, ${C.green}, ${C.blue})`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, fontWeight:800, color:'#fff', margin:'0 auto', boxShadow:'0 4px 16px rgba(13,55,129,0.2)' }}>{initials}</div>
+              }
+              <div style={{ position:'absolute', bottom:0, right:0, width:24, height:24, background:C.blue, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid #fff', boxShadow:'0 2px 6px rgba(13,55,129,0.3)' }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="#fff" strokeWidth="2" strokeLinejoin="round"/><circle cx="12" cy="13" r="4" stroke="#fff" strokeWidth="2"/></svg>
+              </div>
+            </div>
+            <div style={{ fontSize:11, color:C.muted, marginBottom:10 }}>Click to upload photo</div>
+            <div style={{ fontWeight:700, fontSize:15, color:C.text }}>{form.fullName||'Professional'}</div>
+            <div style={{ fontSize:12, color:C.muted, marginTop:3 }}>{form.city||'NJ'}, {form.state}</div>
+            {rating > 0 && (
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:4, marginTop:8 }}>
+                <span style={{ color:C.warning, fontSize:13 }}>{'★'.repeat(Math.round(rating))}</span>
+                <span style={{ fontSize:12, color:C.muted }}>{rating.toFixed(1)}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Hourly Rate */}
+          <div style={cardStyle}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:C.text }}>Hourly rate</div>
+              <button onClick={()=>setEditingRate(!editingRate)} style={{ fontSize:11, color:C.blue, background:'none', border:'none', cursor:'pointer', fontWeight:600 }}>
+                {editingRate ? 'Cancel' : 'Edit'}
+              </button>
+            </div>
+            {editingRate ? (
+              <div>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+                  <span style={{ fontSize:14, color:C.muted }}>$</span>
+                  <input type="number" min={18} max={30} value={newRate} onChange={e=>setNewRate(Number(e.target.value))} style={{ ...inputStyle, width:80, textAlign:'center', padding:'8px' }}/>
+                  <span style={{ fontSize:13, color:C.muted }}>/hr</span>
+                </div>
+                <div style={{ fontSize:11, color:'#92400E', background:'#FEF3C7', borderRadius:8, padding:'8px 10px', marginBottom:10 }}>
+                  ⚠️ Lower rate = higher auction priority
+                </div>
+                <button onClick={saveRate} style={{ width:'100%', padding:'9px 0', borderRadius:10, border:'none', cursor:'pointer', background:`linear-gradient(135deg, ${C.green}, ${C.greenDk})`, color:'#fff', fontSize:12, fontWeight:700 }}>
+                  Save rate
+                </button>
+              </div>
+            ) : (
+              <div style={{ fontSize:30, fontWeight:800, color:C.text, fontFamily:'Poppins, sans-serif' }}>
+                ${form.hourlyRate}<span style={{ fontSize:14, fontWeight:400, color:C.muted }}>/hr</span>
+              </div>
+            )}
+          </div>
+
+          {/* Performance */}
+          <div style={cardStyle}>
+            <div style={{ fontSize:13, fontWeight:700, color:C.text, marginBottom:12 }}>Performance</div>
+            {[
+              { label:'Total earnings', val:`$${earnings.toFixed(2)}` },
+              { label:'Services completed', val:services },
+              { label:'Completion rate', val:'100%' },
+              { label:'Service radius', val:`${form.serviceRadiusMiles} mi` },
+              { label:'Payout schedule', val:form.payoutSchedule },
+            ].map(s => (
+              <div key={s.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'7px 0', borderBottom:`1px solid ${C.border}` }}>
+                <span style={{ fontSize:12, color:C.muted }}>{s.label}</span>
+                <span style={{ fontSize:12, fontWeight:700, color:C.text }}>{s.val}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Verifications */}
+          <div style={cardStyle}>
+            <div style={{ fontSize:13, fontWeight:700, color:C.text, marginBottom:12 }}>Verifications</div>
+            {[
+              { label:'Background check', done:profile?.background_checked },
+              { label:'ID verified', done:profile?.id_verified },
+              { label:'Payout setup', done:!!profile?.stripe_account_id },
+            ].map(v => (
+              <div key={v.label} style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 0', borderBottom:`1px solid ${C.border}` }}>
+                <span style={{ fontSize:13, color:v.done?C.green:C.warning }}>{v.done?'✓':'⏳'}</span>
+                <span style={{ fontSize:12, color:v.done?C.text:C.muted }}>{v.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Support */}
+          <div style={{ ...cardStyle, textAlign:'center', background:C.bg }}>
+            <div style={{ fontSize:12, color:C.muted, marginBottom:8 }}>Need help?</div>
+            <button style={{ fontSize:12, color:C.blue, fontWeight:600, background:'none', border:'none', cursor:'pointer' }}>Contact support</button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
