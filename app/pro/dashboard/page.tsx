@@ -9,7 +9,6 @@ const API =
 
 const C = {
   navy: '#0D3781',
-  navyDark: '#081f4a',
   blue: '#1565C0',
   green: '#4CAF50',
   greenDk: '#388E3C',
@@ -76,6 +75,39 @@ const SVC: Record<string, string> = {
   DRY_CLEANING: '👔',
 };
 
+function calculatedSqft(job: any) {
+  const value =
+    job.sqft_used ??
+    job.calculated_sqft ??
+    job.square_feet ??
+    job.sqftUsed ??
+    job.sqft;
+
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+}
+
+function estimatedHoursFromJob(job: any) {
+  const direct =
+    job.estimated_hours ??
+    job.estimatedHours ??
+    job.duration_hours ??
+    job.durationHours ??
+    job.hours;
+
+  const directNumber = Number(direct);
+  if (Number.isFinite(directNumber) && directNumber > 0) {
+    return Math.round(directNumber * 10) / 10;
+  }
+
+  const sqft = calculatedSqft(job);
+  if (!sqft) return null;
+  if (sqft <= 1000) return 2;
+  if (sqft <= 2000) return 3;
+  if (sqft <= 3500) return 4;
+  return 5;
+}
+
 function StatusBadge({ status }: { status: string }) {
   const s = STATUS[status] || STATUS.PENDING_ASSIGNMENT;
 
@@ -87,42 +119,9 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function calculatedSqft(job: any) {
-  return Number(
-    job.sqft_used ||
-      job.calculated_sqft ||
-      job.square_feet ||
-      job.sqft ||
-      job.sqftUsed ||
-      0
-  );
-}
-
-function estimatedHoursFromJob(job: any) {
-  const direct = Number(
-    job.estimated_hours ||
-      job.estimatedHours ||
-      job.hours ||
-      job.duration_hours ||
-      job.durationHours ||
-      0
-  );
-
-  if (direct > 0) return direct;
-
-  const sqft = calculatedSqft(job);
-  if (!sqft) return null;
-
-  if (sqft <= 1000) return 2;
-  if (sqft <= 2000) return 3;
-  if (sqft <= 3500) return 4;
-  return 5;
-}
-
 function CalendarStrip({ jobs }: { jobs: any[] }) {
   const [selected, setSelected] = useState(new Date().toISOString().split('T')[0]);
   const today = new Date();
-
   const days = Array.from({ length: 14 }, (_, i) => {
     const d = new Date(today);
     d.setDate(today.getDate() + i - 2);
@@ -132,15 +131,16 @@ function CalendarStrip({ jobs }: { jobs: any[] }) {
   const hasJob = (d: Date) =>
     jobs.some((j) => j.scheduled_at && new Date(j.scheduled_at).toDateString() === d.toDateString());
 
-  const dayJobs = jobs.filter(
-    (j) => j.scheduled_at && new Date(j.scheduled_at).toISOString().split('T')[0] === selected
-  );
+  const dayJobs = jobs.filter((j) => {
+    if (!j.scheduled_at) return false;
+    return new Date(j.scheduled_at).toISOString().split('T')[0] === selected;
+  });
 
   return (
     <div>
       <div style={{ overflowX: 'auto', paddingBottom: 6 }}>
-        <div style={{ display: 'flex', gap: 5, minWidth: 'max-content' }}>
-          {days.map((d, i) => {
+        <div style={{ display: 'flex', gap: 6, minWidth: 'max-content' }}>
+          {days.map((d) => {
             const key = d.toISOString().split('T')[0];
             const isToday = d.toDateString() === today.toDateString();
             const isSel = key === selected;
@@ -148,25 +148,26 @@ function CalendarStrip({ jobs }: { jobs: any[] }) {
 
             return (
               <button
-                key={i}
+                key={key}
                 onClick={() => setSelected(key)}
+                type="button"
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  padding: '8px 10px',
+                  padding: '8px 11px',
                   borderRadius: 12,
                   border: 'none',
                   cursor: 'pointer',
-                  minWidth: 50,
+                  minWidth: 52,
                   background: isSel ? `linear-gradient(135deg, ${C.navy}, ${C.blue})` : isToday ? `${C.blue}15` : C.bg,
                   boxShadow: isSel ? '0 4px 12px rgba(13,55,129,0.3)' : 'none',
                 }}
               >
-                <span style={{ fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: isSel ? 'rgba(255,255,255,0.7)' : C.muted }}>
+                <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', color: isSel ? 'rgba(255,255,255,0.75)' : C.muted }}>
                   {d.toLocaleDateString('en', { weekday: 'short' })}
                 </span>
-                <span style={{ fontSize: 17, fontWeight: 800, color: isSel ? '#fff' : isToday ? C.blue : C.text, marginTop: 2 }}>
+                <span style={{ fontSize: 17, fontWeight: 900, color: isSel ? '#fff' : isToday ? C.blue : C.text, marginTop: 2 }}>
                   {d.getDate()}
                 </span>
                 <div style={{ width: 5, height: 5, borderRadius: '50%', background: busy ? (isSel ? '#fff' : C.green) : 'transparent', marginTop: 3 }} />
@@ -178,9 +179,8 @@ function CalendarStrip({ jobs }: { jobs: any[] }) {
 
       {dayJobs.length > 0 ? (
         <div style={{ marginTop: 10, padding: '10px 12px', background: `${C.green}10`, border: `1px solid ${C.green}25`, borderRadius: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.greenDk, marginBottom: 6 }}>
-            {dayJobs.length} job{dayJobs.length > 1 ? 's' : ''} ·{' '}
-            {new Date(selected + 'T12:00:00').toLocaleDateString('en', { month: 'long', day: 'numeric' })}
+          <div style={{ fontSize: 11, fontWeight: 800, color: C.greenDk, marginBottom: 6 }}>
+            {dayJobs.length} job{dayJobs.length > 1 ? 's' : ''} · {new Date(selected + 'T12:00:00').toLocaleDateString('en', { month: 'long', day: 'numeric' })}
           </div>
 
           {dayJobs.map((j) => {
@@ -188,13 +188,14 @@ function CalendarStrip({ jobs }: { jobs: any[] }) {
             const hours = estimatedHoursFromJob(j);
 
             return (
-              <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderTop: `1px solid ${C.green}20` }}>
+              <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderTop: `1px solid ${C.green}20` }}>
                 <span style={{ fontSize: 14 }}>{SVC[j.service_type] || '🧹'}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: C.text }}>{(j.service_type || '').replace(/_/g, ' ')}</div>
-                  <div style={{ fontSize: 10, color: C.muted }}>
-                    {sqft > 0 ? `${sqft} sqft` : j.address}
-                    {hours ? ` · ${hours}h` : ''}
+                  <div style={{ fontSize: 10, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {j.address}
+                    {sqft ? ` · ${sqft} sqft` : ''}
+                    {hours ? ` · ${hours}h estimated` : ''}
                   </div>
                 </div>
                 <StatusBadge status={j.status} />
@@ -203,7 +204,9 @@ function CalendarStrip({ jobs }: { jobs: any[] }) {
           })}
         </div>
       ) : (
-        <div style={{ textAlign: 'center', padding: '10px 0', color: C.muted, fontSize: 12 }}>No jobs on this date</div>
+        <div style={{ textAlign: 'center', padding: '10px 0', color: C.muted, fontSize: 12 }}>
+          No jobs on this date
+        </div>
       )}
     </div>
   );
@@ -229,7 +232,7 @@ export default function ProDashboard() {
       const jD = await jR.json();
       const pD = await pR.json();
 
-      setJobs(jD.data || []);
+      setJobs(Array.isArray(jD.data) ? jD.data : []);
       setProfile(pD);
       setIsAvailable(pD.is_available ?? false);
     } catch {
@@ -298,23 +301,45 @@ export default function ProDashboard() {
   return (
     <div style={{ width: '100%', fontFamily: 'Poppins, sans-serif' }}>
       <style>{`
-        @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        .pro-dashboard-stats {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px;
+          margin-bottom: 20px;
+        }
+
+        @media (max-width: 760px) {
+          .pro-dashboard-header {
+            flex-direction: column;
+            align-items: stretch !important;
+          }
+
+          .pro-dashboard-stats {
+            grid-template-columns: 1fr;
+          }
+        }
       `}</style>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 14 }}>
+      <div className="pro-dashboard-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 900, color: C.text, margin: 0, lineHeight: 1.05 }}>
-            Good morning, {proName.split(' ')[0]} 👋
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: C.text, margin: 0 }}>
+            Good morning, {proName.split(' ')[0]}
           </h1>
-          <p style={{ color: C.muted, fontSize: 14, margin: '5px 0 0' }}>Here's your schedule overview</p>
+          <p style={{ color: C.muted, fontSize: 13, margin: '4px 0 0' }}>
+            Here's your schedule overview
+          </p>
         </div>
 
         <button
           onClick={toggleAvail}
+          type="button"
           style={{
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: 7,
             padding: '9px 18px',
             borderRadius: 999,
@@ -325,7 +350,6 @@ export default function ProDashboard() {
             background: isAvailable ? `linear-gradient(135deg, ${C.green}, ${C.greenDk})` : 'rgba(100,116,139,0.15)',
             color: isAvailable ? '#fff' : C.muted,
             boxShadow: isAvailable ? '0 4px 12px rgba(76,175,80,0.35)' : 'none',
-            whiteSpace: 'nowrap',
           }}
         >
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: isAvailable ? '#fff' : C.muted, display: 'inline-block' }} />
@@ -333,7 +357,7 @@ export default function ProDashboard() {
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12, marginBottom: 20 }}>
+      <div className="pro-dashboard-stats">
         {[
           { label: 'Total Earnings', val: `$${earnings.toFixed(0)}`, gradient: `linear-gradient(135deg, ${C.green}, ${C.greenDk})`, icon: '💰' },
           { label: 'Active Jobs', val: active.length, gradient: `linear-gradient(135deg, ${C.blue}, ${C.navy})`, icon: '⚡' },
@@ -358,7 +382,7 @@ export default function ProDashboard() {
 
       <div style={{ background: '#fff', borderRadius: 16, border: `1px solid ${C.border}`, padding: 18, boxShadow: '0 2px 12px rgba(13,55,129,0.06)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <span style={{ fontWeight: 900, fontSize: 15, color: C.text }}>My Jobs</span>
+          <span style={{ fontWeight: 900, fontSize: 14, color: C.text }}>My Jobs</span>
           {visible.length > 0 && (
             <span style={{ background: `${C.navy}15`, color: C.navy, padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 800 }}>
               {visible.length}
@@ -369,7 +393,7 @@ export default function ProDashboard() {
         {visible.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 16px' }}>
             <div style={{ fontSize: 44, marginBottom: 10 }}>🧹</div>
-            <div style={{ fontWeight: 800, color: C.text, marginBottom: 4 }}>No active jobs</div>
+            <div style={{ fontWeight: 900, color: C.text, marginBottom: 4 }}>No active jobs</div>
             <div style={{ color: C.muted, fontSize: 13, marginBottom: 16 }}>Check Available Jobs to find work nearby</div>
             <Link href="/pro/marketplace" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`, color: '#fff', textDecoration: 'none', fontSize: 13, fontWeight: 800 }}>
               Find Available Jobs →
@@ -382,7 +406,7 @@ export default function ProDashboard() {
               const payout = Number(job.payout_amount || job.total_amount || 0);
               const eta = etaData[job.id];
               const sqft = calculatedSqft(job);
-              const estimatedHours = estimatedHoursFromJob(job);
+              const hours = estimatedHoursFromJob(job);
 
               return (
                 <div key={job.id} style={{ background: C.bg, borderRadius: 14, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
@@ -392,14 +416,11 @@ export default function ProDashboard() {
                         {SVC[job.service_type] || '🧹'}
                       </div>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 800, fontSize: 13, color: C.text, marginBottom: 3 }}>
+                        <div style={{ fontWeight: 900, fontSize: 13, color: C.text, marginBottom: 3 }}>
                           {(job.service_type || '').replace(/_/g, ' ')}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: C.blue, fontSize: 11, fontWeight: 600 }}>
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke={C.blue} strokeWidth="1.8" />
-                            <circle cx="12" cy="9" r="2.5" stroke={C.blue} strokeWidth="1.8" />
-                          </svg>
+                          <span>⌖</span>
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}>
                             {job.address}
                             {job.city ? `, ${job.city}` : ''}
@@ -412,29 +433,28 @@ export default function ProDashboard() {
 
                   <div style={{ padding: '0 14px 12px', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {date && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#fff', color: C.muted, padding: '4px 10px', borderRadius: 8, fontSize: 11, border: `1px solid ${C.border}` }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#fff', color: C.muted, padding: '4px 10px', borderRadius: 8, fontSize: 11, border: `1px solid ${C.border}`, fontWeight: 700 }}>
                         <IC.Clock s={11} c={C.muted} />
-                        {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ·{' '}
-                        {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                        {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     )}
 
-                    {sqft > 0 && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#fff', color: C.muted, padding: '4px 10px', borderRadius: 8, fontSize: 11, border: `1px solid ${C.border}` }}>
-                        <IC.Sqft s={11} c={C.muted} />
+                    {sqft && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EFF6FF', color: C.blue, padding: '4px 10px', borderRadius: 8, fontSize: 11, border: `1px solid ${C.blue}20`, fontWeight: 800 }}>
+                        <IC.Sqft s={11} c={C.blue} />
                         {sqft} sqft
                       </span>
                     )}
 
-                    {estimatedHours && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EEF2FF', color: '#4F46E5', padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800 }}>
+                    {hours && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EDE9FE', color: '#4F46E5', padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 900 }}>
                         <IC.Clock s={11} c="#4F46E5" />
-                        {estimatedHours}h estimated
+                        {hours}h estimated
                       </span>
                     )}
 
                     {payout > 0 && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#D1FAE5', color: C.greenDk, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#D1FAE5', color: C.greenDk, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 900 }}>
                         <IC.Dollar s={11} c={C.greenDk} />
                         +${payout.toFixed(2)}
                       </span>
@@ -449,28 +469,30 @@ export default function ProDashboard() {
                             🚗 {eta.distanceMiles} mi · ETA {eta.etaText}
                           </div>
                           <a href={eta.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '9px 0', borderRadius: 10, background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`, color: '#fff', fontSize: 12, fontWeight: 800, textDecoration: 'none' }}>
-                            🗺️ Open Navigation
+                            🗺 Open Navigation
                           </a>
-                          <div style={{ textAlign: 'center', marginTop: 6, fontSize: 11, color: C.green, fontWeight: 800 }}>✅ ETA sent to client</div>
+                          <div style={{ textAlign: 'center', marginTop: 6, fontSize: 11, color: C.green, fontWeight: 800 }}>
+                            ETA sent to client
+                          </div>
                         </div>
                       ) : (
-                        <button onClick={() => fetchETA(job.id)} style={{ width: '100%', padding: '10px 0', borderRadius: 11, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`, color: '#fff', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <button onClick={() => fetchETA(job.id)} type="button" style={{ width: '100%', padding: '10px 0', borderRadius: 11, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`, color: '#fff', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                           <IC.ETA c="#fff" s={14} />
                           Send ETA to Client
                         </button>
                       )}
 
                       {job.status === 'CONFIRMED' && (
-                        <button onClick={() => doAction(job.id, 'checkin')} disabled={acting === job.id} style={{ width: '100%', padding: '10px 0', borderRadius: 11, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${C.blue}, #1976D2)`, color: '#fff', fontSize: 12, fontWeight: 800, opacity: acting === job.id ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <button onClick={() => doAction(job.id, 'checkin')} disabled={acting === job.id} type="button" style={{ width: '100%', padding: '10px 0', borderRadius: 11, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${C.blue}, #1976D2)`, color: '#fff', fontSize: 12, fontWeight: 800, opacity: acting === job.id ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                           <IC.Check c="#fff" s={14} />
                           Check In
                         </button>
                       )}
 
                       {job.status === 'IN_PROGRESS' && (
-                        <button onClick={() => doAction(job.id, 'checkout')} disabled={acting === job.id} style={{ width: '100%', padding: '10px 0', borderRadius: 11, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${C.green}, ${C.greenDk})`, color: '#fff', fontSize: 12, fontWeight: 800, opacity: acting === job.id ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <button onClick={() => doAction(job.id, 'checkout')} disabled={acting === job.id} type="button" style={{ width: '100%', padding: '10px 0', borderRadius: 11, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${C.green}, ${C.greenDk})`, color: '#fff', fontSize: 12, fontWeight: 800, opacity: acting === job.id ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                           <IC.Check c="#fff" s={14} />
-                          Complete Job ✓
+                          Complete Job
                         </button>
                       )}
                     </div>
