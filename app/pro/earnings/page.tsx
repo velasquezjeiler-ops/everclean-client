@@ -36,7 +36,7 @@ export default function ProEarnings() {
   const pending = summary?.pending_payout || 0;
 
   return (
-    <div style={{ maxWidth: 760, fontFamily: 'Poppins, sans-serif' }}>
+    <div style={{ width: '100%', fontFamily: 'Poppins, sans-serif' }}>
       <h1 style={{ fontFamily: 'Poppins, sans-serif', fontSize: 22, fontWeight: 700, color: C.text, margin: '0 0 20px' }}>My Earnings</h1>
 
       {/* Summary Cards */}

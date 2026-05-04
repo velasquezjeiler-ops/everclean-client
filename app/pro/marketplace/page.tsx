@@ -67,7 +67,7 @@ export default function ProMarketplace() {
   );
 
   return (
-    <div style={{ maxWidth: 760, fontFamily: 'Poppins, sans-serif' }}>
+    <div style={{ width: '100%', fontFamily: 'Poppins, sans-serif' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
       {/* Header */}
