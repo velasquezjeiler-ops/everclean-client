@@ -162,11 +162,10 @@ export default function ProProfile() {
           hourly_rate: form.hourlyRate,
           payoutSchedule: form.payoutSchedule,
           payout_schedule: form.payoutSchedule,
-          // Temporarily omitted until backend fixes Postgres array handling.
-          // language: Array.isArray(form.language) ? form.language : [form.language].filter(Boolean),
-          // languages: Array.isArray(form.language) ? form.language : [form.language].filter(Boolean),
-          // servicesOffered: Array.isArray(form.servicesOffered) ? form.servicesOffered : [],
-          // services_offered: Array.isArray(form.servicesOffered) ? form.servicesOffered : [],
+          language: Array.isArray(form.language) ? form.language : [form.language].filter(Boolean),
+          languages: Array.isArray(form.language) ? form.language : [form.language].filter(Boolean),
+          servicesOffered: Array.isArray(form.servicesOffered) ? form.servicesOffered : [],
+          services_offered: Array.isArray(form.servicesOffered) ? form.servicesOffered : [],
         }),
       });
 
