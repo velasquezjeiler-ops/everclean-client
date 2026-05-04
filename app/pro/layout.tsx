@@ -245,6 +245,13 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
     { href: '/pro/profile', label: 'Profile', Icon: IC.Profile },
   ];
 
+  const MOBILE_NAV = [
+    { href: '/pro/dashboard', label: 'My Jobs', Icon: IC.Jobs },
+    { href: '/pro/marketplace', label: 'Available', Icon: IC.Market },
+    { href: '/pro/earnings', label: 'Earnings', Icon: IC.Dollar },
+    { href: '/pro/profile', label: 'Profile', Icon: IC.Profile },
+  ];
+
   if (!ready) return null;
 
   const sidebarBg = `linear-gradient(180deg, ${C.navyDark} 0%, ${C.navy} 50%, #0d4a2e 100%)`;
@@ -359,7 +366,7 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
       {selectedBooking && <AddressMapCard booking={selectedBooking} onClose={() => setSelectedBooking(null)}/>}
 
       <nav className="pro-mobile-nav" style={{ display: 'none', position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, background: '#fff', borderTop: `1px solid ${C.border}`, boxShadow: '0 -4px 20px rgba(13,55,129,0.08)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        {NAV.map(({ href, label, Icon }) => {
+        {MOBILE_NAV.map(({ href, label, Icon }) => {
           const active = pathname === href;
           return (
             <Link key={href} href={href} style={{ flex: 1, textDecoration: 'none' }}>
