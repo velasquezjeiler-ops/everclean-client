@@ -151,7 +151,7 @@ function RightPanel({
         {[
           { href: '/dashboard/new-booking', label: 'Book a Service', icon: '+' },
           { href: '/dashboard', label: 'My Services', icon: '⌂' },
-          { href: '/dashboard/history', label: 'Service History', icon: '↺' },
+          { href: '/dashboard/history', label: 'View History', icon: '↺' },
           { href: '/dashboard/profile', label: 'Billing Profile', icon: '◌' },
         ].map((item) => (
           <Link key={item.href} href={item.href} className="client-quick-link">
