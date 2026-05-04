@@ -42,6 +42,20 @@ function jobMapsUrl(job: any) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(jobAddress(job))}`;
 }
 
+function calculatedSqft(job: any) {
+  return Number(job.sqft || job.square_feet || job.squareFeet || job.calculated_sqft || job.calculatedSqft || 0);
+}
+
+function approvedHours(job: any) {
+  const explicit = Number(job.hours || job.estimated_hours || job.estimatedHours || job.approved_hours || job.approvedHours || 0);
+  if (explicit > 0) return explicit;
+
+  const sqft = calculatedSqft(job);
+  if (sqft > 0) return Math.max(2, Math.ceil(sqft / 500));
+
+  return 2;
+}
+
 function StatusBadge({ status }: { status: string }) {
   const s = STATUS[status] || STATUS.PENDING_ASSIGNMENT;
   return (
@@ -159,7 +173,7 @@ export default function ProDashboard() {
 
   const hourlyRate = Number(profile?.hourly_rate || profile?.hourlyRate || 18);
   const calcPayout = (job: any) => {
-    const hours = Number(job.hours || 2);
+    const hours = approvedHours(job);
     const byRate = hourlyRate * hours;
     const cap = Number(job.client_price || 0) * 0.55;
     return cap > 0 ? Math.min(byRate, cap) : byRate;
@@ -178,7 +192,7 @@ export default function ProDashboard() {
   );
 
   return (
-    <div style={{ maxWidth: 900, fontFamily: 'Poppins, sans-serif' }}>
+    <div style={{ width: '100%', fontFamily: 'Poppins, sans-serif' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
       {/* Header */}
@@ -247,7 +261,8 @@ export default function ProDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {myJobs.map(job => {
               const payout = calcPayout(job);
-              const hours = Number(job.hours || 2);
+              const hours = approvedHours(job);
+              const sqft = calculatedSqft(job);
               const date = job.scheduled_at ? new Date(job.scheduled_at) : null;
               const eta = etaData[job.id];
               return (
@@ -287,11 +302,14 @@ export default function ProDashboard() {
                         {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     )}
-                    {job.sqft && (
+                    {sqft > 0 && (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#fff', color: C.muted, padding: '4px 10px', borderRadius: 8, fontSize: 11, border: `1px solid ${C.border}` }}>
-                        <IC.Sqft s={11} c={C.muted}/>{job.sqft} sqft
+                        <IC.Sqft s={11} c={C.muted}/>{sqft.toFixed(0)} sqft
                       </span>
                     )}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EEF2FF', color: '#4338CA', padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700 }}>
+                      <IC.Clock s={11} c="#4338CA"/>{hours}h approved
+                    </span>
                     {payout > 0 && (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#D1FAE5', color: C.greenDk, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700 }}>
                         <IC.Dollar s={11} c={C.greenDk}/>Your pay: ${payout.toFixed(2)}
