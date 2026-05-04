@@ -220,6 +220,8 @@ export default function ProDashboard() {
   const [acting, setActing] = useState<string | null>(null);
   const [etaData, setEtaData] = useState<Record<string, any>>({});
   const [isAvailable, setIsAvailable] = useState(false);
+  const [bookingConfirmed, setBookingConfirmed] = useState(false);
+  const [lastBookingId, setLastBookingId] = useState('');
 
   const load = useCallback(async () => {
     const token = localStorage.getItem('token') || '';
@@ -246,6 +248,15 @@ export default function ProDashboard() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    const bookedQuery = 'booked=1';
+    const params = new URLSearchParams(window.location.search);
+    if (window.location.search.includes(bookedQuery) || params.get('booked') === '1') {
+      setBookingConfirmed(true);
+      setLastBookingId(localStorage.getItem('last_booking_id') || '');
+    }
+  }, []);
 
   async function fetchETA(id: string) {
     const token = localStorage.getItem('token') || '';
@@ -333,6 +344,13 @@ export default function ProDashboard() {
           }
         }
       `}</style>
+
+      {bookingConfirmed && (
+        <div style={{ marginBottom: 16, padding: '12px 14px', borderRadius: 12, background: '#D1FAE5', color: C.greenDk, border: `1px solid ${C.green}40`, fontSize: 13, fontWeight: 700 }}>
+          Booking confirmed! A professional will be assigned soon.
+          {lastBookingId && <span style={{ fontWeight: 600 }}> ID: {lastBookingId}</span>}
+        </div>
+      )}
 
       <div className="pro-dashboard-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 20 }}>
         <div>

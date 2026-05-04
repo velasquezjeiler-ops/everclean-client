@@ -290,6 +290,9 @@ export default function NewBookingPage() {
         throw new Error(err.error ?? 'Error');
       }
 
+      const data = await res.json();
+      const bookingId = data.id || data.booking?.id;
+      if (bookingId) localStorage.setItem('last_booking_id', String(bookingId));
       router.push('/dashboard?booked=1');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Error desconocido');
