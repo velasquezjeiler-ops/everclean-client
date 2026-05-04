@@ -240,6 +240,8 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
     { href: '/pro/dashboard', label: 'My Jobs', Icon: IC.Jobs },
     { href: '/pro/marketplace', label: 'Available', Icon: IC.Market },
     { href: '/pro/history', label: 'History', Icon: IC.History },
+    { href: '/pro/earnings', label: 'Earnings', Icon: IC.Dollar },
+    { href: '/pro/payments', label: 'Payments', Icon: IC.Card },
     { href: '/pro/profile', label: 'Profile', Icon: IC.Profile },
   ];
 
