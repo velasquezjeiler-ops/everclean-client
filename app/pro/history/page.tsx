@@ -363,13 +363,13 @@ export default function ProHistory() {
                           style={{
                             background: '#FEF3C7',
                             color: '#92400E',
-                            borderRadius: 10,
-                            padding: '5px 10px',
-                            fontSize: 12,
+                            padding: '4px 10px',
+                            borderRadius: 8,
+                            fontSize: 11,
                             fontWeight: 700,
                           }}
                         >
-                          ⭐ {Number(b.rating).toFixed(1)}
+                          ⭐ {b.rating}/5
                         </span>
                       )}
 
