@@ -284,11 +284,10 @@ export default function ProDashboard() {
     setIsAvailable(!isAvailable);
   }
 
-  const active = jobs.filter((j) => ['CONFIRMED', 'IN_PROGRESS'].includes(j.status));
+  const myJobs = jobs.filter((j) => ['CONFIRMED', 'IN_PROGRESS'].includes(j.status));
+  const active = myJobs;
   const completed = jobs.filter((j) => j.status === 'COMPLETED');
   const proName = profile?.full_name || profile?.fullName || 'Professional';
-  const visible = jobs.filter((j) => j.status !== 'CANCELLED');
-
   const hourlyRate = Number(profile?.hourly_rate || profile?.hourlyRate || 18);
 
   function calcPayout(job: any) {
@@ -389,20 +388,20 @@ export default function ProDashboard() {
           <IC.Clock c={C.navy} s={16} />
           <span style={{ fontWeight: 900, fontSize: 14, color: C.text }}>Schedule</span>
         </div>
-        <CalendarStrip jobs={jobs} />
+        <CalendarStrip jobs={myJobs} />
       </div>
 
       <div style={{ background: '#fff', borderRadius: 16, border: `1px solid ${C.border}`, padding: 18, boxShadow: '0 2px 12px rgba(13,55,129,0.06)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <span style={{ fontWeight: 900, fontSize: 14, color: C.text }}>My Jobs</span>
-          {visible.length > 0 && (
+          {myJobs.length > 0 && (
             <span style={{ background: `${C.navy}15`, color: C.navy, padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 800 }}>
-              {visible.length}
+              {myJobs.length}
             </span>
           )}
         </div>
 
-        {visible.length === 0 ? (
+        {myJobs.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 16px' }}>
             <div style={{ fontSize: 44, marginBottom: 10 }}>🧹</div>
             <div style={{ fontWeight: 900, color: C.text, marginBottom: 4 }}>No active jobs</div>
@@ -413,7 +412,7 @@ export default function ProDashboard() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {visible.slice(0, 10).map((job) => {
+            {myJobs.slice(0, 10).map((job) => {
               const date = job.scheduled_at ? new Date(job.scheduled_at) : null;
               const payout = calcPayout(job);
               const eta = etaData[job.id];
