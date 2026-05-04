@@ -307,8 +307,8 @@ export default function ProDashboard() {
                         <IC.Sqft s={11} c={C.muted}/>{sqft.toFixed(0)} sqft
                       </span>
                     )}
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EEF2FF', color: '#4338CA', padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700 }}>
-                      <IC.Clock s={11} c="#4338CA"/>{hours}h approved
+                    <span style={{ display:'inline-flex', alignItems:'center', gap:4, background:C.bg, color:C.muted, padding:'4px 10px', borderRadius:8, fontSize:11, border:`1px solid ${C.border}` }}>
+                      ⏱ {hours}h estimated
                     </span>
                     {payout > 0 && (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#D1FAE5', color: C.greenDk, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700 }}>
