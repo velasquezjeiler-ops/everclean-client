@@ -24,6 +24,7 @@ export default function ProMarketplace() {
   const [claiming, setClaiming] = useState<string|null>(null);
   const [claimed, setClaimed] = useState<string[]>([]);
   const [proRate, setProRate] = useState<number>(18);
+  const [proRadius, setProRadius] = useState<number | null>(null);
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
@@ -34,6 +35,7 @@ export default function ProMarketplace() {
       const d = await res.json();
       setJobs(d.data || []);
       setProRate(d.pro_rate || 18);
+      setProRadius(d.pro_radius || null);
     } catch (e) { setError('Could not load available jobs.'); }
     setLoading(false);
   }, []);
@@ -93,6 +95,11 @@ export default function ProMarketplace() {
           <div style={{ fontSize: 11, opacity: 0.6, marginTop: 3 }}>
             {proRate <= 18 ? 'You see jobs first — lowest rate gets priority' : `Jobs open after ${proRate <= 19 ? '5' : proRate <= 20 ? '10' : '15'}+ min`}
           </div>
+          {proRadius && (
+            <div style={{ fontSize: 11, opacity: 0.6, marginTop: 2 }}>
+              Coverage radius: {proRadius} mi
+            </div>
+          )}
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 28, fontWeight: 800 }}>{jobs.length}</div>
@@ -170,6 +177,16 @@ export default function ProMarketplace() {
                     {job.sqft && <span style={{ background: C.bg, color: C.muted, padding: '3px 9px', borderRadius: 999, fontSize: 10 }}>📐 {job.sqft} sqft</span>}
                     {job.frequency && job.frequency !== 'ONE_TIME' && <span style={{ background: '#FEF3C7', color: '#92400E', padding: '3px 9px', borderRadius: 999, fontSize: 10, fontWeight: 700 }}>🔄 {job.frequency}</span>}
                     <span style={{ background: C.bg, color: C.muted, padding: '3px 9px', borderRadius: 999, fontSize: 10 }}>🕐 {mins}m ago</span>
+                    {job.distance_miles && (
+                      <span style={{ display:'inline-flex', alignItems:'center', gap:4,
+                        background: job.distance_miles <= 10 ? '#D1FAE5' : '#F5F7FA',
+                        color: job.distance_miles <= 10 ? '#388E3C' : '#64748B',
+                        padding:'4px 10px', borderRadius:8, fontSize:11,
+                        border:'1px solid #E2E8F0', fontWeight: job.distance_miles <= 10 ? 700 : 400
+                      }}>
+                        📍 {job.distance_miles} mi away
+                      </span>
+                    )}
                   </div>
 
                   {/* Client price */}
