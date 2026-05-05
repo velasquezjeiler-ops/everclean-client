@@ -364,13 +364,26 @@ export default function ProProfile() {
             linear-gradient(0deg, rgba(76,175,80,0.15), rgba(255,255,255,0.35)),
             #EEF7F1;
         }
-        .coverage-ring{
+        .coverage-map::before{
+          content:'';
+          position:absolute;
+          inset:0;
+          background:
+            radial-gradient(circle at 26% 34%, rgba(13,55,129,0.12) 0 2px, transparent 3px),
+            radial-gradient(circle at 66% 31%, rgba(13,55,129,0.12) 0 2px, transparent 3px),
+            radial-gradient(circle at 70% 66%, rgba(13,55,129,0.12) 0 2px, transparent 3px),
+            radial-gradient(circle at 36% 70%, rgba(13,55,129,0.12) 0 2px, transparent 3px),
+            radial-gradient(circle at 48% 49%, rgba(13,55,129,0.1) 0 2px, transparent 3px);
+          pointer-events:none;
+        }
+        .coverage-active-circle{
           position:absolute;
           left:50%;
           top:50%;
-          border-radius:50%;
           transform:translate(-50%, -50%);
+          border-radius:50%;
           pointer-events:none;
+          transition:width 0.25s ease, border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
         }
         .coverage-home{
           position:absolute;
@@ -388,7 +401,21 @@ export default function ProProfile() {
           font-size:20px;
           box-shadow:0 8px 24px rgba(13,55,129,0.35);
           border:3px solid #fff;
-          z-index:4;
+          z-index:8;
+        }
+        .coverage-home::after{
+          content:'';
+          position:absolute;
+          left:50%;
+          bottom:-9px;
+          width:14px;
+          height:14px;
+          background:${C.blue};
+          border-right:3px solid #fff;
+          border-bottom:3px solid #fff;
+          transform:translateX(-50%) rotate(45deg);
+          border-radius:0 0 4px 0;
+          z-index:-1;
         }
         .coverage-label{
           position:absolute;
@@ -611,7 +638,7 @@ export default function ProProfile() {
                         type="range"
                         min={5}
                         max={50}
-                        step={5}
+                        step={1}
                         value={form.serviceRadiusMiles}
                         onChange={(e) =>
                           setForm({ ...form, serviceRadiusMiles: Number(e.target.value) })
@@ -639,7 +666,7 @@ export default function ProProfile() {
                       type="number"
                       min={5}
                       max={50}
-                      step={5}
+                      step={1}
                       value={form.serviceRadiusMiles}
                       onChange={(e) =>
                         setForm({
@@ -671,12 +698,14 @@ export default function ProProfile() {
                   </div>
 
                   <div className="coverage-map">
-                    <div className="coverage-ring" style={{ width: '24%', aspectRatio: '1/1', background: 'rgba(22,163,74,0.42)', border: '2px solid rgba(21,128,61,0.75)', zIndex: 5 }} />
-                    <div className="coverage-ring" style={{ width: '40%', aspectRatio: '1/1', background: 'rgba(132,204,22,0.24)', border: '2px solid rgba(101,163,13,0.45)', zIndex: 4 }} />
-                    <div className="coverage-ring" style={{ width: '56%', aspectRatio: '1/1', background: 'rgba(250,204,21,0.2)', border: '2px solid rgba(202,138,4,0.42)', zIndex: 3 }} />
-                    <div className="coverage-ring" style={{ width: '72%', aspectRatio: '1/1', background: 'rgba(251,146,60,0.16)', border: '2px solid rgba(234,88,12,0.35)', zIndex: 2 }} />
-                    <div className="coverage-ring" style={{ width: '88%', aspectRatio: '1/1', background: 'rgba(239,68,68,0.1)', border: '2px solid rgba(220,38,38,0.28)', zIndex: 1 }} />
-                    <div className="coverage-ring" style={{ width: `${Math.max(24, coveragePercent * 0.64 + 24)}%`, aspectRatio: '1/1', border: `3px solid ${coverageBand.color}`, boxShadow: `0 0 0 999px rgba(255,255,255,0.24), 0 0 28px ${coverageBand.color}55`, zIndex: 6 }} />
+                    <div className="coverage-active-circle" style={{
+                      width: `${Math.max(24, coveragePercent * 0.74 + 24)}%`,
+                      aspectRatio: '1/1',
+                      border: `4px solid ${coverageBand.color}`,
+                      background: `${coverageBand.color}24`,
+                      boxShadow: `0 0 0 999px rgba(255,255,255,0.18), 0 0 30px ${coverageBand.color}55`,
+                      zIndex: 6,
+                    }} />
                     <div className="coverage-home">⌂</div>
                     <span className="coverage-label" style={{ left: '53%', top: '29%' }}>Newark</span>
                     <span className="coverage-label" style={{ left: '18%', top: '36%' }}>Hillsborough</span>
