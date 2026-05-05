@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const API =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -422,6 +423,13 @@ export default function LoginPage() {
                 {loading ? 'Signing in...' : 'Sign In'}
               </button>
             </div>
+
+            <p style={{ margin: '16px 0 0', textAlign: 'center', color: C.muted, fontSize: 12 }}>
+              New to EverClean?{' '}
+              <Link href="/register" style={{ color: C.blue, fontWeight: 800, textDecoration: 'none' }}>
+                Create an account
+              </Link>
+            </p>
 
             <p className="client-footer">
               © 2026 EverClean · Professional Cleaning Platform
