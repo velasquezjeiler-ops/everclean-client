@@ -179,6 +179,8 @@ export default function ProProfile() {
   const baseAddress = [form.address, form.city, form.state, form.zipCode].filter(Boolean).join(', ');
   const mapQuery = encodeURIComponent(baseAddress || 'New Brunswick, NJ');
   const mapsSearchUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
+  const embedMapUrl = `https://maps.google.com/maps?q=${mapQuery}&output=embed&z=11`;
+  const hasGoogleMapsKey = Boolean(GOOGLE_MAPS_KEY);
   const profileLat = Number(profile?.lat);
   const profileLng = Number(profile?.lng);
   const hasProfileCoords = Number.isFinite(profileLat) && Number.isFinite(profileLng);
@@ -507,6 +509,13 @@ export default function ProProfile() {
           width:100%;
           height:100%;
         }
+        .coverage-map-frame{
+          position:absolute;
+          inset:0;
+          width:100%;
+          height:100%;
+          border:0;
+        }
         .coverage-map-link{
           position:absolute;
           top:10px;
@@ -806,12 +815,23 @@ export default function ProProfile() {
                   </div>
 
                   <div className="coverage-map">
-                    <div ref={coverageMapRef} className="coverage-map-canvas" />
+                    {hasGoogleMapsKey ? (
+                      <div ref={coverageMapRef} className="coverage-map-canvas" />
+                    ) : (
+                      <iframe
+                        className="coverage-map-frame"
+                        title="Professional coverage map"
+                        loading="lazy"
+                        src={embedMapUrl}
+                      />
+                    )}
                     <a className="coverage-map-link" href={mapsSearchUrl} target="_blank" rel="noreferrer">
                       Open in Maps
                     </a>
                     <div className="coverage-map-note">
-                      {mapError || `${clampedRadius} mi radius from your base address`}
+                      {hasGoogleMapsKey
+                        ? mapError || `${clampedRadius} mi radius from your base address`
+                        : 'Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY for exact radius overlay'}
                     </div>
                   </div>
 
