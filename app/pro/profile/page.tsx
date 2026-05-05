@@ -239,6 +239,8 @@ export default function ProProfile() {
   const clampedRadius = Math.min(50, Math.max(5, form.serviceRadiusMiles || 5));
   const coveragePercent = ((clampedRadius - 5) / 45) * 100;
   const baseAddress = [form.address, form.city, form.state, form.zipCode].filter(Boolean).join(', ');
+  const mapQuery = encodeURIComponent(baseAddress || 'New Brunswick, NJ');
+  const mapZoom = clampedRadius <= 10 ? 11 : clampedRadius <= 20 ? 10 : clampedRadius <= 30 ? 9 : 8;
   const coverageBand =
     clampedRadius <= 10
       ? { label: 'Excellent coverage', tone: 'Fastest response', color: '#15803D', bg: '#DCFCE7' }
@@ -356,25 +358,14 @@ export default function ProProfile() {
           border-radius:14px;
           border:1px solid ${C.border};
           overflow:hidden;
-          background:
-            linear-gradient(105deg, transparent 0 46%, rgba(21,101,192,0.28) 46% 49%, transparent 49% 100%),
-            linear-gradient(22deg, transparent 0 56%, rgba(21,101,192,0.18) 56% 58%, transparent 58% 100%),
-            linear-gradient(155deg, transparent 0 42%, rgba(100,116,139,0.18) 42% 43.3%, transparent 43.3% 100%),
-            linear-gradient(60deg, transparent 0 30%, rgba(100,116,139,0.14) 30% 31.2%, transparent 31.2% 100%),
-            linear-gradient(0deg, rgba(76,175,80,0.15), rgba(255,255,255,0.35)),
-            #EEF7F1;
+          background:#E5E7EB;
         }
-        .coverage-map::before{
-          content:'';
+        .coverage-map iframe{
           position:absolute;
           inset:0;
-          background:
-            radial-gradient(circle at 26% 34%, rgba(13,55,129,0.12) 0 2px, transparent 3px),
-            radial-gradient(circle at 66% 31%, rgba(13,55,129,0.12) 0 2px, transparent 3px),
-            radial-gradient(circle at 70% 66%, rgba(13,55,129,0.12) 0 2px, transparent 3px),
-            radial-gradient(circle at 36% 70%, rgba(13,55,129,0.12) 0 2px, transparent 3px),
-            radial-gradient(circle at 48% 49%, rgba(13,55,129,0.1) 0 2px, transparent 3px);
-          pointer-events:none;
+          width:100%;
+          height:100%;
+          border:0;
         }
         .coverage-active-circle{
           position:absolute;
@@ -385,7 +376,7 @@ export default function ProProfile() {
           pointer-events:none;
           transition:width 0.25s ease, border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
         }
-        .coverage-home{
+        .coverage-pin-overlay{
           position:absolute;
           left:50%;
           top:50%;
@@ -402,8 +393,9 @@ export default function ProProfile() {
           box-shadow:0 8px 24px rgba(13,55,129,0.35);
           border:3px solid #fff;
           z-index:8;
+          pointer-events:none;
         }
-        .coverage-home::after{
+        .coverage-pin-overlay::after{
           content:'';
           position:absolute;
           left:50%;
@@ -417,15 +409,19 @@ export default function ProProfile() {
           border-radius:0 0 4px 0;
           z-index:-1;
         }
-        .coverage-label{
+        .coverage-map-note{
           position:absolute;
-          padding:4px 8px;
+          left:10px;
+          bottom:10px;
+          z-index:9;
+          padding:6px 10px;
           border-radius:999px;
-          background:rgba(255,255,255,0.82);
-          color:${C.text};
+          background:rgba(255,255,255,0.92);
+          color:${C.muted};
           font-size:10px;
           font-weight:700;
-          box-shadow:0 2px 8px rgba(13,55,129,0.08);
+          box-shadow:0 3px 12px rgba(13,55,129,0.12);
+          pointer-events:none;
         }
         .coverage-legend{
           display:grid;
@@ -698,6 +694,11 @@ export default function ProProfile() {
                   </div>
 
                   <div className="coverage-map">
+                    <iframe
+                      title="Professional coverage map"
+                      loading="lazy"
+                      src={`https://maps.google.com/maps?q=${mapQuery}&output=embed&z=${mapZoom}`}
+                    />
                     <div className="coverage-active-circle" style={{
                       width: `${Math.max(24, coveragePercent * 0.74 + 24)}%`,
                       aspectRatio: '1/1',
@@ -706,12 +707,8 @@ export default function ProProfile() {
                       boxShadow: `0 0 0 999px rgba(255,255,255,0.18), 0 0 30px ${coverageBand.color}55`,
                       zIndex: 6,
                     }} />
-                    <div className="coverage-home">⌂</div>
-                    <span className="coverage-label" style={{ left: '53%', top: '29%' }}>Newark</span>
-                    <span className="coverage-label" style={{ left: '18%', top: '36%' }}>Hillsborough</span>
-                    <span className="coverage-label" style={{ left: '60%', top: '55%' }}>Old Bridge</span>
-                    <span className="coverage-label" style={{ left: '39%', top: '65%' }}>Princeton</span>
-                    <span className="coverage-label" style={{ left: '70%', top: '74%' }}>Long Branch</span>
+                    <div className="coverage-pin-overlay">⌂</div>
+                    <div className="coverage-map-note">Coverage starts at your base address</div>
                   </div>
 
                   <div className="coverage-legend">
