@@ -239,6 +239,7 @@ export default function ProProfile() {
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
+    boxSizing: 'border-box',
     border: `1px solid ${C.border}`,
     borderRadius: 10,
     padding: '10px 12px',
@@ -265,6 +266,7 @@ export default function ProProfile() {
     border: `1px solid ${C.border}`,
     padding: '20px 22px',
     boxShadow: '0 2px 12px rgba(13,55,129,0.06)',
+    boxSizing: 'border-box',
   };
 
   return (
@@ -274,6 +276,53 @@ export default function ProProfile() {
         input:focus,textarea:focus{
           border-color:${C.blue} !important;
           box-shadow:0 0 0 3px rgba(21,101,192,0.08);
+        }
+        .pro-profile-layout{
+          display:grid;
+          grid-template-columns:minmax(0, 1fr) 300px;
+          gap:20px;
+          align-items:start;
+        }
+        .pro-profile-grid{
+          display:grid;
+          grid-template-columns:repeat(2, minmax(0, 1fr));
+          gap:14px;
+        }
+        .pro-profile-grid > div,
+        .pro-profile-main,
+        .pro-profile-side{
+          min-width:0;
+        }
+        .pro-radius-panel{
+          display:grid;
+          grid-template-columns:minmax(0, 1fr) 76px;
+          gap:12px;
+          align-items:center;
+          padding:12px;
+          border:1px solid ${C.border};
+          border-radius:12px;
+          background:${C.bg};
+        }
+        @media (max-width:980px){
+          .pro-profile-layout{
+            grid-template-columns:minmax(0, 1fr);
+          }
+        }
+        @media (max-width:640px){
+          .pro-profile-grid,
+          .pro-radius-panel{
+            grid-template-columns:minmax(0, 1fr);
+          }
+          .pro-profile-card{
+            padding:16px !important;
+            border-radius:14px !important;
+          }
+          .pro-profile-chip{
+            flex:1 1 calc(50% - 8px);
+            min-width:0;
+            justify-content:center;
+            white-space:normal;
+          }
         }
       `}</style>
 
@@ -315,16 +364,9 @@ export default function ProProfile() {
         </div>
       )}
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr) 300px',
-          gap: 20,
-          alignItems: 'start',
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={cardStyle}>
+      <div className="pro-profile-layout">
+        <div className="pro-profile-main" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="pro-profile-card" style={cardStyle}>
             <div
               style={{
                 fontSize: 14,
@@ -335,7 +377,7 @@ export default function ProProfile() {
             >
               Personal Information
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div className="pro-profile-grid">
               <div>
                 <label style={labelStyle}>Full name</label>
                 <input
@@ -373,7 +415,7 @@ export default function ProProfile() {
             </div>
           </div>
 
-          <div style={cardStyle}>
+          <div className="pro-profile-card" style={cardStyle}>
             <div
               style={{
                 fontSize: 14,
@@ -384,7 +426,7 @@ export default function ProProfile() {
             >
               Address
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div className="pro-profile-grid">
               <div style={{ gridColumn: '1/-1' }}>
                 <label style={labelStyle}>Street address</label>
                 <input
@@ -417,23 +459,54 @@ export default function ProProfile() {
                   style={inputStyle}
                 />
               </div>
-              <div>
+              <div style={{ gridColumn: '1/-1' }}>
                 <label style={labelStyle}>Service radius ({form.serviceRadiusMiles} mi)</label>
-                <input
-                  type="range"
-                  min={5}
-                  max={50}
-                  value={form.serviceRadiusMiles}
-                  onChange={(e) =>
-                    setForm({ ...form, serviceRadiusMiles: Number(e.target.value) })
-                  }
-                  style={{ width: '100%', accentColor: C.green }}
-                />
+                <div className="pro-radius-panel">
+                  <div style={{ minWidth: 0 }}>
+                    <input
+                      type="range"
+                      min={5}
+                      max={50}
+                      step={5}
+                      value={form.serviceRadiusMiles}
+                      onChange={(e) =>
+                        setForm({ ...form, serviceRadiusMiles: Number(e.target.value) })
+                      }
+                      style={{ width: '100%', accentColor: C.green }}
+                    />
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginTop: 4,
+                        fontSize: 10,
+                        color: C.muted,
+                      }}
+                    >
+                      <span>5 mi</span>
+                      <span>50 mi</span>
+                    </div>
+                  </div>
+                  <input
+                    type="number"
+                    min={5}
+                    max={50}
+                    step={5}
+                    value={form.serviceRadiusMiles}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        serviceRadiusMiles: Math.min(50, Math.max(5, Number(e.target.value) || 5)),
+                      })
+                    }
+                    style={{ ...inputStyle, padding: '9px 8px', textAlign: 'center' }}
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          <div style={cardStyle}>
+          <div className="pro-profile-card" style={cardStyle}>
             <div
               style={{
                 fontSize: 14,
@@ -459,6 +532,8 @@ export default function ProProfile() {
                       }))
                     }
                     style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
                       padding: '6px 14px',
                       borderRadius: 999,
                       fontSize: 12,
@@ -468,6 +543,7 @@ export default function ProProfile() {
                       background: selected ? 'rgba(76,175,80,0.12)' : '#fff',
                       color: selected ? C.greenDk : C.muted,
                     }}
+                    className="pro-profile-chip"
                   >
                     {selected ? '✓ ' : ''}
                     {svc}
@@ -477,7 +553,7 @@ export default function ProProfile() {
             </div>
           </div>
 
-          <div style={cardStyle}>
+          <div className="pro-profile-card" style={cardStyle}>
             <div
               style={{
                 fontSize: 14,
@@ -503,6 +579,8 @@ export default function ProProfile() {
                       }))
                     }
                     style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
                       padding: '6px 14px',
                       borderRadius: 999,
                       fontSize: 12,
@@ -512,6 +590,7 @@ export default function ProProfile() {
                       background: selected ? 'rgba(21,101,192,0.10)' : '#fff',
                       color: selected ? C.blue : C.muted,
                     }}
+                    className="pro-profile-chip"
                   >
                     {selected ? '✓ ' : ''}
                     {lang}
@@ -543,8 +622,8 @@ export default function ProProfile() {
           </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ ...cardStyle, textAlign: 'center' }}>
+        <div className="pro-profile-side" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="pro-profile-card" style={{ ...cardStyle, textAlign: 'center' }}>
             <div
               style={{
                 position: 'relative',
