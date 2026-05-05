@@ -236,6 +236,19 @@ export default function ProProfile() {
     .join('')
     .slice(0, 2)
     .toUpperCase();
+  const clampedRadius = Math.min(50, Math.max(5, form.serviceRadiusMiles || 5));
+  const coveragePercent = ((clampedRadius - 5) / 45) * 100;
+  const baseAddress = [form.address, form.city, form.state, form.zipCode].filter(Boolean).join(', ');
+  const coverageBand =
+    clampedRadius <= 10
+      ? { label: 'Excellent coverage', tone: 'Fastest response', color: '#15803D', bg: '#DCFCE7' }
+      : clampedRadius <= 20
+        ? { label: 'Good coverage', tone: 'Strong response window', color: '#65A30D', bg: '#ECFCCB' }
+        : clampedRadius <= 30
+          ? { label: 'Medium coverage', tone: 'Balanced travel time', color: '#CA8A04', bg: '#FEF9C3' }
+          : clampedRadius <= 40
+            ? { label: 'Low coverage', tone: 'Longer drive times', color: '#EA580C', bg: '#FFEDD5' }
+            : { label: 'Minimum priority', tone: 'Longest travel times', color: '#DC2626', bg: '#FEE2E2' };
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
@@ -294,14 +307,112 @@ export default function ProProfile() {
           min-width:0;
         }
         .pro-radius-panel{
+          display:flex;
+          flex-direction:column;
+          gap:14px;
+          padding:14px;
+          border:1px solid ${C.border};
+          border-radius:12px;
+          background:linear-gradient(180deg, #fff 0%, ${C.bg} 100%);
+          overflow:hidden;
+        }
+        .coverage-control{
           display:grid;
           grid-template-columns:minmax(0, 1fr) 76px;
           gap:12px;
           align-items:center;
-          padding:12px;
+        }
+        .coverage-range{
+          appearance:none;
+          width:100%;
+          height:8px;
+          border-radius:999px;
+          outline:none;
+          background:
+            linear-gradient(90deg, #16A34A 0 20%, #84CC16 20% 40%, #FACC15 40% 60%, #FB923C 60% 80%, #EF4444 80% 100%);
+        }
+        .coverage-range::-webkit-slider-thumb{
+          appearance:none;
+          width:22px;
+          height:22px;
+          border-radius:50%;
+          background:#fff;
+          border:5px solid var(--coverage-color);
+          box-shadow:0 4px 12px rgba(13,55,129,0.25);
+          cursor:pointer;
+        }
+        .coverage-range::-moz-range-thumb{
+          width:16px;
+          height:16px;
+          border-radius:50%;
+          background:#fff;
+          border:5px solid var(--coverage-color);
+          box-shadow:0 4px 12px rgba(13,55,129,0.25);
+          cursor:pointer;
+        }
+        .coverage-map{
+          position:relative;
+          min-height:280px;
+          border-radius:14px;
           border:1px solid ${C.border};
-          border-radius:12px;
-          background:${C.bg};
+          overflow:hidden;
+          background:
+            linear-gradient(105deg, transparent 0 46%, rgba(21,101,192,0.28) 46% 49%, transparent 49% 100%),
+            linear-gradient(22deg, transparent 0 56%, rgba(21,101,192,0.18) 56% 58%, transparent 58% 100%),
+            linear-gradient(155deg, transparent 0 42%, rgba(100,116,139,0.18) 42% 43.3%, transparent 43.3% 100%),
+            linear-gradient(60deg, transparent 0 30%, rgba(100,116,139,0.14) 30% 31.2%, transparent 31.2% 100%),
+            linear-gradient(0deg, rgba(76,175,80,0.15), rgba(255,255,255,0.35)),
+            #EEF7F1;
+        }
+        .coverage-ring{
+          position:absolute;
+          left:50%;
+          top:50%;
+          border-radius:50%;
+          transform:translate(-50%, -50%);
+          pointer-events:none;
+        }
+        .coverage-home{
+          position:absolute;
+          left:50%;
+          top:50%;
+          transform:translate(-50%, -50%);
+          width:42px;
+          height:42px;
+          border-radius:50%;
+          background:linear-gradient(135deg, ${C.navy}, ${C.blue});
+          color:#fff;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          font-size:20px;
+          box-shadow:0 8px 24px rgba(13,55,129,0.35);
+          border:3px solid #fff;
+          z-index:4;
+        }
+        .coverage-label{
+          position:absolute;
+          padding:4px 8px;
+          border-radius:999px;
+          background:rgba(255,255,255,0.82);
+          color:${C.text};
+          font-size:10px;
+          font-weight:700;
+          box-shadow:0 2px 8px rgba(13,55,129,0.08);
+        }
+        .coverage-legend{
+          display:grid;
+          grid-template-columns:repeat(5, minmax(0, 1fr));
+          gap:8px;
+        }
+        .coverage-legend-item{
+          border-radius:10px;
+          padding:8px 9px;
+          font-size:10px;
+          color:${C.text};
+          background:#fff;
+          border:1px solid ${C.border};
+          min-width:0;
         }
         @media (max-width:980px){
           .pro-profile-layout{
@@ -310,8 +421,12 @@ export default function ProProfile() {
         }
         @media (max-width:640px){
           .pro-profile-grid,
-          .pro-radius-panel{
+          .coverage-control,
+          .coverage-legend{
             grid-template-columns:minmax(0, 1fr);
+          }
+          .coverage-map{
+            min-height:230px;
           }
           .pro-profile-card{
             padding:16px !important;
@@ -462,45 +577,128 @@ export default function ProProfile() {
               <div style={{ gridColumn: '1/-1' }}>
                 <label style={labelStyle}>Service radius ({form.serviceRadiusMiles} mi)</label>
                 <div className="pro-radius-panel">
-                  <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div
+                      style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: 10,
+                        background: coverageBand.bg,
+                        color: coverageBand.color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 18,
+                        flexShrink: 0,
+                      }}
+                    >
+                      ⌂
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>
+                        Base address
+                      </div>
+                      <div style={{ fontSize: 12, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {baseAddress || 'Add your professional address to center coverage'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="coverage-control">
+                    <div style={{ minWidth: 0 }}>
+                      <input
+                        className="coverage-range"
+                        type="range"
+                        min={5}
+                        max={50}
+                        step={5}
+                        value={form.serviceRadiusMiles}
+                        onChange={(e) =>
+                          setForm({ ...form, serviceRadiusMiles: Number(e.target.value) })
+                        }
+                        style={{ '--coverage-color': coverageBand.color } as React.CSSProperties}
+                      />
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          marginTop: 6,
+                          fontSize: 10,
+                          color: C.muted,
+                        }}
+                      >
+                        <span>5 mi</span>
+                        <span>10</span>
+                        <span>20</span>
+                        <span>30</span>
+                        <span>40</span>
+                        <span>50 mi</span>
+                      </div>
+                    </div>
                     <input
-                      type="range"
+                      type="number"
                       min={5}
                       max={50}
                       step={5}
                       value={form.serviceRadiusMiles}
                       onChange={(e) =>
-                        setForm({ ...form, serviceRadiusMiles: Number(e.target.value) })
+                        setForm({
+                          ...form,
+                          serviceRadiusMiles: Math.min(50, Math.max(5, Number(e.target.value) || 5)),
+                        })
                       }
-                      style={{ width: '100%', accentColor: C.green }}
+                      style={{ ...inputStyle, padding: '9px 8px', textAlign: 'center', fontWeight: 700, color: coverageBand.color }}
                     />
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        marginTop: 4,
-                        fontSize: 10,
-                        color: C.muted,
-                      }}
-                    >
-                      <span>5 mi</span>
-                      <span>50 mi</span>
-                    </div>
                   </div>
-                  <input
-                    type="number"
-                    min={5}
-                    max={50}
-                    step={5}
-                    value={form.serviceRadiusMiles}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        serviceRadiusMiles: Math.min(50, Math.max(5, Number(e.target.value) || 5)),
-                      })
-                    }
-                    style={{ ...inputStyle, padding: '9px 8px', textAlign: 'center' }}
-                  />
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '10px 12px',
+                      borderRadius: 12,
+                      background: coverageBand.bg,
+                      color: coverageBand.color,
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 800 }}>{coverageBand.label}</div>
+                      <div style={{ fontSize: 11, opacity: 0.8 }}>{coverageBand.tone}</div>
+                    </div>
+                    <div style={{ fontSize: 22, fontWeight: 900 }}>{clampedRadius} mi</div>
+                  </div>
+
+                  <div className="coverage-map">
+                    <div className="coverage-ring" style={{ width: '24%', aspectRatio: '1/1', background: 'rgba(22,163,74,0.42)', border: '2px solid rgba(21,128,61,0.75)', zIndex: 5 }} />
+                    <div className="coverage-ring" style={{ width: '40%', aspectRatio: '1/1', background: 'rgba(132,204,22,0.24)', border: '2px solid rgba(101,163,13,0.45)', zIndex: 4 }} />
+                    <div className="coverage-ring" style={{ width: '56%', aspectRatio: '1/1', background: 'rgba(250,204,21,0.2)', border: '2px solid rgba(202,138,4,0.42)', zIndex: 3 }} />
+                    <div className="coverage-ring" style={{ width: '72%', aspectRatio: '1/1', background: 'rgba(251,146,60,0.16)', border: '2px solid rgba(234,88,12,0.35)', zIndex: 2 }} />
+                    <div className="coverage-ring" style={{ width: '88%', aspectRatio: '1/1', background: 'rgba(239,68,68,0.1)', border: '2px solid rgba(220,38,38,0.28)', zIndex: 1 }} />
+                    <div className="coverage-ring" style={{ width: `${Math.max(24, coveragePercent * 0.64 + 24)}%`, aspectRatio: '1/1', border: `3px solid ${coverageBand.color}`, boxShadow: `0 0 0 999px rgba(255,255,255,0.24), 0 0 28px ${coverageBand.color}55`, zIndex: 6 }} />
+                    <div className="coverage-home">⌂</div>
+                    <span className="coverage-label" style={{ left: '53%', top: '29%' }}>Newark</span>
+                    <span className="coverage-label" style={{ left: '18%', top: '36%' }}>Hillsborough</span>
+                    <span className="coverage-label" style={{ left: '60%', top: '55%' }}>Old Bridge</span>
+                    <span className="coverage-label" style={{ left: '39%', top: '65%' }}>Princeton</span>
+                    <span className="coverage-label" style={{ left: '70%', top: '74%' }}>Long Branch</span>
+                  </div>
+
+                  <div className="coverage-legend">
+                    {[
+                      { label: '0-10 mi', text: 'Excellent', color: '#15803D', bg: '#DCFCE7' },
+                      { label: '11-20 mi', text: 'Good', color: '#65A30D', bg: '#ECFCCB' },
+                      { label: '21-30 mi', text: 'Medium', color: '#CA8A04', bg: '#FEF9C3' },
+                      { label: '31-40 mi', text: 'Low', color: '#EA580C', bg: '#FFEDD5' },
+                      { label: '41+ mi', text: 'Slowest', color: '#DC2626', bg: '#FEE2E2' },
+                    ].map((zone) => (
+                      <div key={zone.label} className="coverage-legend-item" style={{ background: zone.bg, borderColor: `${zone.color}33` }}>
+                        <div style={{ fontWeight: 800, color: zone.color }}>{zone.label}</div>
+                        <div style={{ color: C.muted, marginTop: 2 }}>{zone.text}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
