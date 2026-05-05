@@ -40,6 +40,42 @@ const LANGUAGES = [
   'Arabic',
 ];
 
+const GOOGLE_MAPS_KEY =
+  process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
+  process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY ||
+  '';
+
+let googleMapsPromise: Promise<any> | null = null;
+
+function loadGoogleMaps() {
+  if (typeof window === 'undefined') return Promise.reject(new Error('window unavailable'));
+
+  const win = window as any;
+  if (win.google?.maps) return Promise.resolve(win.google.maps);
+  if (!GOOGLE_MAPS_KEY) return Promise.reject(new Error('Google Maps key missing'));
+  if (googleMapsPromise) return googleMapsPromise;
+
+  googleMapsPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>('script[data-everclean-google-maps]');
+    if (existing) {
+      existing.addEventListener('load', () => resolve((window as any).google.maps), { once: true });
+      existing.addEventListener('error', () => reject(new Error('Google Maps failed to load')), { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_MAPS_KEY)}`;
+    script.async = true;
+    script.defer = true;
+    script.dataset.evercleanGoogleMaps = 'true';
+    script.onload = () => resolve((window as any).google.maps);
+    script.onerror = () => reject(new Error('Google Maps failed to load'));
+    document.head.appendChild(script);
+  });
+
+  return googleMapsPromise;
+}
+
 export default function ProProfile() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -49,6 +85,12 @@ export default function ProProfile() {
   const [message, setMessage] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const coverageMapRef = useRef<HTMLDivElement | null>(null);
+  const googleMapRef = useRef<any>(null);
+  const coverageMarkerRef = useRef<any>(null);
+  const coverageCircleRef = useRef<any>(null);
+  const coverageGeocoderRef = useRef<any>(null);
+  const [mapError, setMapError] = useState('');
 
   const [form, setForm] = useState({
     fullName: '',
@@ -132,6 +174,120 @@ export default function ProProfile() {
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
+
+  const clampedRadius = Math.min(50, Math.max(5, form.serviceRadiusMiles || 5));
+  const baseAddress = [form.address, form.city, form.state, form.zipCode].filter(Boolean).join(', ');
+  const mapQuery = encodeURIComponent(baseAddress || 'New Brunswick, NJ');
+  const mapsSearchUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
+  const profileLat = Number(profile?.lat);
+  const profileLng = Number(profile?.lng);
+  const hasProfileCoords = Number.isFinite(profileLat) && Number.isFinite(profileLng);
+  const fallbackCenter = { lat: 40.4862, lng: -74.4518 };
+  const coverageBand =
+    clampedRadius <= 10
+      ? { label: 'Excellent coverage', tone: 'Fastest response', color: '#15803D', bg: '#DCFCE7' }
+      : clampedRadius <= 20
+        ? { label: 'Good coverage', tone: 'Strong response window', color: '#65A30D', bg: '#ECFCCB' }
+        : clampedRadius <= 30
+          ? { label: 'Medium coverage', tone: 'Balanced travel time', color: '#CA8A04', bg: '#FEF9C3' }
+          : clampedRadius <= 40
+            ? { label: 'Low coverage', tone: 'Longer drive times', color: '#EA580C', bg: '#FFEDD5' }
+            : { label: 'Minimum priority', tone: 'Longest travel times', color: '#DC2626', bg: '#FEE2E2' };
+
+  const syncCoverageMap = useCallback(() => {
+    const map = googleMapRef.current;
+    const circle = coverageCircleRef.current;
+    if (!map || !circle) return;
+
+    circle.setRadius(clampedRadius * 1609.344);
+    circle.setOptions({
+      strokeColor: coverageBand.color,
+      fillColor: coverageBand.color,
+    });
+
+    const bounds = circle.getBounds?.();
+    if (bounds) map.fitBounds(bounds, 34);
+  }, [clampedRadius, coverageBand.color]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    loadGoogleMaps()
+      .then((maps) => {
+        if (cancelled || !coverageMapRef.current) return;
+
+        const map =
+          googleMapRef.current ||
+          new maps.Map(coverageMapRef.current, {
+            center: hasProfileCoords ? { lat: profileLat, lng: profileLng } : fallbackCenter,
+            zoom: 10,
+            clickableIcons: true,
+            fullscreenControl: true,
+            mapTypeControl: true,
+            mapTypeId: 'roadmap',
+            streetViewControl: false,
+          });
+
+        googleMapRef.current = map;
+        coverageGeocoderRef.current = coverageGeocoderRef.current || new maps.Geocoder();
+        coverageMarkerRef.current =
+          coverageMarkerRef.current ||
+          new maps.Marker({
+            map,
+            title: 'Base address',
+          });
+        coverageCircleRef.current =
+          coverageCircleRef.current ||
+          new maps.Circle({
+            map,
+            clickable: false,
+            fillOpacity: 0.2,
+            strokeOpacity: 0.95,
+            strokeWeight: 4,
+          });
+
+        const applyCenter = (center: { lat: number; lng: number }) => {
+          coverageMarkerRef.current.setPosition(center);
+          coverageCircleRef.current.setCenter(center);
+          map.setCenter(center);
+          setMapError('');
+          syncCoverageMap();
+        };
+
+        if (hasProfileCoords) {
+          applyCenter({ lat: profileLat, lng: profileLng });
+          return;
+        }
+
+        if (!baseAddress) {
+          applyCenter(fallbackCenter);
+          setMapError('Add your professional address to center coverage precisely.');
+          return;
+        }
+
+        coverageGeocoderRef.current.geocode({ address: baseAddress }, (results: any, status: string) => {
+          if (cancelled) return;
+          if (status === 'OK' && results?.[0]?.geometry?.location) {
+            const loc = results[0].geometry.location;
+            applyCenter({ lat: loc.lat(), lng: loc.lng() });
+          } else {
+            applyCenter(fallbackCenter);
+            setMapError('Unable to locate this address on Google Maps.');
+          }
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setMapError('Google Maps key is required for exact radius coverage.');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [baseAddress, hasProfileCoords, profileLat, profileLng]);
+
+  useEffect(() => {
+    syncCoverageMap();
+  }, [syncCoverageMap]);
 
   async function saveProfile() {
     setSaving(true);
@@ -236,24 +392,6 @@ export default function ProProfile() {
     .join('')
     .slice(0, 2)
     .toUpperCase();
-  const clampedRadius = Math.min(50, Math.max(5, form.serviceRadiusMiles || 5));
-  const baseAddress = [form.address, form.city, form.state, form.zipCode].filter(Boolean).join(', ');
-  const mapQuery = encodeURIComponent(baseAddress || 'New Brunswick, NJ');
-  const mapZoom = clampedRadius <= 10 ? 10 : clampedRadius <= 20 ? 9 : clampedRadius <= 40 ? 8 : 7;
-  const mapLatitude = Number(profile?.lat || 40.4862);
-  const metersPerPixel =
-    (156543.03392 * Math.cos((mapLatitude * Math.PI) / 180)) / 2 ** mapZoom;
-  const coverageDiameterPx = Math.round(((clampedRadius * 1609.344) / metersPerPixel) * 2);
-  const coverageBand =
-    clampedRadius <= 10
-      ? { label: 'Excellent coverage', tone: 'Fastest response', color: '#15803D', bg: '#DCFCE7' }
-      : clampedRadius <= 20
-        ? { label: 'Good coverage', tone: 'Strong response window', color: '#65A30D', bg: '#ECFCCB' }
-        : clampedRadius <= 30
-          ? { label: 'Medium coverage', tone: 'Balanced travel time', color: '#CA8A04', bg: '#FEF9C3' }
-          : clampedRadius <= 40
-            ? { label: 'Low coverage', tone: 'Longer drive times', color: '#EA580C', bg: '#FFEDD5' }
-            : { label: 'Minimum priority', tone: 'Longest travel times', color: '#DC2626', bg: '#FEE2E2' };
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
@@ -363,54 +501,25 @@ export default function ProProfile() {
           overflow:hidden;
           background:#E5E7EB;
         }
-        .coverage-map iframe{
+        .coverage-map-canvas{
           position:absolute;
           inset:0;
           width:100%;
           height:100%;
-          border:0;
         }
-        .coverage-active-circle{
+        .coverage-map-link{
           position:absolute;
-          left:50%;
-          top:50%;
-          transform:translate(-50%, -50%);
-          border-radius:50%;
-          pointer-events:none;
-          transition:width 0.25s ease, border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
-        }
-        .coverage-pin-overlay{
-          position:absolute;
-          left:50%;
-          top:50%;
-          transform:translate(-50%, -50%);
-          width:42px;
-          height:42px;
-          border-radius:50%;
-          background:linear-gradient(135deg, ${C.navy}, ${C.blue});
-          color:#fff;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          font-size:20px;
-          box-shadow:0 8px 24px rgba(13,55,129,0.35);
-          border:3px solid #fff;
-          z-index:8;
-          pointer-events:none;
-        }
-        .coverage-pin-overlay::after{
-          content:'';
-          position:absolute;
-          left:50%;
-          bottom:-9px;
-          width:14px;
-          height:14px;
-          background:${C.blue};
-          border-right:3px solid #fff;
-          border-bottom:3px solid #fff;
-          transform:translateX(-50%) rotate(45deg);
-          border-radius:0 0 4px 0;
-          z-index:-1;
+          top:10px;
+          left:10px;
+          z-index:9;
+          padding:7px 10px;
+          border-radius:8px;
+          background:rgba(255,255,255,0.94);
+          color:${C.blue};
+          font-size:11px;
+          font-weight:800;
+          text-decoration:none;
+          box-shadow:0 3px 12px rgba(13,55,129,0.14);
         }
         .coverage-map-note{
           position:absolute;
@@ -697,21 +806,13 @@ export default function ProProfile() {
                   </div>
 
                   <div className="coverage-map">
-                    <iframe
-                      title="Professional coverage map"
-                      loading="lazy"
-                      src={`https://maps.google.com/maps?q=${mapQuery}&output=embed&z=${mapZoom}`}
-                    />
-                    <div className="coverage-active-circle" style={{
-                      width: `min(${coverageDiameterPx}px, 92%)`,
-                      aspectRatio: '1/1',
-                      border: `4px solid ${coverageBand.color}`,
-                      background: `${coverageBand.color}24`,
-                      boxShadow: `0 0 0 999px rgba(255,255,255,0.18), 0 0 30px ${coverageBand.color}55`,
-                      zIndex: 6,
-                    }} />
-                    <div className="coverage-pin-overlay">⌂</div>
-                    <div className="coverage-map-note">Coverage starts at your base address</div>
+                    <div ref={coverageMapRef} className="coverage-map-canvas" />
+                    <a className="coverage-map-link" href={mapsSearchUrl} target="_blank" rel="noreferrer">
+                      Open in Maps
+                    </a>
+                    <div className="coverage-map-note">
+                      {mapError || `${clampedRadius} mi radius from your base address`}
+                    </div>
                   </div>
 
                   <div className="coverage-legend">
