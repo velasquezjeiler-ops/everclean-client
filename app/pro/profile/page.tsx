@@ -237,10 +237,13 @@ export default function ProProfile() {
     .slice(0, 2)
     .toUpperCase();
   const clampedRadius = Math.min(50, Math.max(5, form.serviceRadiusMiles || 5));
-  const coveragePercent = ((clampedRadius - 5) / 45) * 100;
   const baseAddress = [form.address, form.city, form.state, form.zipCode].filter(Boolean).join(', ');
   const mapQuery = encodeURIComponent(baseAddress || 'New Brunswick, NJ');
-  const mapZoom = clampedRadius <= 10 ? 11 : clampedRadius <= 20 ? 10 : clampedRadius <= 30 ? 9 : 8;
+  const mapZoom = clampedRadius <= 10 ? 10 : clampedRadius <= 20 ? 9 : clampedRadius <= 40 ? 8 : 7;
+  const mapLatitude = Number(profile?.lat || 40.4862);
+  const metersPerPixel =
+    (156543.03392 * Math.cos((mapLatitude * Math.PI) / 180)) / 2 ** mapZoom;
+  const coverageDiameterPx = Math.round(((clampedRadius * 1609.344) / metersPerPixel) * 2);
   const coverageBand =
     clampedRadius <= 10
       ? { label: 'Excellent coverage', tone: 'Fastest response', color: '#15803D', bg: '#DCFCE7' }
@@ -700,7 +703,7 @@ export default function ProProfile() {
                       src={`https://maps.google.com/maps?q=${mapQuery}&output=embed&z=${mapZoom}`}
                     />
                     <div className="coverage-active-circle" style={{
-                      width: `${Math.max(24, coveragePercent * 0.74 + 24)}%`,
+                      width: `min(${coverageDiameterPx}px, 92%)`,
                       aspectRatio: '1/1',
                       border: `4px solid ${coverageBand.color}`,
                       background: `${coverageBand.color}24`,
