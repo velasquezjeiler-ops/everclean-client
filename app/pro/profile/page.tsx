@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 
@@ -175,7 +175,7 @@ export default function ProProfile() {
     loadProfile();
   }, [loadProfile]);
 
-  const clampedRadius = Math.min(50, Math.max(5, form.serviceRadiusMiles || 5));
+  const clampedRadius = Math.min(50, Math.max(0, form.serviceRadiusMiles || 0));
   const baseAddress = [form.address, form.city, form.state, form.zipCode].filter(Boolean).join(', ');
   const mapQuery = encodeURIComponent(baseAddress || 'New Brunswick, NJ');
   const mapsSearchUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
@@ -618,7 +618,7 @@ export default function ProProfile() {
               opacity: 0.6,
             }}
           >
-            ✕
+            âœ•
           </button>
         </div>
       )}
@@ -736,7 +736,7 @@ export default function ProProfile() {
                         flexShrink: 0,
                       }}
                     >
-                      ⌂
+                      âŒ‚
                     </div>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>
@@ -753,10 +753,10 @@ export default function ProProfile() {
                       <input
                         className="coverage-range"
                         type="range"
-                        min={5}
+                        min={0}
                         max={50}
                         step={1}
-                        value={form.serviceRadiusMiles}
+                        value={clampedRadius}
                         onChange={(e) =>
                           setForm({ ...form, serviceRadiusMiles: Number(e.target.value) })
                         }
@@ -771,7 +771,7 @@ export default function ProProfile() {
                           color: C.muted,
                         }}
                       >
-                        <span>5 mi</span>
+                        <span>0 mi</span>
                         <span>10</span>
                         <span>20</span>
                         <span>30</span>
@@ -781,14 +781,14 @@ export default function ProProfile() {
                     </div>
                     <input
                       type="number"
-                      min={5}
-                      max={50}
-                      step={1}
-                      value={form.serviceRadiusMiles}
+                      min={0}
+                        max={50}
+                        step={1}
+                        value={clampedRadius}
                       onChange={(e) =>
                         setForm({
                           ...form,
-                          serviceRadiusMiles: Math.min(50, Math.max(5, Number(e.target.value) || 5)),
+                          serviceRadiusMiles: Math.min(50, Math.max(0, Number(e.target.value) || 0)),
                         })
                       }
                       style={{ ...inputStyle, padding: '9px 8px', textAlign: 'center', fontWeight: 700, color: coverageBand.color }}
@@ -831,7 +831,7 @@ export default function ProProfile() {
                     <div className="coverage-map-note">
                       {hasGoogleMapsKey
                         ? mapError || `${clampedRadius} mi radius from your base address`
-                        : 'Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY for exact radius overlay'}
+                        : 'NEXT_PUBLIC_GOOGLE_MAPS_API_KEY missing in this Vercel build'}
                     </div>
                   </div>
 
@@ -893,7 +893,7 @@ export default function ProProfile() {
                     }}
                     className="pro-profile-chip"
                   >
-                    {selected ? '✓ ' : ''}
+                    {selected ? 'âœ“ ' : ''}
                     {svc}
                   </button>
                 );
@@ -940,7 +940,7 @@ export default function ProProfile() {
                     }}
                     className="pro-profile-chip"
                   >
-                    {selected ? '✓ ' : ''}
+                    {selected ? 'âœ“ ' : ''}
                     {lang}
                   </button>
                 );
@@ -1064,7 +1064,7 @@ export default function ProProfile() {
                 }}
               >
                 <span style={{ color: C.warning, fontSize: 13 }}>
-                  {'★'.repeat(Math.round(rating))}
+                  {'â˜…'.repeat(Math.round(rating))}
                 </span>
                 <span style={{ fontSize: 12, color: C.muted }}>{rating.toFixed(1)}</span>
               </div>
@@ -1206,7 +1206,7 @@ export default function ProProfile() {
                 }}
               >
                 <span style={{ fontSize: 13, color: v.done ? C.green : C.warning }}>
-                  {v.done ? '✓' : '⏳'}
+                  {v.done ? 'âœ“' : 'â³'}
                 </span>
                 <span style={{ fontSize: 12, color: v.done ? C.text : C.muted }}>
                   {v.label}
@@ -1235,3 +1235,4 @@ export default function ProProfile() {
     </div>
   );
 }
+
