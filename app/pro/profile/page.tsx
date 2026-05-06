@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 
@@ -221,7 +221,7 @@ export default function ProProfile() {
         const map =
           googleMapRef.current ||
           new maps.Map(coverageMapRef.current, {
-            center: hasProfileCoords ? { lat: profileLat, lng: profileLng } : fallbackCenter,
+            center: fallbackCenter,
             zoom: 10,
             clickableIcons: true,
             fullscreenControl: true,
@@ -256,27 +256,30 @@ export default function ProProfile() {
           syncCoverageMap();
         };
 
+        if (baseAddress) {
+          coverageGeocoderRef.current.geocode({ address: baseAddress }, (results: any, status: string) => {
+            if (cancelled) return;
+            if (status === 'OK' && results?.[0]?.geometry?.location) {
+              const loc = results[0].geometry.location;
+              applyCenter({ lat: loc.lat(), lng: loc.lng() });
+            } else if (hasProfileCoords) {
+              applyCenter({ lat: profileLat, lng: profileLng });
+              setMapError('Using saved coordinates. Verify your base address.');
+            } else {
+              applyCenter(fallbackCenter);
+              setMapError('Unable to locate this address on Google Maps.');
+            }
+          });
+          return;
+        }
+
         if (hasProfileCoords) {
           applyCenter({ lat: profileLat, lng: profileLng });
           return;
         }
 
-        if (!baseAddress) {
-          applyCenter(fallbackCenter);
-          setMapError('Add your professional address to center coverage precisely.');
-          return;
-        }
-
-        coverageGeocoderRef.current.geocode({ address: baseAddress }, (results: any, status: string) => {
-          if (cancelled) return;
-          if (status === 'OK' && results?.[0]?.geometry?.location) {
-            const loc = results[0].geometry.location;
-            applyCenter({ lat: loc.lat(), lng: loc.lng() });
-          } else {
-            applyCenter(fallbackCenter);
-            setMapError('Unable to locate this address on Google Maps.');
-          }
-        });
+        applyCenter(fallbackCenter);
+        setMapError('Add your professional address to center coverage precisely.');
       })
       .catch(() => {
         if (!cancelled) setMapError('Google Maps key is required for exact radius coverage.');
@@ -618,7 +621,7 @@ export default function ProProfile() {
               opacity: 0.6,
             }}
           >
-            âœ•
+            x
           </button>
         </div>
       )}
@@ -736,7 +739,7 @@ export default function ProProfile() {
                         flexShrink: 0,
                       }}
                     >
-                      âŒ‚
+                      Home
                     </div>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>
@@ -893,7 +896,7 @@ export default function ProProfile() {
                     }}
                     className="pro-profile-chip"
                   >
-                    {selected ? 'âœ“ ' : ''}
+                    {selected ? 'Selected: ' : ''}
                     {svc}
                   </button>
                 );
@@ -940,7 +943,7 @@ export default function ProProfile() {
                     }}
                     className="pro-profile-chip"
                   >
-                    {selected ? 'âœ“ ' : ''}
+                    {selected ? 'Selected: ' : ''}
                     {lang}
                   </button>
                 );
@@ -1064,7 +1067,7 @@ export default function ProProfile() {
                 }}
               >
                 <span style={{ color: C.warning, fontSize: 13 }}>
-                  {'â˜…'.repeat(Math.round(rating))}
+                  {`${rating.toFixed(1)} stars`}
                 </span>
                 <span style={{ fontSize: 12, color: C.muted }}>{rating.toFixed(1)}</span>
               </div>
@@ -1206,7 +1209,7 @@ export default function ProProfile() {
                 }}
               >
                 <span style={{ fontSize: 13, color: v.done ? C.green : C.warning }}>
-                  {v.done ? 'âœ“' : 'â³'}
+                  {v.done ? 'Done' : 'Pending'}
                 </span>
                 <span style={{ fontSize: 12, color: v.done ? C.text : C.muted }}>
                   {v.label}
@@ -1235,4 +1238,5 @@ export default function ProProfile() {
     </div>
   );
 }
+
 
