@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
 const API =
@@ -20,226 +20,137 @@ const C = {
   danger: '#DC2626',
 };
 
-const IC = {
-  ETA: (p: any) => (
-    <svg width={p.s || 16} height={p.s || 16} viewBox="0 0 24 24" fill="none">
-      <path d="M3 12h18M15 6l6 6-6 6" stroke={p.c || '#fff'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
-  Check: (p: any) => (
-    <svg width={p.s || 16} height={p.s || 16} viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="9" stroke={p.c || '#fff'} strokeWidth="1.8" />
-      <path d="M9 12l2 2 4-4" stroke={p.c || '#fff'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
-  Clock: (p: any) => (
-    <svg width={p.s || 13} height={p.s || 13} viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="9" stroke={p.c || C.muted} strokeWidth="1.8" />
-      <path d="M12 7v5l3 3" stroke={p.c || C.muted} strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  ),
-  Dollar: (p: any) => (
-    <svg width={p.s || 14} height={p.s || 14} viewBox="0 0 24 24" fill="none">
-      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke={p.c || C.green} strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  ),
-  Sqft: (p: any) => (
-    <svg width={p.s || 13} height={p.s || 13} viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="3" width="18" height="18" rx="2" stroke={p.c || C.muted} strokeWidth="1.8" />
-      <path d="M3 9h18M9 3v18" stroke={p.c || C.muted} strokeWidth="1.2" />
-    </svg>
-  ),
+const STATUS: Record<string, { label: string; bg: string; color: string; dot: string; note: string }> = {
+  PENDING_ASSIGNMENT: { label: 'Finding Cleaner', bg: '#FEF3C7', color: '#92400E', dot: C.warning, note: 'Matching professional' },
+  CONFIRMED: { label: 'Confirmed', bg: '#DBEAFE', color: '#1E40AF', dot: '#3B82F6', note: 'Professional assigned' },
+  IN_PROGRESS: { label: 'In Progress', bg: '#EDE9FE', color: '#5B21B6', dot: '#8B5CF6', note: 'Service in progress' },
+  COMPLETED: { label: 'Completed', bg: '#D1FAE5', color: '#065F46', dot: C.green, note: 'Service completed' },
+  CANCELLED: { label: 'Cancelled', bg: '#FEE2E2', color: '#991B1B', dot: C.danger, note: 'Cancelled' },
 };
 
-const STATUS: Record<string, { label: string; bg: string; color: string; dot: string }> = {
-  PENDING_ASSIGNMENT: { label: 'Pending', bg: '#FEF3C7', color: '#92400E', dot: '#F59E0B' },
-  CONFIRMED: { label: 'Confirmed', bg: '#DBEAFE', color: '#1E40AF', dot: '#3B82F6' },
-  IN_PROGRESS: { label: 'In Progress', bg: '#EDE9FE', color: '#5B21B6', dot: '#8B5CF6' },
-  COMPLETED: { label: 'Completed', bg: '#D1FAE5', color: '#065F46', dot: C.green },
-  CANCELLED: { label: 'Cancelled', bg: '#FEE2E2', color: '#991B1B', dot: C.danger },
+const SERVICE_LABELS: Record<string, string> = {
+  HOUSE_CLEANING: 'House Cleaning',
+  DEEP_CLEANING: 'Deep Cleaning',
+  MOVE_IN_OUT: 'Move In / Out',
+  SAME_DAY_CLEANING: 'Same Day Cleaning',
+  OFFICE_CLEANING: 'Office Cleaning',
+  POST_CONSTRUCTION: 'Post Construction',
+  MEDICAL_CLEANING: 'Medical / Clinical',
+  CARPET_CLEANING: 'Carpet Cleaning',
+  WINDOW_CLEANING: 'Window Cleaning',
+  ORGANIZING: 'Organizing',
+  CAR_WASH: 'Car Wash',
+  LAUNDRY_PICKUP: 'Laundry',
 };
 
-const SVC: Record<string, string> = {
-  HOUSE_CLEANING: '🏠',
-  DEEP_CLEANING: '✨',
-  MOVE_IN_OUT: '📦',
-  SAME_DAY_CLEANING: '⚡',
-  OFFICE_CLEANING: '🏢',
-  POST_CONSTRUCTION: '🔨',
-  MEDICAL_CLEANING: '🏥',
-  CARPET_CLEANING: '🛋',
-  WINDOW_CLEANING: '🪟',
-  ORGANIZING: '📋',
-  CAR_WASH: '🚗',
-  LAUNDRY_PICKUP: '👕',
-  DRY_CLEANING: '👔',
-};
-
-function calculatedSqft(job: any) {
-  const value =
-    job.sqft_used ??
-    job.calculated_sqft ??
-    job.square_feet ??
-    job.sqftUsed ??
-    job.sqft;
-
-  const n = Number(value);
-  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+function greetingForNow() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
 }
 
-function estimatedHoursFromJob(job: any) {
-  const direct =
-    job.estimated_hours ??
-    job.estimatedHours ??
-    job.duration_hours ??
-    job.durationHours ??
-    job.hours;
+function serviceName(value: string) {
+  return SERVICE_LABELS[value] || String(value || 'Service').replace(/_/g, ' ');
+}
 
-  const directNumber = Number(direct);
-  if (Number.isFinite(directNumber) && directNumber > 0) {
-    return Math.round(directNumber * 10) / 10;
-  }
+function bookingAddress(booking: any) {
+  return [booking?.address, booking?.city, booking?.state].filter(Boolean).join(', ');
+}
 
-  const sqft = calculatedSqft(job);
-  if (!sqft) return null;
-  if (sqft <= 1000) return 2;
-  if (sqft <= 2000) return 3;
-  if (sqft <= 3500) return 4;
-  return 5;
+function bookingDate(booking: any) {
+  if (!booking?.scheduled_at) return 'Schedule pending';
+  const d = new Date(booking.scheduled_at);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+    ' at ' +
+    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function bookingAmount(booking: any) {
+  const amount = Number(booking?.client_price || booking?.total_amount || booking?.price || 0);
+  return Number.isFinite(amount) && amount > 0 ? amount : 0;
 }
 
 function StatusBadge({ status }: { status: string }) {
   const s = STATUS[status] || STATUS.PENDING_ASSIGNMENT;
-
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: s.bg, color: s.color, padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
-      <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.dot, display: 'inline-block' }} />
+    <span className="client-status-badge" style={{ background: s.bg, color: s.color }}>
+      <span style={{ background: s.dot }} />
       {s.label}
     </span>
   );
 }
 
-function CalendarStrip({ jobs }: { jobs: any[] }) {
+function CalendarStrip({ bookings }: { bookings: any[] }) {
   const [selected, setSelected] = useState(new Date().toISOString().split('T')[0]);
   const today = new Date();
-
   const days = Array.from({ length: 14 }, (_, i) => {
     const d = new Date(today);
     d.setDate(today.getDate() + i - 2);
     return d;
   });
 
-  const hasJob = (d: Date) =>
-    jobs.some((j) => j.scheduled_at && new Date(j.scheduled_at).toDateString() === d.toDateString());
-
-  const dayJobs = jobs.filter((j) => {
-    if (!j.scheduled_at) return false;
-    return new Date(j.scheduled_at).toISOString().split('T')[0] === selected;
+  const dayBookings = bookings.filter((booking) => {
+    if (!booking.scheduled_at) return false;
+    return new Date(booking.scheduled_at).toISOString().split('T')[0] === selected;
   });
 
   return (
-    <div>
-      <div style={{ overflowX: 'auto', paddingBottom: 6 }}>
-        <div style={{ display: 'flex', gap: 6, minWidth: 'max-content' }}>
-          {days.map((d) => {
-            const key = d.toISOString().split('T')[0];
-            const isToday = d.toDateString() === today.toDateString();
-            const isSel = key === selected;
-            const busy = hasJob(d);
-
-            return (
-              <button
-                key={key}
-                onClick={() => setSelected(key)}
-                type="button"
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  padding: '8px 11px',
-                  borderRadius: 12,
-                  border: 'none',
-                  cursor: 'pointer',
-                  minWidth: 52,
-                  background: isSel ? `linear-gradient(135deg, ${C.navy}, ${C.blue})` : isToday ? `${C.blue}15` : C.bg,
-                  boxShadow: isSel ? '0 4px 12px rgba(13,55,129,0.3)' : 'none',
-                }}
-              >
-                <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', color: isSel ? 'rgba(255,255,255,0.75)' : C.muted }}>
-                  {d.toLocaleDateString('en', { weekday: 'short' })}
-                </span>
-                <span style={{ fontSize: 17, fontWeight: 900, color: isSel ? '#fff' : isToday ? C.blue : C.text, marginTop: 2 }}>
-                  {d.getDate()}
-                </span>
-                <div style={{ width: 5, height: 5, borderRadius: '50%', background: busy ? (isSel ? '#fff' : C.green) : 'transparent', marginTop: 3 }} />
-              </button>
-            );
-          })}
-        </div>
+    <div className="client-schedule-card">
+      <div className="client-section-title">Schedule</div>
+      <div className="client-calendar-strip">
+        {days.map((d) => {
+          const key = d.toISOString().split('T')[0];
+          const active = key === selected;
+          const hasBooking = bookings.some((b) => b.scheduled_at && new Date(b.scheduled_at).toDateString() === d.toDateString());
+          return (
+            <button key={key} type="button" onClick={() => setSelected(key)} className={active ? 'active' : ''}>
+              <span>{d.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+              <strong>{d.getDate()}</strong>
+              <i style={{ opacity: hasBooking ? 1 : 0 }} />
+            </button>
+          );
+        })}
       </div>
 
-      {dayJobs.length > 0 ? (
-        <div style={{ marginTop: 10, padding: '10px 12px', background: `${C.green}10`, border: `1px solid ${C.green}25`, borderRadius: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: C.greenDk, marginBottom: 6 }}>
-            {dayJobs.length} job{dayJobs.length > 1 ? 's' : ''} · {new Date(selected + 'T12:00:00').toLocaleDateString('en', { month: 'long', day: 'numeric' })}
-          </div>
-
-          {dayJobs.map((j) => {
-            const sqft = calculatedSqft(j);
-            const hours = estimatedHoursFromJob(j);
-
-            return (
-              <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderTop: `1px solid ${C.green}20` }}>
-                <span style={{ fontSize: 14 }}>{SVC[j.service_type] || '🧹'}</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: C.text }}>{(j.service_type || '').replace(/_/g, ' ')}</div>
-                  <div style={{ fontSize: 10, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {j.address}
-                    {sqft ? ` · ${sqft} sqft` : ''}
-                    {hours ? ` · ${hours}h estimated` : ''}
-                  </div>
-                </div>
-                <StatusBadge status={j.status} />
-              </div>
-            );
-          })}
+      {dayBookings.length > 0 ? (
+        <div className="client-day-list">
+          {dayBookings.map((booking) => (
+            <div key={booking.id}>
+              <strong>{serviceName(booking.service_type)}</strong>
+              <span>{bookingAddress(booking) || STATUS[booking.status]?.note || 'Service scheduled'}</span>
+              <StatusBadge status={booking.status} />
+            </div>
+          ))}
         </div>
       ) : (
-        <div style={{ textAlign: 'center', padding: '10px 0', color: C.muted, fontSize: 12 }}>
-          No jobs on this date
-        </div>
+        <p className="client-empty-line">No services on this date</p>
       )}
     </div>
   );
 }
 
-export default function ProDashboard() {
-  const [jobs, setJobs] = useState<any[]>([]);
+export default function ClientDashboard() {
+  const [bookings, setBookings] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [acting, setActing] = useState<string | null>(null);
-  const [etaData, setEtaData] = useState<Record<string, any>>({});
-  const [isAvailable, setIsAvailable] = useState(false);
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
   const [lastBookingId, setLastBookingId] = useState('');
 
   const load = useCallback(async () => {
     const token = localStorage.getItem('token') || '';
-
     try {
-      const [jR, pR] = await Promise.all([
-        fetch(API + '/professionals/me/bookings', { headers: { Authorization: 'Bearer ' + token } }),
-        fetch(API + '/professionals/me', { headers: { Authorization: 'Bearer ' + token } }),
+      const [bookingsRes, meRes] = await Promise.all([
+        fetch(API + '/bookings', { headers: { Authorization: 'Bearer ' + token } }),
+        fetch(API + '/auth/me', { headers: { Authorization: 'Bearer ' + token } }).catch(() => null),
       ]);
 
-      const jD = await jR.json();
-      const pD = await pR.json();
-
-      setJobs(Array.isArray(jD.data) ? jD.data : []);
-      setProfile(pD);
-      setIsAvailable(pD.is_available ?? false);
+      const bookingsData = await bookingsRes.json();
+      const meData = meRes ? await meRes.json().catch(() => null) : null;
+      setBookings(Array.isArray(bookingsData.data) ? bookingsData.data : []);
+      setProfile(meData);
     } catch {
-      setJobs([]);
+      setBookings([]);
     } finally {
       setLoading(false);
     }
@@ -250,283 +161,153 @@ export default function ProDashboard() {
   }, [load]);
 
   useEffect(() => {
-    const bookedQuery = 'booked=1';
     const params = new URLSearchParams(window.location.search);
-    if (window.location.search.includes(bookedQuery) || params.get('booked') === '1') {
+    if (params.get('booked') === '1') {
       setBookingConfirmed(true);
       setLastBookingId(localStorage.getItem('last_booking_id') || '');
     }
   }, []);
 
-  async function fetchETA(id: string) {
-    const token = localStorage.getItem('token') || '';
-    const res = await fetch(API + '/bookings/' + id + '/eta', {
-      headers: { Authorization: 'Bearer ' + token },
-    });
-
-    if (res.ok) {
-      const d = await res.json();
-      setEtaData((p) => ({ ...p, [id]: d }));
-    }
-  }
-
-  async function doAction(id: string, action: string) {
-    setActing(id);
-    const token = localStorage.getItem('token') || '';
-
-    await fetch(API + '/bookings/' + id + '/' + action, {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + token },
-    });
-
-    await load();
-    setActing(null);
-  }
-
-  async function toggleAvail() {
-    const token = localStorage.getItem('token') || '';
-
-    await fetch(API + '/professionals/me/availability', {
-      method: 'PATCH',
-      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isAvailable: !isAvailable }),
-    });
-
-    setIsAvailable(!isAvailable);
-  }
-
-  const myJobs = jobs.filter((j) => ['CONFIRMED', 'IN_PROGRESS'].includes(j.status));
-  const active = myJobs;
-  const completed = jobs.filter((j) => j.status === 'COMPLETED');
-  const proName = profile?.full_name || profile?.fullName || 'Professional';
-  const hourlyRate = Number(profile?.hourly_rate || profile?.hourlyRate || 18);
-
-  function calcPayout(job: any) {
-    const hours = Number(job.hours || estimatedHoursFromJob(job) || 2);
-    const byRate = hourlyRate * hours;
-    const cap = Number(job.client_price || 0) * 0.55;
-
-    return cap > 0 ? Math.min(byRate, cap) : byRate;
-  }
-
-  const earnings = completed.reduce((s, j) => s + calcPayout(j), 0);
+  const activeBookings = useMemo(
+    () => bookings.filter((b) => !['COMPLETED', 'CANCELLED'].includes(b.status)),
+    [bookings]
+  );
+  const completedBookings = useMemo(
+    () => bookings.filter((b) => b.status === 'COMPLETED'),
+    [bookings]
+  );
+  const totalSpent = completedBookings.reduce((sum, booking) => sum + bookingAmount(booking), 0);
+  const nextServices = [...activeBookings].sort((a, b) => {
+    const aTime = a.scheduled_at ? new Date(a.scheduled_at).getTime() : Number.MAX_SAFE_INTEGER;
+    const bTime = b.scheduled_at ? new Date(b.scheduled_at).getTime() : Number.MAX_SAFE_INTEGER;
+    return aTime - bTime;
+  });
+  const clientName = profile?.name || profile?.fullName || profile?.full_name || profile?.email?.split('@')[0] || 'Client';
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
-        <div style={{ width: 40, height: 40, border: `3px solid ${C.border}`, borderTopColor: C.green, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <div className="client-loading">
+        <div />
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     );
   }
 
   return (
-    <div style={{ width: '100%', fontFamily: 'Poppins, sans-serif' }}>
+    <div className="client-dashboard-page">
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-
-        .pro-dashboard-stats {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 12px;
-          margin-bottom: 20px;
-        }
-
+        .client-dashboard-page { width: 100%; font-family: Poppins, DM Sans, system-ui, sans-serif; }
+        .client-loading { display: flex; align-items: center; justify-content: center; min-height: 60vh; }
+        .client-loading div { width: 40px; height: 40px; border: 3px solid ${C.border}; border-top-color: ${C.blue}; border-radius: 50%; animation: spin .8s linear infinite; }
+        .client-dashboard-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+        .client-dashboard-header h1 { color: ${C.text}; font-size: 26px; line-height: 1.1; margin: 0; font-weight: 900; }
+        .client-dashboard-header p { color: ${C.muted}; font-size: 13px; margin: 5px 0 0; }
+        .client-primary-action { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 18px; border-radius: 999px; background: linear-gradient(135deg, ${C.navy}, ${C.blue}); color: #fff; text-decoration: none; font-size: 12px; font-weight: 900; box-shadow: 0 8px 20px rgba(13,55,129,.18); white-space: nowrap; }
+        .client-confirm-banner { margin-bottom: 16px; padding: 12px 14px; border-radius: 13px; background: #D1FAE5; color: ${C.greenDk}; border: 1px solid rgba(76,175,80,.25); font-size: 13px; font-weight: 800; }
+        .client-stats-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+        .client-stat-card { border-radius: 16px; padding: 18px 16px; color: #fff; box-shadow: 0 4px 20px rgba(13,55,129,.16); position: relative; overflow: hidden; min-height: 110px; }
+        .client-stat-card::after { content: ''; position: absolute; top: -18px; right: -18px; width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,.1); }
+        .client-stat-card strong { display: block; font-size: 31px; line-height: 1; font-weight: 900; margin-top: 18px; }
+        .client-stat-card span { display: block; font-size: 11px; font-weight: 700; opacity: .82; margin-top: 6px; }
+        .client-card { background: #fff; border: 1px solid ${C.border}; border-radius: 16px; padding: 18px; box-shadow: 0 2px 12px rgba(13,55,129,.06); margin-bottom: 16px; }
+        .client-section-title { color: ${C.text}; font-size: 15px; font-weight: 900; margin-bottom: 14px; }
+        .client-schedule-card { background: #fff; border: 1px solid ${C.border}; border-radius: 16px; padding: 18px; box-shadow: 0 2px 12px rgba(13,55,129,.06); margin-bottom: 16px; }
+        .client-calendar-strip { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 8px; }
+        .client-calendar-strip button { min-width: 54px; border: 0; border-radius: 13px; padding: 9px 10px; background: ${C.bg}; color: ${C.text}; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
+        .client-calendar-strip button.active { background: linear-gradient(135deg, ${C.navy}, ${C.blue}); color: #fff; box-shadow: 0 6px 14px rgba(13,55,129,.22); }
+        .client-calendar-strip span { font-size: 9px; font-weight: 800; text-transform: uppercase; opacity: .72; }
+        .client-calendar-strip strong { font-size: 18px; font-weight: 900; margin-top: 2px; }
+        .client-calendar-strip i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin-top: 4px; }
+        .client-day-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .client-day-list div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; background: ${C.bg}; border-radius: 12px; padding: 10px 12px; }
+        .client-day-list strong { font-size: 12px; color: ${C.text}; }
+        .client-day-list span:not(.client-status-badge):not(.client-status-badge span) { font-size: 11px; color: ${C.muted}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .client-status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 900; white-space: nowrap; }
+        .client-status-badge span { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+        .client-empty-line { text-align: center; color: ${C.muted}; font-size: 12px; margin: 8px 0 0; }
+        .client-services-list { display: flex; flex-direction: column; gap: 12px; }
+        .client-service-card { border: 1px solid ${C.border}; border-radius: 14px; background: ${C.bg}; padding: 14px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+        .client-service-card h3 { margin: 0 0 5px; color: ${C.text}; font-size: 14px; font-weight: 900; }
+        .client-service-card p { margin: 0; color: ${C.muted}; font-size: 12px; line-height: 1.5; }
+        .client-service-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .client-service-meta span { display: inline-flex; padding: 4px 9px; border-radius: 8px; border: 1px solid ${C.border}; background: #fff; color: ${C.muted}; font-size: 11px; font-weight: 700; }
+        .client-service-price { color: ${C.greenDk}; font-size: 15px; font-weight: 900; text-align: right; white-space: nowrap; }
+        .client-empty-state { text-align: center; padding: 44px 16px; }
+        .client-empty-state div { font-size: 34px; font-weight: 900; color: ${C.blue}; margin-bottom: 10px; }
+        .client-empty-state h3 { margin: 0 0 6px; color: ${C.text}; font-size: 17px; font-weight: 900; }
+        .client-empty-state p { margin: 0 0 18px; color: ${C.muted}; font-size: 13px; }
         @media (max-width: 760px) {
-          .pro-dashboard-header {
-            flex-direction: column;
-            align-items: stretch !important;
-          }
-
-          .pro-dashboard-stats {
-            grid-template-columns: 1fr;
-          }
+          .client-dashboard-header { align-items: stretch; flex-direction: column; }
+          .client-stats-row { grid-template-columns: 1fr; }
+          .client-service-card { grid-template-columns: 1fr; }
+          .client-service-price { text-align: left; }
         }
       `}</style>
 
       {bookingConfirmed && (
-        <div style={{ marginBottom: 16, padding: '12px 14px', borderRadius: 12, background: '#D1FAE5', color: C.greenDk, border: `1px solid ${C.green}40`, fontSize: 13, fontWeight: 700 }}>
+        <div className="client-confirm-banner">
           Booking confirmed! A professional will be assigned soon.
-          {lastBookingId && <span style={{ fontWeight: 600 }}> ID: {lastBookingId}</span>}
+          {lastBookingId && <span> ID: {lastBookingId}</span>}
         </div>
       )}
 
-      <div className="pro-dashboard-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 20 }}>
+      <div className="client-dashboard-header">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 900, color: C.text, margin: 0 }}>
-            Good morning, {proName.split(' ')[0]}
-          </h1>
-          <p style={{ color: C.muted, fontSize: 13, margin: '4px 0 0' }}>
-            Here's your schedule overview
-          </p>
+          <h1>{greetingForNow()}, {clientName.split(' ')[0]}</h1>
+          <p>Track your active services, assigned professionals and booking history.</p>
         </div>
-
-        <button
-          onClick={toggleAvail}
-          type="button"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 7,
-            padding: '9px 18px',
-            borderRadius: 999,
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: 12,
-            fontWeight: 800,
-            background: isAvailable ? `linear-gradient(135deg, ${C.green}, ${C.greenDk})` : 'rgba(100,116,139,0.15)',
-            color: isAvailable ? '#fff' : C.muted,
-            boxShadow: isAvailable ? '0 4px 12px rgba(76,175,80,0.35)' : 'none',
-          }}
-        >
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: isAvailable ? '#fff' : C.muted, display: 'inline-block' }} />
-          {isAvailable ? 'Available' : 'Go Available'}
-        </button>
+        <Link href="/dashboard/new-booking" className="client-primary-action">Book a Service</Link>
       </div>
 
-      <div className="pro-dashboard-stats">
-        {[
-          { label: 'Total Earnings', val: `$${earnings.toFixed(0)}`, gradient: `linear-gradient(135deg, ${C.green}, ${C.greenDk})`, icon: '💰' },
-          { label: 'Active Jobs', val: active.length, gradient: `linear-gradient(135deg, ${C.blue}, ${C.navy})`, icon: '⚡' },
-          { label: 'Completed', val: completed.length, gradient: 'linear-gradient(135deg, #7C3AED, #5B21B6)', icon: '✅' },
-        ].map((s) => (
-          <div key={s.label} style={{ background: s.gradient, borderRadius: 16, padding: '18px 16px', color: '#fff', boxShadow: '0 4px 20px rgba(13,55,129,0.2)', position: 'relative', overflow: 'hidden', animation: 'fadeIn 0.4s ease' }}>
-            <div style={{ position: 'absolute', top: -10, right: -10, width: 70, height: 70, background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
-            <div style={{ fontSize: 22, marginBottom: 6 }}>{s.icon}</div>
-            <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1 }}>{s.val}</div>
-            <div style={{ fontSize: 11, opacity: 0.75, marginTop: 4, fontWeight: 600 }}>{s.label}</div>
-          </div>
-        ))}
+      <div className="client-stats-row">
+        <div className="client-stat-card" style={{ background: `linear-gradient(135deg, ${C.navy}, ${C.blue})` }}>
+          <strong>{activeBookings.length}</strong>
+          <span>Active services</span>
+        </div>
+        <div className="client-stat-card" style={{ background: `linear-gradient(135deg, ${C.green}, ${C.greenDk})` }}>
+          <strong>{completedBookings.length}</strong>
+          <span>Completed services</span>
+        </div>
+        <div className="client-stat-card" style={{ background: 'linear-gradient(135deg, #64748B, #334155)' }}>
+          <strong>${totalSpent.toFixed(0)}</strong>
+          <span>Total spent</span>
+        </div>
       </div>
 
-      <div style={{ background: '#fff', borderRadius: 16, border: `1px solid ${C.border}`, padding: 18, marginBottom: 16, boxShadow: '0 2px 12px rgba(13,55,129,0.06)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-          <IC.Clock c={C.navy} s={16} />
-          <span style={{ fontWeight: 900, fontSize: 14, color: C.text }}>Schedule</span>
-        </div>
-        <CalendarStrip jobs={myJobs} />
-      </div>
+      <CalendarStrip bookings={activeBookings} />
 
-      <div style={{ background: '#fff', borderRadius: 16, border: `1px solid ${C.border}`, padding: 18, boxShadow: '0 2px 12px rgba(13,55,129,0.06)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <span style={{ fontWeight: 900, fontSize: 14, color: C.text }}>My Jobs</span>
-          {myJobs.length > 0 && (
-            <span style={{ background: `${C.navy}15`, color: C.navy, padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 800 }}>
-              {myJobs.length}
-            </span>
-          )}
-        </div>
-
-        {myJobs.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 16px' }}>
-            <div style={{ fontSize: 44, marginBottom: 10 }}>🧹</div>
-            <div style={{ fontWeight: 900, color: C.text, marginBottom: 4 }}>No active jobs</div>
-            <div style={{ color: C.muted, fontSize: 13, marginBottom: 16 }}>Check Available Jobs to find work nearby</div>
-            <Link href="/pro/marketplace" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`, color: '#fff', textDecoration: 'none', fontSize: 13, fontWeight: 800 }}>
-              Find Available Jobs →
-            </Link>
+      <div className="client-card">
+        <div className="client-section-title">My Services</div>
+        {nextServices.length === 0 ? (
+          <div className="client-empty-state">
+            <div>+</div>
+            <h3>No active services</h3>
+            <p>Book your next cleaning and it will appear here as soon as it is created.</p>
+            <Link href="/dashboard/new-booking" className="client-primary-action">Book a Service</Link>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {myJobs.slice(0, 10).map((job) => {
-              const date = job.scheduled_at ? new Date(job.scheduled_at) : null;
-              const payout = calcPayout(job);
-              const eta = etaData[job.id];
-              const sqft = calculatedSqft(job);
-              const hours = estimatedHoursFromJob(job);
-
+          <div className="client-services-list">
+            {nextServices.map((booking) => {
+              const amount = bookingAmount(booking);
+              const status = STATUS[booking.status] || STATUS.PENDING_ASSIGNMENT;
+              const pro = booking.professionals?.[0]?.professional || booking.professional;
               return (
-                <div key={job.id} style={{ background: C.bg, borderRadius: 14, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
-                  <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                      <div style={{ width: 40, height: 40, background: `${C.navy}12`, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, flexShrink: 0 }}>
-                        {SVC[job.service_type] || '🧹'}
-                      </div>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 900, fontSize: 13, color: C.text, marginBottom: 3 }}>
-                          {(job.service_type || '').replace(/_/g, ' ')}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: C.blue, fontSize: 11, fontWeight: 600 }}>
-                          <span>⌖</span>
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}>
-                            {job.address}
-                            {job.city ? `, ${job.city}` : ''}
-                          </span>
-                        </div>
-                      </div>
+                <article className="client-service-card" key={booking.id}>
+                  <div>
+                    <h3>{serviceName(booking.service_type)}</h3>
+                    <p>{bookingAddress(booking) || 'Address pending'}</p>
+                    <div className="client-service-meta">
+                      <span>{bookingDate(booking)}</span>
+                      <span>{status.note}</span>
+                      {pro?.fullName || pro?.full_name ? <span>{pro.fullName || pro.full_name}</span> : null}
                     </div>
-                    <StatusBadge status={job.status} />
                   </div>
-
-                  <div style={{ padding: '0 14px 12px', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    {date && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#fff', color: C.muted, padding: '4px 10px', borderRadius: 8, fontSize: 11, border: `1px solid ${C.border}`, fontWeight: 700 }}>
-                        <IC.Clock s={11} c={C.muted} />
-                        {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    )}
-
-                    {sqft && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EFF6FF', color: C.blue, padding: '4px 10px', borderRadius: 8, fontSize: 11, border: `1px solid ${C.blue}20`, fontWeight: 800 }}>
-                        <IC.Sqft s={11} c={C.blue} />
-                        {sqft} sqft
-                      </span>
-                    )}
-
-                    {hours && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EDE9FE', color: '#4F46E5', padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 900 }}>
-                        <IC.Clock s={11} c="#4F46E5" />
-                        {hours}h estimated
-                      </span>
-                    )}
-
-                    {payout > 0 && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#D1FAE5', color: C.greenDk, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 900 }}>
-                        <IC.Dollar s={11} c={C.greenDk} />
-                        Your pay: ${payout.toFixed(2)}
-                      </span>
-                    )}
+                  <div>
+                    <StatusBadge status={booking.status} />
+                    {amount > 0 && <div className="client-service-price">${amount.toFixed(2)}</div>}
                   </div>
-
-                  {(job.status === 'CONFIRMED' || job.status === 'IN_PROGRESS') && (
-                    <div style={{ padding: '0 14px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {eta ? (
-                        <div style={{ background: '#EFF6FF', border: `1px solid ${C.blue}25`, borderRadius: 12, padding: '10px 14px' }}>
-                          <div style={{ fontSize: 12, fontWeight: 800, color: C.blue, marginBottom: 8 }}>
-                            🚗 {eta.distanceMiles} mi · ETA {eta.etaText}
-                          </div>
-                          <a href={eta.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '9px 0', borderRadius: 10, background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`, color: '#fff', fontSize: 12, fontWeight: 800, textDecoration: 'none' }}>
-                            🗺 Open Navigation
-                          </a>
-                          <div style={{ textAlign: 'center', marginTop: 6, fontSize: 11, color: C.green, fontWeight: 800 }}>
-                            ETA sent to client
-                          </div>
-                        </div>
-                      ) : (
-                        <button onClick={() => fetchETA(job.id)} type="button" style={{ width: '100%', padding: '10px 0', borderRadius: 11, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`, color: '#fff', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                          <IC.ETA c="#fff" s={14} />
-                          Send ETA to Client
-                        </button>
-                      )}
-
-                      {job.status === 'CONFIRMED' && (
-                        <button onClick={() => doAction(job.id, 'checkin')} disabled={acting === job.id} type="button" style={{ width: '100%', padding: '10px 0', borderRadius: 11, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${C.blue}, #1976D2)`, color: '#fff', fontSize: 12, fontWeight: 800, opacity: acting === job.id ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                          <IC.Check c="#fff" s={14} />
-                          Check In
-                        </button>
-                      )}
-
-                      {job.status === 'IN_PROGRESS' && (
-                        <button onClick={() => doAction(job.id, 'checkout')} disabled={acting === job.id} type="button" style={{ width: '100%', padding: '10px 0', borderRadius: 11, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${C.green}, ${C.greenDk})`, color: '#fff', fontSize: 12, fontWeight: 800, opacity: acting === job.id ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                          <IC.Check c="#fff" s={14} />
-                          Complete Job
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
+                </article>
               );
             })}
           </div>

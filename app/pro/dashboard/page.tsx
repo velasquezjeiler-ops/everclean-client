@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 
@@ -28,11 +28,18 @@ const STATUS: Record<string, { label: string; bg: string; color: string; dot: st
 };
 
 const SVC: Record<string, string> = {
-  HOUSE_CLEANING: '🏠', DEEP_CLEANING: '✨', MOVE_IN_OUT: '📦',
-  SAME_DAY_CLEANING: '⚡', OFFICE_CLEANING: '🏢', POST_CONSTRUCTION: '🔨',
-  MEDICAL_CLEANING: '🏥', CARPET_CLEANING: '🛋', WINDOW_CLEANING: '🪟',
-  ORGANIZING: '📋', CAR_WASH: '🚗', LAUNDRY_PICKUP: '👕', DRY_CLEANING: '👔',
+  HOUSE_CLEANING: 'ðŸ ', DEEP_CLEANING: 'âœ¨', MOVE_IN_OUT: 'ðŸ“¦',
+  SAME_DAY_CLEANING: 'âš¡', OFFICE_CLEANING: 'ðŸ¢', POST_CONSTRUCTION: 'ðŸ”¨',
+  MEDICAL_CLEANING: 'ðŸ¥', CARPET_CLEANING: 'ðŸ›‹', WINDOW_CLEANING: 'ðŸªŸ',
+  ORGANIZING: 'ðŸ“‹', CAR_WASH: 'ðŸš—', LAUNDRY_PICKUP: 'ðŸ‘•', DRY_CLEANING: 'ðŸ‘”',
 };
+
+function greetingForNow() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
 
 function jobAddress(job: any) {
   return [job.address, job.city, job.state].filter(Boolean).join(', ');
@@ -101,11 +108,11 @@ function CalendarStrip({ jobs }: { jobs: any[] }) {
       {dayJobs.length > 0 ? (
         <div style={{ marginTop: 10, padding: '10px 12px', background: `${C.green}10`, border: `1px solid ${C.green}25`, borderRadius: 10 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: C.greenDk, marginBottom: 6 }}>
-            {dayJobs.length} job{dayJobs.length > 1 ? 's' : ''} · {new Date(selected + 'T12:00:00').toLocaleDateString('en', { month: 'long', day: 'numeric' })}
+            {dayJobs.length} job{dayJobs.length > 1 ? 's' : ''} Â· {new Date(selected + 'T12:00:00').toLocaleDateString('en', { month: 'long', day: 'numeric' })}
           </div>
           {dayJobs.map(j => (
             <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderTop: `1px solid ${C.green}20` }}>
-              <span style={{ fontSize: 14 }}>{SVC[j.service_type] || '🧹'}</span>
+              <span style={{ fontSize: 14 }}>{SVC[j.service_type] || 'ðŸ§¹'}</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: C.text }}>{(j.service_type || '').replace(/_/g, ' ')}</div>
                 <div style={{ fontSize: 10, color: C.muted }}>{j.address}</div>
@@ -199,7 +206,7 @@ export default function ProDashboard() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <h1 style={{ fontFamily: 'Poppins, sans-serif', fontSize: 22, fontWeight: 700, color: C.text, margin: 0 }}>
-            Good morning, {proName.split(' ')[0]} 👋
+            {greetingForNow()}, {proName.split(' ')[0]}
           </h1>
           <p style={{ color: C.muted, fontSize: 13, margin: '3px 0 0' }}>Here's your schedule overview</p>
         </div>
@@ -219,9 +226,9 @@ export default function ProDashboard() {
       {/* Stat Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
         {[
-          { label: 'Total Earnings', val: `$${earnings.toFixed(0)}`, gradient: `linear-gradient(135deg, ${C.green}, ${C.greenDk})`, icon: '💰' },
-          { label: 'Active Jobs', val: active.length, gradient: `linear-gradient(135deg, ${C.blue}, ${C.navy})`, icon: '⚡' },
-          { label: 'Completed', val: completed.length, gradient: 'linear-gradient(135deg, #7C3AED, #5B21B6)', icon: '✅' },
+          { label: 'Total Earnings', val: `$${earnings.toFixed(0)}`, gradient: `linear-gradient(135deg, ${C.green}, ${C.greenDk})`, icon: 'ðŸ’°' },
+          { label: 'Active Jobs', val: active.length, gradient: `linear-gradient(135deg, ${C.blue}, ${C.navy})`, icon: 'âš¡' },
+          { label: 'Completed', val: completed.length, gradient: 'linear-gradient(135deg, #7C3AED, #5B21B6)', icon: 'âœ…' },
         ].map(s => (
           <div key={s.label} style={{ background: s.gradient, borderRadius: 16, padding: '18px 16px', color: '#fff', boxShadow: '0 4px 20px rgba(13,55,129,0.2)', position: 'relative', overflow: 'hidden', animation: 'fadeIn 0.4s ease' }}>
             <div style={{ position: 'absolute', top: -10, right: -10, width: 70, height: 70, background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }}/>
@@ -250,11 +257,11 @@ export default function ProDashboard() {
 
         {myJobs.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 16px' }}>
-            <div style={{ fontSize: 44, marginBottom: 10 }}>🧹</div>
+            <div style={{ fontSize: 44, marginBottom: 10 }}>ðŸ§¹</div>
             <div style={{ fontWeight: 700, color: C.text, marginBottom: 4 }}>No active jobs</div>
             <div style={{ color: C.muted, fontSize: 13, marginBottom: 16 }}>Check Available Jobs to find work nearby</div>
             <Link href="/pro/marketplace" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`, color: '#fff', textDecoration: 'none', fontSize: 13, fontWeight: 700 }}>
-              Find Available Jobs →
+              Find Available Jobs â†’
             </Link>
           </div>
         ) : (
@@ -271,7 +278,7 @@ export default function ProDashboard() {
                   <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                       <div style={{ width: 40, height: 40, background: `${C.navy}12`, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, flexShrink: 0 }}>
-                        {SVC[job.service_type] || '🧹'}
+                        {SVC[job.service_type] || 'ðŸ§¹'}
                       </div>
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontWeight: 700, fontSize: 13, color: C.text, marginBottom: 3 }}>
@@ -299,7 +306,7 @@ export default function ProDashboard() {
                     {date && (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#fff', color: C.muted, padding: '4px 10px', borderRadius: 8, fontSize: 11, border: `1px solid ${C.border}` }}>
                         <IC.Clock s={11} c={C.muted}/>
-                        {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                        {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} Â· {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     )}
                     {sqft > 0 && (
@@ -308,7 +315,7 @@ export default function ProDashboard() {
                       </span>
                     )}
                     <span style={{ display:'inline-flex', alignItems:'center', gap:4, background:C.bg, color:C.muted, padding:'4px 10px', borderRadius:8, fontSize:11, border:`1px solid ${C.border}` }}>
-                      ⏱ {hours}h estimated
+                      â± {hours}h estimated
                     </span>
                     {payout > 0 && (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#D1FAE5', color: C.greenDk, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700 }}>
@@ -324,13 +331,13 @@ export default function ProDashboard() {
                       {eta ? (
                         <div style={{ background: '#EFF6FF', border: `1px solid ${C.blue}25`, borderRadius: 12, padding: '10px 14px' }}>
                           <div style={{ fontSize: 12, fontWeight: 600, color: C.blue, marginBottom: 8 }}>
-                            🚗 {eta.distanceMiles} mi · ETA {eta.etaText}
+                            ðŸš— {eta.distanceMiles} mi Â· ETA {eta.etaText}
                           </div>
                           <a href={eta.mapsUrl} target="_blank" rel="noopener noreferrer"
                             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '9px 0', borderRadius: 10, background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`, color: '#fff', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
-                            🗺️ Open Navigation
+                            ðŸ—ºï¸ Open Navigation
                           </a>
-                          <div style={{ textAlign: 'center', marginTop: 6, fontSize: 11, color: C.green, fontWeight: 600 }}>✅ ETA sent to client</div>
+                          <div style={{ textAlign: 'center', marginTop: 6, fontSize: 11, color: C.green, fontWeight: 600 }}>âœ… ETA sent to client</div>
                         </div>
                       ) : (
                         <button onClick={() => fetchETA(job.id)} style={{
@@ -360,7 +367,7 @@ export default function ProDashboard() {
                           color: '#fff', fontSize: 12, fontWeight: 700, opacity: acting === job.id ? 0.6 : 1,
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                         }}>
-                          <IC.Check c="#fff" s={14}/> Complete Job ✓
+                          <IC.Check c="#fff" s={14}/> Complete Job âœ“
                         </button>
                       )}
                     </div>
@@ -374,3 +381,4 @@ export default function ProDashboard() {
     </div>
   );
 }
+
