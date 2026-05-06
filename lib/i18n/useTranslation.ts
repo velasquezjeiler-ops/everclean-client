@@ -15,16 +15,16 @@ import pt from './pt.json';
 const LANGS: Record<string, any> = { en, es, zh, tl, vi, ar, fr, ko, ru, pt };
 
 export const LANGUAGE_OPTIONS = [
-  { code: 'en', label: 'English', flag: '🇺🇸' },
-  { code: 'es', label: 'Español', flag: '🇪🇸' },
-  { code: 'zh', label: '中文', flag: '🇨🇳' },
-  { code: 'tl', label: 'Tagalog', flag: '🇵🇭' },
-  { code: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
-  { code: 'ar', label: 'العربية', flag: '🇸🇦' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'ko', label: '한국어', flag: '🇰🇷' },
-  { code: 'ru', label: 'Русский', flag: '🇷🇺' },
-  { code: 'pt', label: 'Português', flag: '🇧🇷' },
+  { code: 'en', label: 'English', short: 'EN' },
+  { code: 'es', label: 'Spanish', short: 'ES' },
+  { code: 'zh', label: 'Chinese', short: 'ZH' },
+  { code: 'tl', label: 'Tagalog', short: 'TL' },
+  { code: 'vi', label: 'Vietnamese', short: 'VI' },
+  { code: 'ar', label: 'Arabic', short: 'AR' },
+  { code: 'fr', label: 'French', short: 'FR' },
+  { code: 'ko', label: 'Korean', short: 'KO' },
+  { code: 'ru', label: 'Russian', short: 'RU' },
+  { code: 'pt', label: 'Portuguese', short: 'PT' },
 ];
 
 function getNestedValue(obj: any, path: string): string {
@@ -49,13 +49,14 @@ export function useTranslation() {
     if (LANGS[code]) {
       setLangState(code);
       localStorage.setItem('lang', code);
+      window.dispatchEvent(new CustomEvent('everclean:language-change', { detail: code }));
     }
   }, []);
 
   const t = useCallback((key: string): string => {
     const translation = getNestedValue(LANGS[lang], key);
     if (translation !== key) return translation;
-    return getNestedValue(LANGS['en'], key);
+    return getNestedValue(LANGS.en, key);
   }, [lang]);
 
   return { t, lang, setLang };

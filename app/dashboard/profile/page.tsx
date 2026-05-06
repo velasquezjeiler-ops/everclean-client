@@ -117,7 +117,7 @@ export default function ClientProfile() {
       {message && (
         <div style={{ marginBottom:16, padding:'10px 14px', borderRadius:10, fontSize:13, background: message.startsWith('Error') ? '#FEE2E2' : '#D1FAE5', color: message.startsWith('Error') ? '#991B1B' : C.greenDk, display:'flex', justifyContent:'space-between' }}>
           {message}
-          <button onClick={()=>setMessage('')} style={{ background:'none', border:'none', cursor:'pointer', opacity:0.6 }}>âœ•</button>
+          <button onClick={()=>setMessage('')} style={{ background:'none', border:'none', cursor:'pointer', opacity:0.6 }}>x</button>
         </div>
       )}
 
@@ -181,7 +181,7 @@ export default function ClientProfile() {
                 ? <img src={photo} alt="Profile" style={{ width:80, height:80, borderRadius:'50%', objectFit:'cover', border:`3px solid ${C.blue}` }}/>
                 : <div style={{ width:80, height:80, borderRadius:'50%', background:`linear-gradient(135deg, ${C.blue}, ${C.navy})`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, fontWeight:800, color:'#fff', margin:'0 auto' }}>{initials}</div>
               }
-              <div style={{ position:'absolute', bottom:0, right:0, width:24, height:24, background:C.blue, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid #fff', fontSize:11, color:'#fff' }}>ðŸ“·</div>
+              <div style={{ position:'absolute', bottom:0, right:0, width:30, height:24, background:C.blue, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid #fff', fontSize:9, color:'#fff', fontWeight:700 }}>Photo</div>
             </div>
             <div style={{ fontSize:11, color:C.muted, marginBottom:8 }}>Click to upload photo</div>
             <div style={{ fontWeight:700, fontSize:15, color:C.text }}>{form.fullName||'Client'}</div>

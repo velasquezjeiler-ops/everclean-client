@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import LanguageSelector from '../../lib/i18n/LanguageSelector';
+import { useTranslation } from '../../lib/i18n/useTranslation';
 
 const API =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -258,6 +260,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   const [clientName, setClientName] = useState('');
   const [clientInitial, setClientInitial] = useState('C');
   const [menuOpen, setMenuOpen] = useState(false);
+  const { lang, setLang } = useTranslation();
   const [bookings, setBookings] = useState<any[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
@@ -348,6 +351,10 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
           );
         })}
       </nav>
+
+      <div className="client-language-block">
+        <LanguageSelector lang={lang} setLang={setLang} />
+      </div>
 
       <button className="client-logout" onClick={logout} type="button">
         <span>↩</span>
@@ -530,6 +537,10 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
           width: 3px;
           border-radius: 0 3px 3px 0;
           background: ${C.blue};
+        }
+
+        .client-language-block {
+          margin: auto 10px 0;
         }
 
         .client-logout {

@@ -4,6 +4,8 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import LanguageSelector from '../../lib/i18n/LanguageSelector';
+import { useTranslation } from '../../lib/i18n/useTranslation';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
 
@@ -142,10 +144,10 @@ function RightPanel({ bookings, selectedBooking, onSelectBooking }: { bookings: 
         <div style={{ fontSize: 30, fontWeight: 800, fontFamily: 'Poppins, sans-serif', marginBottom: 12 }}>${earnings.toFixed(2)}</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {[
-            { label: 'Active', val: active.length, icon: '⚡' },
-            { label: 'Done', val: completed.length, icon: '✅' },
-            { label: 'Rating', val: `${rating}★`, icon: '⭐' },
-            { label: 'Pending', val: 0, icon: '⏳' },
+            { label: 'Active', val: active.length, icon: 'A' },
+            { label: 'Done', val: completed.length, icon: 'D' },
+            { label: 'Rating', val: `${rating} star`, icon: 'R' },
+            { label: 'Pending', val: 0, icon: 'P' },
           ].map(s => (
             <div key={s.label} style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 10, padding: '7px 10px' }}>
               <div style={{ fontSize: 10, opacity: 0.6 }}>{s.icon} {s.label}</div>
@@ -212,6 +214,7 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
   const [bookings, setBookings] = useState<any[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [rating, setRating] = useState<number | null>(null);
+  const { lang, setLang } = useTranslation();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -297,7 +300,10 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
           );
         })}
       </nav>
-      <div style={{ padding: '10px 10px 16px', borderTop: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
+      <div className="pro-language-block" style={{ padding: '10px 10px 0', borderTop: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
+        <LanguageSelector lang={lang} setLang={setLang} />
+      </div>
+      <div style={{ padding: '10px 10px 16px', flexShrink: 0 }}>
         <button onClick={logout} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 11, border: 'none', cursor: 'pointer', background: 'transparent', transition: 'all 0.2s' }}
           onMouseEnter={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.12)')}
           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
