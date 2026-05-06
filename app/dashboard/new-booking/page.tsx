@@ -309,6 +309,10 @@ export default function NewBookingPage() {
         body.window_outside_count = cleaningAddons.windowsOutside;
       }
 
+      if (!isCleaning) {
+        body.sqft = 0;
+      }
+
       if (isCarWash) {
         body.vehicle_code = vehicleCode;
         body.package = carPkg;

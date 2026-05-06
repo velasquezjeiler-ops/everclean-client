@@ -67,7 +67,14 @@ export default function ClientProfile() {
       const res = await fetch(API+'/clients/me', {
         method: 'PATCH',
         headers: { 'Content-Type':'application/json', Authorization:'Bearer '+token },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          fullName: form.fullName,
+          phone: form.phone,
+          address: form.address,
+          city: form.city,
+          state: form.state,
+          zipCode: form.zipCode,
+        }),
       });
       if (res.ok) { setMessage('Profile saved!'); load(); }
       else { const e = await res.json(); setMessage('Error: '+e.error); }
@@ -129,7 +136,7 @@ export default function ClientProfile() {
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
               <div><label style={labelStyle}>Full name</label><input value={form.fullName} onChange={e=>setForm({...form,fullName:e.target.value})} style={inputStyle}/></div>
               <div><label style={labelStyle}>Phone</label><input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} style={inputStyle}/></div>
-              <div style={{ gridColumn:'1/-1' }}><label style={labelStyle}>Email</label><input value={form.email} onChange={e=>setForm({...form,email:e.target.value})} style={inputStyle}/></div>
+              <div style={{ gridColumn:'1/-1' }}><label style={labelStyle}>Email</label><input value={form.email} readOnly style={{ ...inputStyle, background:C.bg, cursor:'not-allowed' }}/></div>
             </div>
           </div>
 

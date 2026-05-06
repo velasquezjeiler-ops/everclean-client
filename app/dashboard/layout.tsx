@@ -422,7 +422,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
             <strong>{clientName || t('sidebar.client')}</strong>
             <small>{clt(lang, 'member')}</small>
           </div>
-          {active.length > 0 && <b>{active.length}</b>}
+          {active.length > 0 && <b>{active.length} {clt(lang, 'active').toLowerCase()}</b>}
         </div>
       </div>
 
