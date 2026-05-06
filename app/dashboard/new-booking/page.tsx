@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -43,27 +43,16 @@ const STATE_OPTIONS = [
   { code: 'AZ', name: 'Arizona', tier: 'B' },
 ];
 
-const STATE_MULTIPLIERS: Record<string, number> = {
-  A: 1.2,
-  B: 1,
-  C: 0.9,
-  D: 0.85,
-};
+const STATE_MULTIPLIERS: Record<string, number> = { A: 1.2, B: 1, C: 0.9, D: 0.85 };
 
-const SERVICE_RATES: Record<
-  string,
-  { label: string; icon: string; rate: number; min: number; commercial: boolean; desc: string }
-> = {
-  HOUSE_CLEANING: { label: 'House Cleaning', icon: '🏠', rate: 0.15, min: 120, commercial: false, desc: 'Regular residential' },
-  DEEP_CLEANING: { label: 'Deep Cleaning', icon: '✨', rate: 0.2, min: 150, commercial: false, desc: 'Top-to-bottom' },
-  MOVE_IN_OUT: { label: 'Move In / Out', icon: '📦', rate: 0.28, min: 200, commercial: false, desc: 'Full property reset' },
-  SAME_DAY_CLEANING: { label: 'Same Day', icon: '⚡', rate: 0.18, min: 130, commercial: false, desc: 'Available today' },
-  OFFICE_CLEANING: { label: 'Office Cleaning', icon: '🏢', rate: 0.14, min: 150, commercial: true, desc: 'Pros $18-$22/hr' },
-  POST_CONSTRUCTION: { label: 'Post Construction', icon: '🔨', rate: 0.22, min: 180, commercial: true, desc: 'After remodel' },
-  MEDICAL_CLEANING: { label: 'Medical / Clinical', icon: '🏥', rate: 0.32, min: 250, commercial: true, desc: 'Hospital-grade' },
-  CARPET_CLEANING: { label: 'Carpet Cleaning', icon: '🛋️', rate: 0.18, min: 130, commercial: false, desc: 'Deep extraction' },
-  WINDOW_CLEANING: { label: 'Window Cleaning', icon: '🪟', rate: 0.16, min: 120, commercial: false, desc: 'Interior & exterior' },
-  ORGANIZING: { label: 'Organizing', icon: '📋', rate: 0.15, min: 120, commercial: false, desc: 'Declutter & organize' },
+const CLEANING_SERVICES: Record<string, { label: string; icon: string; rate: number; min: number; commercial: boolean; desc: string }> = {
+  HOUSE_CLEANING: { label: 'House Cleaning', icon: 'Home', rate: 0.15, min: 120, commercial: false, desc: 'Regular residential cleaning' },
+  DEEP_CLEANING: { label: 'Deep Cleaning', icon: 'Deep', rate: 0.2, min: 150, commercial: false, desc: 'Detailed top-to-bottom cleaning' },
+  MOVE_IN_OUT: { label: 'Move In / Out', icon: 'Move', rate: 0.28, min: 200, commercial: false, desc: 'Full property reset' },
+  SAME_DAY_CLEANING: { label: 'Same Day', icon: 'Fast', rate: 0.18, min: 130, commercial: false, desc: 'Priority same-day visit' },
+  OFFICE_CLEANING: { label: 'Office Cleaning', icon: 'Office', rate: 0.14, min: 150, commercial: true, desc: 'Workplace cleaning' },
+  POST_CONSTRUCTION: { label: 'Post Construction', icon: 'Build', rate: 0.22, min: 180, commercial: true, desc: 'After remodel or construction' },
+  MEDICAL_CLEANING: { label: 'Medical / Clinical', icon: 'Care', rate: 0.32, min: 250, commercial: true, desc: 'Clinical-grade cleaning' },
 };
 
 const FREQ_OPTIONS = [
@@ -73,101 +62,125 @@ const FREQ_OPTIONS = [
   { key: 'WEEKLY', label: 'Weekly', disc: 0.15 },
 ];
 
-const ROOM_SQFT_MIN: Record<string, number> = {
-  '0-1': 400,
-  '1-1': 500,
-  '1-2': 650,
-  '2-1': 750,
-  '2-2': 1000,
-  '3-2': 1200,
-  '3-3': 1500,
-  '4-2': 1800,
-  '4-3': 2200,
-  '4-4': 2600,
-  '5-3': 2800,
-  '5-4': 3200,
-  '6-4': 3800,
+const RUG_PRICES: Record<string, { label: string; price: number }> = {
+  SMALL: { label: 'Small rug', price: 25 },
+  MEDIUM: { label: 'Medium rug', price: 45 },
+  LARGE: { label: 'Large rug', price: 70 },
+  XL: { label: 'Oversized rug', price: 95 },
 };
 
 const VEHICLE_TYPES = [
   { code: 'COMPACT', label: 'Compact / Hatchback', examples: 'Corolla, Civic, Elantra, Golf, Mazda3' },
   { code: 'SEDAN', label: 'Sedan', examples: 'Camry, Accord, Altima, BMW 3, Audi A4' },
-  { code: 'SUV_MID', label: 'SUV Mediano', examples: 'RAV4, CR-V, Rogue, Equinox, Tucson' },
-  { code: 'SUV_LG', label: 'SUV Grande', examples: 'Highlander, Explorer, Telluride, Palisade' },
-  { code: 'SUV_XL', label: 'SUV Full-Size', examples: 'Expedition, Suburban, Yukon XL, Sequoia' },
-  { code: 'TRUCK_S', label: 'Pickup Cabina Sencilla', examples: 'F-150 Regular, Silverado Regular, Ram Regular' },
-  { code: 'TRUCK_DC', label: 'Pickup Doble Cabina', examples: 'F-150 Crew, Ram Crew, Tacoma DC, Frontier DC' },
-  { code: 'TRUCK_HD', label: 'Pickup Heavy Duty', examples: 'F-250, F-350, Ram 2500/3500, Silverado 2500HD' },
-  { code: 'VAN', label: 'Van / Minivan', examples: 'Odyssey, Pacifica, Sienna, Carnival, Grand Caravan' },
+  { code: 'SUV_MID', label: 'Mid-size SUV', examples: 'RAV4, CR-V, Rogue, Equinox, Tucson' },
+  { code: 'SUV_LG', label: 'Large SUV', examples: 'Highlander, Explorer, Telluride, Palisade' },
+  { code: 'SUV_XL', label: 'Full-size SUV', examples: 'Expedition, Suburban, Yukon XL, Sequoia' },
+  { code: 'TRUCK_S', label: 'Single-cab Pickup', examples: 'F-150 Regular, Silverado Regular, Ram Regular' },
+  { code: 'TRUCK_DC', label: 'Crew-cab Pickup', examples: 'F-150 Crew, Ram Crew, Tacoma DC, Frontier DC' },
+  { code: 'TRUCK_HD', label: 'Heavy-duty Pickup', examples: 'F-250, F-350, Ram 2500/3500' },
+  { code: 'VAN', label: 'Van / Minivan', examples: 'Odyssey, Pacifica, Sienna, Carnival' },
 ];
 
 const CAR_PKG_DETAILS = {
-  BASIC: { label: 'Basic Wash', includes: 'Exterior wash + secado + ventanas' },
-  STANDARD: { label: 'Standard', includes: 'Basic + aspirado interior + tablero' },
-  INTERIOR: { label: 'Interior Only', includes: 'Aspirado + superficies + vidrios int.' },
-  FULL: { label: 'Full Detail', includes: 'Exterior completo + interior completo' },
-  PREMIUM: { label: 'Premium', includes: 'Full + cera + llantas + aromatizante' },
-  VIP: { label: 'VIP', includes: 'Premium + protector + cuero + motor' },
+  BASIC: { label: 'Basic Wash', includes: 'Exterior hand wash and dry' },
+  STANDARD: { label: 'Standard', includes: 'Basic + interior vacuum and wipe down' },
+  INTERIOR: { label: 'Interior Only', includes: 'Vacuum, surfaces and interior glass' },
+  FULL: { label: 'Full Detail', includes: 'Complete exterior and interior detail' },
+  PREMIUM: { label: 'Premium', includes: 'Full + wax, wheels and finish care' },
+  VIP: { label: 'VIP', includes: 'Premium + protectant, leather and engine bay' },
 };
 
 const CAR_WASH_RATES: Record<string, Record<string, number>> = {
-  COMPACT: { BASIC: 45, STANDARD: 65, INTERIOR: 60, FULL: 95, PREMIUM: 130, VIP: 180 },
-  SEDAN: { BASIC: 50, STANDARD: 70, INTERIOR: 65, FULL: 105, PREMIUM: 140, VIP: 195 },
-  SUV_MID: { BASIC: 60, STANDARD: 85, INTERIOR: 75, FULL: 125, PREMIUM: 165, VIP: 220 },
-  SUV_LG: { BASIC: 70, STANDARD: 95, INTERIOR: 85, FULL: 140, PREMIUM: 185, VIP: 245 },
-  SUV_XL: { BASIC: 80, STANDARD: 110, INTERIOR: 95, FULL: 160, PREMIUM: 210, VIP: 275 },
-  TRUCK_S: { BASIC: 65, STANDARD: 90, INTERIOR: 80, FULL: 130, PREMIUM: 170, VIP: 230 },
-  TRUCK_DC: { BASIC: 75, STANDARD: 100, INTERIOR: 90, FULL: 150, PREMIUM: 195, VIP: 260 },
-  TRUCK_HD: { BASIC: 90, STANDARD: 120, INTERIOR: 105, FULL: 175, PREMIUM: 225, VIP: 295 },
-  VAN: { BASIC: 80, STANDARD: 105, INTERIOR: 95, FULL: 155, PREMIUM: 200, VIP: 265 },
+  COMPACT: { BASIC: 40, STANDARD: 60, INTERIOR: 55, FULL: 90, PREMIUM: 125, VIP: 170 },
+  SEDAN: { BASIC: 45, STANDARD: 65, INTERIOR: 60, FULL: 100, PREMIUM: 135, VIP: 185 },
+  SUV_MID: { BASIC: 55, STANDARD: 80, INTERIOR: 70, FULL: 120, PREMIUM: 160, VIP: 215 },
+  SUV_LG: { BASIC: 65, STANDARD: 90, INTERIOR: 80, FULL: 135, PREMIUM: 180, VIP: 240 },
+  SUV_XL: { BASIC: 75, STANDARD: 105, INTERIOR: 90, FULL: 155, PREMIUM: 205, VIP: 270 },
+  TRUCK_S: { BASIC: 60, STANDARD: 85, INTERIOR: 75, FULL: 125, PREMIUM: 165, VIP: 225 },
+  TRUCK_DC: { BASIC: 70, STANDARD: 95, INTERIOR: 85, FULL: 145, PREMIUM: 190, VIP: 255 },
+  TRUCK_HD: { BASIC: 85, STANDARD: 115, INTERIOR: 100, FULL: 170, PREMIUM: 220, VIP: 290 },
+  VAN: { BASIC: 75, STANDARD: 100, INTERIOR: 90, FULL: 150, PREMIUM: 195, VIP: 260 },
 };
 
-const ADDONS = [
-  { code: 'OZONE', label: 'Eliminación de olores', price: 35 },
-  { code: 'PAINT_LIGHT', label: 'Corrección de pintura', price: 60 },
-  { code: 'CERAMIC', label: 'Recubrimiento cerámico', price: 120 },
-  { code: 'ENGINE', label: 'Limpieza de motor', price: 45 },
+const CAR_ADDONS = [
+  { code: 'OZONE', label: 'Odor removal', price: 35 },
+  { code: 'PAINT_LIGHT', label: 'Light paint correction', price: 60 },
+  { code: 'CERAMIC', label: 'Ceramic coating', price: 120 },
+  { code: 'ENGINE', label: 'Engine bay cleaning', price: 45 },
 ];
 
-function getRoomSqftMin(beds: number, baths: number) {
-  return ROOM_SQFT_MIN[`${beds}-${baths}`] ?? null;
+function estimatedSqftFromRooms(beds: number, baths: number, kitchens: number) {
+  const baseLiving = beds === 0 ? 360 : 420;
+  const bedroomSqft = beds * 240;
+  const bathSqft = baths * 90;
+  const kitchenSqft = Math.max(kitchens, 1) * 180;
+  return Math.ceil((baseLiving + bedroomSqft + bathSqft + kitchenSqft) / 50) * 50;
 }
 
-function estimatedHours(sqft: number) {
-  if (sqft <= 1000) return 2;
-  if (sqft <= 2000) return 3;
-  if (sqft <= 3500) return 4;
-  return 5;
+function estimatedHours(sqft: number, addonTotal: number) {
+  const baseHours = sqft <= 1000 ? 2 : sqft <= 2000 ? 3 : sqft <= 3500 ? 4 : 5;
+  return Math.round((baseHours + addonTotal / 90) * 10) / 10;
 }
 
-function calcPrice(
+function cleaningAddonPrice(addons: {
+  drawers: number;
+  carpetSqft: number;
+  rugSize: string;
+  rugCount: number;
+  windowsInside: number;
+  windowsOutside: number;
+}) {
+  const carpet = addons.carpetSqft > 0 ? Math.max(addons.carpetSqft * 0.28, 45) : 0;
+  const rug = addons.rugSize && addons.rugCount > 0 ? (RUG_PRICES[addons.rugSize]?.price || 0) * addons.rugCount : 0;
+  const drawers = addons.drawers * 8;
+  const windows = addons.windowsInside * 8 + addons.windowsOutside * 12;
+  return Math.round((carpet + rug + drawers + windows) * 100) / 100;
+}
+
+function calcCleaningPrice(
   serviceType: string,
   sqft: number,
   beds: number | null,
   baths: number | null,
+  kitchens: number,
   tier: string,
-  frequency: string
+  frequency: string,
+  addons: { drawers: number; carpetSqft: number; rugSize: string; rugCount: number; windowsInside: number; windowsOutside: number }
 ) {
-  const cfg = SERVICE_RATES[serviceType];
+  const cfg = CLEANING_SERVICES[serviceType];
   if (!cfg) return null;
 
   const multi = STATE_MULTIPLIERS[tier] ?? 1;
   const disc = FREQ_OPTIONS.find((f) => f.key === frequency)?.disc ?? 0;
-  let sqftUsed = sqft;
+  const roomSqft = beds != null && baths != null ? estimatedSqftFromRooms(beds, baths, kitchens) : 0;
+  let sqftUsed = sqft || roomSqft;
   let corrected = false;
 
-  if (beds != null && baths != null) {
-    const minSqft = getRoomSqftMin(beds, baths);
-    if (minSqft && sqft < minSqft) {
-      sqftUsed = minSqft;
-      corrected = true;
-    }
+  if (roomSqft && sqftUsed < roomSqft) {
+    sqftUsed = roomSqft;
+    corrected = true;
   }
 
-  const base = Math.max(sqftUsed * cfg.rate * multi, cfg.min * multi);
-  const price = parseFloat((base * (1 - disc)).toFixed(2));
+  if (sqftUsed <= 0) return null;
 
-  return { price, hours: estimatedHours(sqftUsed), sqftUsed, corrected };
+  const addonTotal = cleaningAddonPrice(addons);
+  const base = Math.max(sqftUsed * cfg.rate * multi, cfg.min * multi);
+  const price = Math.round((base * (1 - disc) + addonTotal) * 100) / 100;
+
+  return { price, hours: estimatedHours(sqftUsed, addonTotal), sqftUsed, corrected, addonTotal, roomSqft };
+}
+
+function laundryPrice(weight: string) {
+  const lbs = Math.max(parseFloat(weight) || 10, 10);
+  const price = Math.max(lbs * 2.5 + 20, 45);
+  return { price: Math.round(price * 100) / 100, lbs };
+}
+
+function serviceLabel(serviceType: string) {
+  if (CLEANING_SERVICES[serviceType]) return CLEANING_SERVICES[serviceType].label;
+  if (serviceType === 'CAR_WASH') return 'Car Wash';
+  if (serviceType === 'LAUNDRY_PICKUP') return 'Laundry';
+  return serviceType;
 }
 
 export default function NewBookingPage() {
@@ -183,13 +196,20 @@ export default function NewBookingPage() {
   const [sqft, setSqft] = useState('');
   const [beds, setBeds] = useState('');
   const [baths, setBaths] = useState('');
+  const [kitchens, setKitchens] = useState('1');
   const [frequency, setFrequency] = useState('ONE_TIME');
+
+  const [drawerCount, setDrawerCount] = useState('0');
+  const [carpetSqft, setCarpetSqft] = useState('0');
+  const [rugSize, setRugSize] = useState('');
+  const [rugCount, setRugCount] = useState('0');
+  const [windowInside, setWindowInside] = useState('0');
+  const [windowOutside, setWindowOutside] = useState('0');
 
   const [vehicleCode, setVehicleCode] = useState('');
   const [carPkg, setCarPkg] = useState('');
-  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
+  const [selectedCarAddons, setSelectedCarAddons] = useState<string[]>([]);
   const [weightLbs, setWeightLbs] = useState('10');
-  const [itemCount, setItemCount] = useState('1');
 
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
@@ -198,43 +218,45 @@ export default function NewBookingPage() {
   const [scheduledTime, setScheduledTime] = useState('');
   const [notes, setNotes] = useState('');
 
-  const isCleaning = serviceType in SERVICE_RATES;
+  const isCleaning = serviceType in CLEANING_SERVICES;
   const isCarWash = serviceType === 'CAR_WASH';
   const isLaundry = serviceType === 'LAUNDRY_PICKUP';
-  const isDry = serviceType === 'DRY_CLEANING';
+
+  const cleaningAddons = {
+    drawers: Math.max(parseInt(drawerCount) || 0, 0),
+    carpetSqft: Math.max(parseFloat(carpetSqft) || 0, 0),
+    rugSize,
+    rugCount: Math.max(parseInt(rugCount) || 0, 0),
+    windowsInside: Math.max(parseInt(windowInside) || 0, 0),
+    windowsOutside: Math.max(parseInt(windowOutside) || 0, 0),
+  };
 
   const priceCalc = (() => {
     if (!serviceType) return null;
-
     if (isCleaning) {
       const s = parseInt(sqft) || 0;
       if (s === 0 && !beds) return null;
-      return calcPrice(
+      return calcCleaningPrice(
         serviceType,
         s,
         beds ? parseInt(beds) : null,
         baths ? parseInt(baths) : null,
+        Math.max(parseInt(kitchens) || 1, 1),
         stateTier,
-        frequency
+        frequency,
+        cleaningAddons
       );
     }
 
     if (isCarWash && vehicleCode && carPkg) {
       const base = CAR_WASH_RATES[vehicleCode]?.[carPkg] ?? 0;
-      const addonsTotal = selectedAddons.reduce(
-        (sum, addon) => sum + (ADDONS.find((x) => x.code === addon)?.price ?? 0),
-        0
-      );
-      return { price: base + addonsTotal, hours: null, sqftUsed: null, corrected: false };
+      const addonsTotal = selectedCarAddons.reduce((sum, addon) => sum + (CAR_ADDONS.find((x) => x.code === addon)?.price ?? 0), 0);
+      return { price: base + addonsTotal, hours: null, sqftUsed: null, corrected: false, addonTotal: addonsTotal };
     }
 
     if (isLaundry) {
-      const lbs = Math.max(parseFloat(weightLbs) || 10, 10);
-      return { price: Math.max(lbs * 3 + 30, 60), hours: null, sqftUsed: null, corrected: false };
-    }
-
-    if (isDry) {
-      return { price: (parseInt(itemCount) || 1) * 12, hours: null, sqftUsed: null, corrected: false };
+      const calc = laundryPrice(weightLbs);
+      return { price: calc.price, hours: null, sqftUsed: null, corrected: false, addonTotal: 0 };
     }
 
     return null;
@@ -244,7 +266,7 @@ export default function NewBookingPage() {
 
   async function handleSubmit() {
     if (!address || !scheduledDate || !scheduledTime) {
-      setError('Completa todos los campos requeridos.');
+      setError('Complete the required address, date and time fields.');
       return;
     }
 
@@ -268,16 +290,22 @@ export default function NewBookingPage() {
         body.sqft = parseInt(sqft) || 0;
         body.bedrooms = beds ? parseInt(beds) : null;
         body.bathrooms = baths ? parseInt(baths) : null;
+        body.kitchens = Math.max(parseInt(kitchens) || 1, 1);
+        body.drawer_count = cleaningAddons.drawers;
+        body.carpet_sqft = cleaningAddons.carpetSqft;
+        body.rug_size = cleaningAddons.rugSize;
+        body.rug_count = cleaningAddons.rugCount;
+        body.window_inside_count = cleaningAddons.windowsInside;
+        body.window_outside_count = cleaningAddons.windowsOutside;
       }
 
       if (isCarWash) {
         body.vehicle_code = vehicleCode;
         body.package = carPkg;
-        body.car_wash_addons = selectedAddons;
+        body.car_wash_addons = selectedCarAddons;
       }
 
-      if (isLaundry) body.weight_lbs = parseFloat(weightLbs) || 10;
-      if (isDry) body.item_count = parseInt(itemCount) || 1;
+      if (isLaundry) body.weight_lbs = laundryPrice(weightLbs).lbs;
 
       const res = await fetch(`${API}/bookings`, {
         method: 'POST',
@@ -287,7 +315,7 @@ export default function NewBookingPage() {
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error ?? 'Error');
+        throw new Error(err.error ?? 'Error creating booking');
       }
 
       const data = await res.json();
@@ -295,7 +323,7 @@ export default function NewBookingPage() {
       if (bookingId) localStorage.setItem('last_booking_id', String(bookingId));
       router.push('/dashboard?booked=1');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error desconocido');
+      setError(e instanceof Error ? e.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -324,11 +352,12 @@ export default function NewBookingPage() {
         .booking-grid { display:grid; gap:10px; }
         .booking-grid.three { grid-template-columns:repeat(3, minmax(0, 1fr)); }
         .booking-grid.two { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+        .booking-grid.four { grid-template-columns:repeat(4, minmax(0, 1fr)); }
         .booking-option { border:1px solid ${C.border}; background:#fff; border-radius:14px; padding:13px; min-height:86px; cursor:pointer; text-align:left; transition:border .15s, box-shadow .15s, background .15s; }
         .booking-option:hover { border-color:${C.blue}; }
         .booking-option.selected { border-color:${C.blue}; background:#EFF6FF; box-shadow:0 0 0 3px rgba(21,101,192,0.08); }
         .booking-option.green.selected { border-color:${C.green}; background:#ECFDF5; box-shadow:0 0 0 3px rgba(76,175,80,0.1); }
-        .booking-option-icon { font-size:21px; margin-bottom:6px; }
+        .booking-option-icon { font-size:12px; font-weight:900; color:${C.blue}; margin-bottom:7px; text-transform:uppercase; letter-spacing:.4px; }
         .booking-option strong { display:block; color:${C.text}; font-size:13px; font-weight:900; line-height:1.15; }
         .booking-option span { display:block; color:${C.muted}; font-size:12px; margin-top:4px; }
         .booking-option em { display:block; color:${C.warning}; font-size:11px; font-style:normal; font-weight:800; margin-top:4px; }
@@ -345,80 +374,53 @@ export default function NewBookingPage() {
         .booking-summary span { display:block; color:${C.muted}; font-size:12px; margin-top:3px; }
         .booking-summary b { color:${C.blue}; font-size:24px; white-space:nowrap; }
         .booking-error { background:#FEF2F2; border:1px solid #FECACA; color:${C.danger}; border-radius:14px; padding:12px 14px; font-size:13px; font-weight:800; margin-bottom:14px; }
-        @media (max-width:760px) {
-          .booking-header { flex-direction:column; }
-          .booking-grid.three, .booking-grid.two { grid-template-columns:1fr; }
-          .booking-actions { flex-direction:column; }
-          .booking-title { font-size:26px; }
-        }
+        @media (max-width:960px) { .booking-grid.four { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+        @media (max-width:760px) { .booking-header { flex-direction:column; } .booking-grid.three, .booking-grid.two, .booking-grid.four { grid-template-columns:1fr; } .booking-actions { flex-direction:column; } .booking-title { font-size:26px; } }
       `}</style>
 
       <div className="booking-header">
         <div>
           <h1 className="booking-title">Book a Service</h1>
-          <p className="booking-subtitle">Choose a service, review pricing, then schedule your visit.</p>
+          <p className="booking-subtitle">Choose a service, add extras, then schedule your visit.</p>
         </div>
       </div>
 
       <div className="booking-shell">
         <div className="booking-steps">
-          {[1, 2].map((s) => (
-            <div key={s} className={`booking-step ${step >= s ? 'active' : ''}`}>
-              {s}
-            </div>
-          ))}
-          <span className="booking-step-label">
-            {step === 1 ? 'Servicio y precio' : 'Cuándo y dónde'}
-          </span>
+          {[1, 2].map((s) => <div key={s} className={`booking-step ${step >= s ? 'active' : ''}`}>{s}</div>)}
+          <span className="booking-step-label">{step === 1 ? 'Service and price' : 'Where and when'}</span>
         </div>
 
         <div className="booking-body">
           {step === 1 && (
             <>
               <div className="booking-section">
-                <label className="booking-label">Estado</label>
+                <label className="booking-label">State</label>
                 <select value={state} onChange={(e) => setState(e.target.value)} className="booking-select">
-                  {STATE_OPTIONS.filter((s, i, a) => a.findIndex((x) => x.code === s.code) === i).map((s) => (
-                    <option key={s.code} value={s.code}>
-                      {s.name}
-                    </option>
-                  ))}
+                  {STATE_OPTIONS.filter((s, i, a) => a.findIndex((x) => x.code === s.code) === i).map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
                 </select>
               </div>
 
               <div className="booking-section">
-                <p className="booking-kicker">Servicios de limpieza (por sqft)</p>
+                <p className="booking-kicker">Base cleaning services</p>
                 <div className="booking-grid three">
-                  {Object.entries(SERVICE_RATES).map(([key, cfg]) => (
-                    <button
-                      key={key}
-                      onClick={() => setServiceType(key)}
-                      className={`booking-option ${serviceType === key ? 'selected' : ''}`}
-                      type="button"
-                    >
+                  {Object.entries(CLEANING_SERVICES).map(([key, cfg]) => (
+                    <button key={key} onClick={() => setServiceType(key)} className={`booking-option ${serviceType === key ? 'selected' : ''}`} type="button">
                       <div className="booking-option-icon">{cfg.icon}</div>
                       <strong>{cfg.label}</strong>
                       <span>${(cfg.rate * STATE_MULTIPLIERS[stateTier]).toFixed(2)}/sqft</span>
-                      {cfg.commercial && <em>Comercial</em>}
+                      <span>{cfg.desc}</span>
+                      {cfg.commercial && <em>Commercial</em>}
                     </button>
                   ))}
                 </div>
               </div>
 
               <div className="booking-section">
-                <p className="booking-kicker">Servicios adicionales</p>
-                <div className="booking-grid three">
-                  {[
-                    { key: 'CAR_WASH', label: 'Car Wash', icon: '🚗' },
-                    { key: 'LAUNDRY_PICKUP', label: 'Laundry', icon: '👕' },
-                    { key: 'DRY_CLEANING', label: 'Dry Cleaning', icon: '👔' },
-                  ].map((s) => (
-                    <button
-                      key={s.key}
-                      onClick={() => setServiceType(s.key)}
-                      className={`booking-option ${serviceType === s.key ? 'selected' : ''}`}
-                      type="button"
-                    >
+                <p className="booking-kicker">Standalone services</p>
+                <div className="booking-grid two">
+                  {[{ key: 'CAR_WASH', label: 'Car Wash', icon: 'Auto' }, { key: 'LAUNDRY_PICKUP', label: 'Laundry', icon: 'Laundry' }].map((s) => (
+                    <button key={s.key} onClick={() => setServiceType(s.key)} className={`booking-option ${serviceType === s.key ? 'selected' : ''}`} type="button">
                       <div className="booking-option-icon">{s.icon}</div>
                       <strong>{s.label}</strong>
                     </button>
@@ -428,68 +430,42 @@ export default function NewBookingPage() {
 
               {isCleaning && (
                 <div className="booking-section">
-                  <div className="booking-grid two">
-                    <label>
-                      <span className="booking-label">Habitaciones</span>
-                      <select value={beds} onChange={(e) => setBeds(e.target.value)} className="booking-select">
-                        <option value="">--</option>
-                        {[0, 1, 2, 3, 4, 5, 6].map((n) => (
-                          <option key={n} value={n}>
-                            {n === 0 ? 'Studio' : n}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <label>
-                      <span className="booking-label">Baños</span>
-                      <select value={baths} onChange={(e) => setBaths(e.target.value)} className="booking-select">
-                        <option value="">--</option>
-                        {[1, 2, 3, 4].map((n) => (
-                          <option key={n} value={n}>
-                            {n}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                  <p className="booking-kicker">Home size</p>
+                  <div className="booking-grid three">
+                    <label><span className="booking-label">Bedrooms</span><select value={beds} onChange={(e) => setBeds(e.target.value)} className="booking-select"><option value="">--</option>{[0, 1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n === 0 ? 'Studio' : n}</option>)}</select></label>
+                    <label><span className="booking-label">Bathrooms</span><select value={baths} onChange={(e) => setBaths(e.target.value)} className="booking-select"><option value="">--</option>{[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
+                    <label><span className="booking-label">Kitchens</span><select value={kitchens} onChange={(e) => setKitchens(e.target.value)} className="booking-select">{[1, 2, 3].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
                   </div>
 
-                  {beds && baths && getRoomSqftMin(parseInt(beds), parseInt(baths)) && (
-                    <p className="booking-help">
-                      Mínimo estimado para {beds === '0' ? 'Studio' : `${beds}B/${baths}B`}:{' '}
-                      {getRoomSqftMin(parseInt(beds), parseInt(baths))} sqft
-                    </p>
-                  )}
+                  {beds && baths && <p className="booking-help">Estimated minimum: {estimatedSqftFromRooms(parseInt(beds), parseInt(baths), parseInt(kitchens) || 1)} sqft based on bedrooms, bathrooms and kitchen.</p>}
 
                   <div style={{ marginTop: 12 }}>
-                    <label className="booking-label">Sqft exacto (opcional)</label>
-                    <input
-                      type="number"
-                      min="100"
-                      value={sqft}
-                      onChange={(e) => setSqft(e.target.value)}
-                      placeholder="ej: 1200"
-                      className="booking-input"
-                    />
+                    <label className="booking-label">Exact sqft (optional)</label>
+                    <input type="number" min="100" value={sqft} onChange={(e) => setSqft(e.target.value)} placeholder="example: 1200" className="booking-input" />
                   </div>
 
-                  {priceCalc?.corrected && (
-                    <div className="booking-error" style={{ marginTop: 12 }}>
-                      Sqft ajustado a {priceCalc.sqftUsed} según las habitaciones declaradas.
+                  {priceCalc?.corrected && <div className="booking-error" style={{ marginTop: 12 }}>Sqft adjusted to {priceCalc.sqftUsed} based on the declared rooms.</div>}
+
+                  <div style={{ marginTop: 18 }}>
+                    <p className="booking-kicker">Cleaning add-ons</p>
+                    <div className="booking-grid four">
+                      <label><span className="booking-label">Drawers to clean/organize</span><input type="number" min="0" value={drawerCount} onChange={(e) => setDrawerCount(e.target.value)} className="booking-input" /></label>
+                      <label><span className="booking-label">Carpet sqft</span><input type="number" min="0" value={carpetSqft} onChange={(e) => setCarpetSqft(e.target.value)} className="booking-input" /></label>
+                      <label><span className="booking-label">Interior windows</span><input type="number" min="0" value={windowInside} onChange={(e) => setWindowInside(e.target.value)} className="booking-input" /></label>
+                      <label><span className="booking-label">Exterior windows</span><input type="number" min="0" value={windowOutside} onChange={(e) => setWindowOutside(e.target.value)} className="booking-input" /></label>
                     </div>
-                  )}
+                    <div className="booking-grid two" style={{ marginTop: 10 }}>
+                      <label><span className="booking-label">Rug size</span><select value={rugSize} onChange={(e) => setRugSize(e.target.value)} className="booking-select"><option value="">No rug</option>{Object.entries(RUG_PRICES).map(([key, rug]) => <option key={key} value={key}>{rug.label} (+${rug.price})</option>)}</select></label>
+                      <label><span className="booking-label">Rug count</span><input type="number" min="0" value={rugCount} onChange={(e) => setRugCount(e.target.value)} className="booking-input" /></label>
+                    </div>
+                    {priceCalc?.addonTotal ? <p className="booking-help">Add-ons total: ${priceCalc.addonTotal.toFixed(2)}</p> : null}
+                  </div>
 
-                  <div style={{ marginTop: 12 }}>
-                    <label className="booking-label">Frecuencia</label>
+                  <div style={{ marginTop: 18 }}>
+                    <label className="booking-label">Frequency</label>
                     <div className="booking-grid two">
                       {FREQ_OPTIONS.map((f) => (
-                        <button
-                          key={f.key}
-                          onClick={() => setFrequency(f.key)}
-                          className={`booking-option green ${frequency === f.key ? 'selected' : ''}`}
-                          type="button"
-                          style={{ minHeight: 58 }}
-                        >
+                        <button key={f.key} onClick={() => setFrequency(f.key)} className={`booking-option green ${frequency === f.key ? 'selected' : ''}`} type="button" style={{ minHeight: 58 }}>
                           <strong>{f.label}</strong>
                           {f.disc > 0 && <span>-{f.disc * 100}%</span>}
                         </button>
@@ -501,121 +477,40 @@ export default function NewBookingPage() {
 
               {isCarWash && (
                 <div className="booking-section">
-                  <label className="booking-label">Tipo de vehículo</label>
+                  <label className="booking-label">Vehicle type</label>
                   <div className="booking-grid two">
-                    {VEHICLE_TYPES.map((v) => (
-                      <button
-                        key={v.code}
-                        onClick={() => setVehicleCode(v.code)}
-                        className={`booking-option ${vehicleCode === v.code ? 'selected' : ''}`}
-                        type="button"
-                      >
-                        <strong>{v.label}</strong>
-                        <span>{v.examples}</span>
-                      </button>
-                    ))}
+                    {VEHICLE_TYPES.map((v) => <button key={v.code} onClick={() => setVehicleCode(v.code)} className={`booking-option ${vehicleCode === v.code ? 'selected' : ''}`} type="button"><strong>{v.label}</strong><span>{v.examples}</span></button>)}
                   </div>
 
-                  {vehicleCode && (
-                    <div style={{ marginTop: 14 }}>
-                      <label className="booking-label">Paquete</label>
-                      <div className="booking-grid three">
-                        {Object.entries(CAR_PKG_DETAILS).map(([key, pkg]) => (
-                          <button
-                            key={key}
-                            onClick={() => setCarPkg(key)}
-                            className={`booking-option ${carPkg === key ? 'selected' : ''}`}
-                            type="button"
-                          >
-                            <strong>{pkg.label}</strong>
-                            <span>{pkg.includes}</span>
-                            <em>${CAR_WASH_RATES[vehicleCode]?.[key]}</em>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  {vehicleCode && <div style={{ marginTop: 14 }}><label className="booking-label">Package</label><div className="booking-grid three">{Object.entries(CAR_PKG_DETAILS).map(([key, pkg]) => <button key={key} onClick={() => setCarPkg(key)} className={`booking-option ${carPkg === key ? 'selected' : ''}`} type="button"><strong>{pkg.label}</strong><span>{pkg.includes}</span><em>${CAR_WASH_RATES[vehicleCode]?.[key]}</em></button>)}</div></div>}
 
-                  {vehicleCode && carPkg && (
-                    <div style={{ marginTop: 14 }}>
-                      <label className="booking-label">Add-ons (opcional)</label>
-                      <div className="booking-grid two">
-                        {ADDONS.map((a) => (
-                          <button
-                            key={a.code}
-                            onClick={() =>
-                              setSelectedAddons((prev) =>
-                                prev.includes(a.code)
-                                  ? prev.filter((x) => x !== a.code)
-                                  : [...prev, a.code]
-                              )
-                            }
-                            className={`booking-option green ${selectedAddons.includes(a.code) ? 'selected' : ''}`}
-                            type="button"
-                          >
-                            <strong>{a.label}</strong>
-                            <span>+${a.price}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  {vehicleCode && carPkg && <div style={{ marginTop: 14 }}><label className="booking-label">Add-ons (optional)</label><div className="booking-grid two">{CAR_ADDONS.map((a) => <button key={a.code} onClick={() => setSelectedCarAddons((prev) => prev.includes(a.code) ? prev.filter((x) => x !== a.code) : [...prev, a.code])} className={`booking-option green ${selectedCarAddons.includes(a.code) ? 'selected' : ''}`} type="button"><strong>{a.label}</strong><span>+${a.price}</span></button>)}</div></div>}
                 </div>
               )}
 
               {isLaundry && (
                 <div className="booking-section">
-                  <label className="booking-label">Libras estimadas (mín. 10 lbs)</label>
-                  <input
-                    type="number"
-                    min="10"
-                    value={weightLbs}
-                    onChange={(e) => setWeightLbs(e.target.value)}
-                    className="booking-input"
-                  />
-                  <p className="booking-help">$3/lb + $30 pickup & delivery</p>
-                </div>
-              )}
-
-              {isDry && (
-                <div className="booking-section">
-                  <label className="booking-label">Número de prendas</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={itemCount}
-                    onChange={(e) => setItemCount(e.target.value)}
-                    className="booking-input"
-                  />
-                  <p className="booking-help">$12 por prenda</p>
+                  <label className="booking-label">Estimated pounds (minimum 10 lbs)</label>
+                  <input type="number" min="10" value={weightLbs} onChange={(e) => setWeightLbs(e.target.value)} className="booking-input" />
+                  <p className="booking-help">$2.50/lb + $20 pickup and delivery. Minimum $45.</p>
                 </div>
               )}
 
               {priceCalc && (
                 <div className="booking-price-card">
-                  <p>Tu precio estimado</p>
+                  <p>Estimated price</p>
                   <strong>${priceCalc.price.toFixed(2)}</strong>
                   <div className="booking-price-meta">
-                    {priceCalc.hours && <span>{priceCalc.hours}h estimadas</span>}
+                    {priceCalc.hours && <span>{priceCalc.hours} estimated hours</span>}
                     {priceCalc.sqftUsed && <span>{priceCalc.sqftUsed} sqft</span>}
-                    {(FREQ_OPTIONS.find((f) => f.key === frequency)?.disc ?? 0) > 0 && (
-                      <span>
-                        -{(FREQ_OPTIONS.find((f) => f.key === frequency)?.disc ?? 0) * 100}% frecuencia
-                      </span>
-                    )}
-                    {priceCalc.corrected && <span>Sqft validado</span>}
+                    {priceCalc.addonTotal ? <span>${priceCalc.addonTotal.toFixed(2)} add-ons</span> : null}
+                    {(FREQ_OPTIONS.find((f) => f.key === frequency)?.disc ?? 0) > 0 && <span>-{(FREQ_OPTIONS.find((f) => f.key === frequency)?.disc ?? 0) * 100}% frequency</span>}
+                    {priceCalc.corrected && <span>Sqft validated</span>}
                   </div>
                 </div>
               )}
 
-              <button
-                onClick={() => canStep1 && setStep(2)}
-                disabled={!canStep1}
-                className="booking-button"
-                type="button"
-              >
-                Continuar →
-              </button>
+              <button onClick={() => canStep1 && setStep(2)} disabled={!canStep1} className="booking-button" type="button">Continue</button>
             </>
           )}
 
@@ -623,94 +518,26 @@ export default function NewBookingPage() {
             <>
               <div className="booking-summary">
                 <div>
-                  <strong>{SERVICE_RATES[serviceType]?.label ?? serviceType}</strong>
-                  {priceCalc?.hours && (
-                    <span>
-                      {priceCalc.sqftUsed} sqft · {priceCalc.hours}h
-                    </span>
-                  )}
+                  <strong>{serviceLabel(serviceType)}</strong>
+                  {priceCalc?.hours && <span>{priceCalc.sqftUsed} sqft - {priceCalc.hours}h</span>}
                 </div>
                 <b>${priceCalc?.price.toFixed(2)}</b>
               </div>
 
               <div className="booking-grid two">
-                <label style={{ gridColumn: '1 / -1' }}>
-                  <span className="booking-label">Dirección *</span>
-                  <input
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="123 Main St, Apt 4B"
-                    className="booking-input"
-                  />
-                </label>
-
-                <label>
-                  <span className="booking-label">Ciudad</span>
-                  <input
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="Newark"
-                    className="booking-input"
-                  />
-                </label>
-
-                <label>
-                  <span className="booking-label">ZIP</span>
-                  <input
-                    value={zipCode}
-                    onChange={(e) => setZipCode(e.target.value)}
-                    placeholder="08901"
-                    className="booking-input"
-                  />
-                </label>
-
-                <label>
-                  <span className="booking-label">Fecha *</span>
-                  <input
-                    type="date"
-                    value={scheduledDate}
-                    onChange={(e) => setScheduledDate(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="booking-input"
-                  />
-                </label>
-
-                <label>
-                  <span className="booking-label">Hora *</span>
-                  <select
-                    value={scheduledTime}
-                    onChange={(e) => setScheduledTime(e.target.value)}
-                    className="booking-select"
-                  >
-                    <option value="">Seleccionar</option>
-                    {['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'].map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label style={{ gridColumn: '1 / -1' }}>
-                  <span className="booking-label">Notas (opcional)</span>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Código de acceso, mascotas, instrucciones especiales..."
-                    className="booking-textarea"
-                  />
-                </label>
+                <label style={{ gridColumn: '1 / -1' }}><span className="booking-label">Address *</span><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="123 Main St, Apt 4B" className="booking-input" /></label>
+                <label><span className="booking-label">City</span><input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Newark" className="booking-input" /></label>
+                <label><span className="booking-label">ZIP</span><input value={zipCode} onChange={(e) => setZipCode(e.target.value)} placeholder="08901" className="booking-input" /></label>
+                <label><span className="booking-label">Date *</span><input type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} min={new Date().toISOString().split('T')[0]} className="booking-input" /></label>
+                <label><span className="booking-label">Time *</span><select value={scheduledTime} onChange={(e) => setScheduledTime(e.target.value)} className="booking-select"><option value="">Select</option>{['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'].map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
+                <label style={{ gridColumn: '1 / -1' }}><span className="booking-label">Notes (optional)</span><textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Access code, pets, special instructions..." className="booking-textarea" /></label>
               </div>
 
               {error && <div className="booking-error">{error}</div>}
 
               <div className="booking-actions" style={{ marginTop: 16 }}>
-                <button onClick={() => setStep(1)} className="booking-button secondary" type="button">
-                  ← Atrás
-                </button>
-                <button onClick={handleSubmit} disabled={loading} className="booking-button" type="button">
-                  {loading ? 'Creando...' : 'Confirmar Booking'}
-                </button>
+                <button onClick={() => setStep(1)} className="booking-button secondary" type="button">Back</button>
+                <button onClick={handleSubmit} disabled={loading} className="booking-button" type="button">{loading ? 'Creating...' : 'Confirm Booking'}</button>
               </div>
             </>
           )}
