@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useTranslation } from '../../lib/i18n/useTranslation';
 
 const API =
   process.env.NEXT_PUBLIC_API_URL ||
-  'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
+  'https://commercial-clean-setup.replit.app/api';
 
 const C = {
   navy: '#0D3781',
@@ -43,27 +44,88 @@ const SERVICE_LABELS: Record<string, string> = {
   LAUNDRY_PICKUP: 'Laundry',
 };
 
-function greetingForNow() {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+const CLIENT_DASH_TEXT: Record<string, Record<string, string>> = {
+  en: {
+    morning: 'Good morning',
+    afternoon: 'Good afternoon',
+    evening: 'Good evening',
+    subtitle: 'Track your active services, assigned professionals and booking history.',
+    bookService: 'Book a Service',
+    activeServices: 'Active services',
+    completedServices: 'Completed services',
+    totalSpent: 'Total spent',
+    schedule: 'Schedule',
+    noServicesDate: 'No services on this date',
+    serviceScheduled: 'Service scheduled',
+    schedulePending: 'Schedule pending',
+    myServices: 'My Services',
+    noActiveServices: 'No active services',
+    emptyCopy: 'Book your next cleaning and it will appear here as soon as it is created.',
+    addressPending: 'Address pending',
+    bookingConfirmed: 'Booking confirmed! A professional will be assigned soon.',
+    matchingProfessional: 'Matching professional',
+    professionalAssigned: 'Professional assigned',
+    serviceInProgress: 'Service in progress',
+    serviceCompleted: 'Service completed',
+    cancelled: 'Cancelled',
+  },
+  es: {
+    morning: 'Buenos dias',
+    afternoon: 'Buenas tardes',
+    evening: 'Buenas noches',
+    subtitle: 'Consulta tus servicios activos, profesionales asignados e historial de reservas.',
+    bookService: 'Reservar servicio',
+    activeServices: 'Servicios activos',
+    completedServices: 'Servicios completados',
+    totalSpent: 'Total gastado',
+    schedule: 'Calendario',
+    noServicesDate: 'No hay servicios en esta fecha',
+    serviceScheduled: 'Servicio programado',
+    schedulePending: 'Horario pendiente',
+    myServices: 'Mis servicios',
+    noActiveServices: 'No hay servicios activos',
+    emptyCopy: 'Reserva tu proxima limpieza y aparecera aqui cuando sea creada.',
+    addressPending: 'Direccion pendiente',
+    bookingConfirmed: 'Reserva confirmada. Un profesional sera asignado pronto.',
+    matchingProfessional: 'Asignando profesional',
+    professionalAssigned: 'Profesional asignado',
+    serviceInProgress: 'Servicio en progreso',
+    serviceCompleted: 'Servicio completado',
+    cancelled: 'Cancelado',
+  },
+};
+
+function cdt(lang: string, key: string) {
+  return CLIENT_DASH_TEXT[lang]?.[key] || CLIENT_DASH_TEXT.en[key] || key;
 }
 
-function serviceName(value: string) {
-  return SERVICE_LABELS[value] || String(value || 'Service').replace(/_/g, ' ');
+function localeForLang(lang: string) {
+  return lang === 'es' ? 'es-US' : 'en-US';
+}
+
+function greetingForNow(lang: string) {
+  const hour = new Date().getHours();
+  if (hour < 12) return cdt(lang, 'morning');
+  if (hour < 18) return cdt(lang, 'afternoon');
+  return cdt(lang, 'evening');
+}
+
+function serviceName(value: string, t: (key: string) => string) {
+  const key = String(value || 'HOUSE_CLEANING').toLowerCase();
+  return t('services.' + key) || SERVICE_LABELS[value] || String(value || 'Service').replace(/_/g, ' ');
 }
 
 function bookingAddress(booking: any) {
   return [booking?.address, booking?.city, booking?.state].filter(Boolean).join(', ');
 }
 
-function bookingDate(booking: any) {
-  if (!booking?.scheduled_at) return 'Schedule pending';
+function bookingDate(booking: any, lang: string) {
+  if (!booking?.scheduled_at) return cdt(lang, 'schedulePending');
   const d = new Date(booking.scheduled_at);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
-    ' at ' +
-    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const locale = localeForLang(lang);
+  return d.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' }) +
+    ' - ' +
+    d.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' });
 }
 
 function bookingAmount(booking: any) {
@@ -71,17 +133,26 @@ function bookingAmount(booking: any) {
   return Number.isFinite(amount) && amount > 0 ? amount : 0;
 }
 
-function StatusBadge({ status }: { status: string }) {
+function statusNote(status: string, lang: string) {
+  if (status === 'PENDING_ASSIGNMENT') return cdt(lang, 'matchingProfessional');
+  if (status === 'CONFIRMED') return cdt(lang, 'professionalAssigned');
+  if (status === 'IN_PROGRESS') return cdt(lang, 'serviceInProgress');
+  if (status === 'COMPLETED') return cdt(lang, 'serviceCompleted');
+  if (status === 'CANCELLED') return cdt(lang, 'cancelled');
+  return '';
+}
+
+function StatusBadge({ status, t }: { status: string; t: (key: string) => string }) {
   const s = STATUS[status] || STATUS.PENDING_ASSIGNMENT;
   return (
     <span className="client-status-badge" style={{ background: s.bg, color: s.color }}>
       <span style={{ background: s.dot }} />
-      {s.label}
+      {t('statuses.' + status) || s.label}
     </span>
   );
 }
 
-function CalendarStrip({ bookings }: { bookings: any[] }) {
+function CalendarStrip({ bookings, t, lang }: { bookings: any[]; t: (key: string) => string; lang: string }) {
   const [selected, setSelected] = useState(new Date().toISOString().split('T')[0]);
   const today = new Date();
   const days = Array.from({ length: 14 }, (_, i) => {
@@ -97,7 +168,7 @@ function CalendarStrip({ bookings }: { bookings: any[] }) {
 
   return (
     <div className="client-schedule-card">
-      <div className="client-section-title">Schedule</div>
+      <div className="client-section-title">{cdt(lang, 'schedule')}</div>
       <div className="client-calendar-strip">
         {days.map((d) => {
           const key = d.toISOString().split('T')[0];
@@ -105,7 +176,7 @@ function CalendarStrip({ bookings }: { bookings: any[] }) {
           const hasBooking = bookings.some((b) => b.scheduled_at && new Date(b.scheduled_at).toDateString() === d.toDateString());
           return (
             <button key={key} type="button" onClick={() => setSelected(key)} className={active ? 'active' : ''}>
-              <span>{d.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+              <span>{d.toLocaleDateString(localeForLang(lang), { weekday: 'short' })}</span>
               <strong>{d.getDate()}</strong>
               <i style={{ opacity: hasBooking ? 1 : 0 }} />
             </button>
@@ -117,20 +188,21 @@ function CalendarStrip({ bookings }: { bookings: any[] }) {
         <div className="client-day-list">
           {dayBookings.map((booking) => (
             <div key={booking.id}>
-              <strong>{serviceName(booking.service_type)}</strong>
-              <span>{bookingAddress(booking) || STATUS[booking.status]?.note || 'Service scheduled'}</span>
-              <StatusBadge status={booking.status} />
+              <strong>{serviceName(booking.service_type, t)}</strong>
+              <span>{bookingAddress(booking) || statusNote(booking.status, lang) || cdt(lang, 'serviceScheduled')}</span>
+              <StatusBadge status={booking.status} t={t} />
             </div>
           ))}
         </div>
       ) : (
-        <p className="client-empty-line">No services on this date</p>
+        <p className="client-empty-line">{cdt(lang, 'noServicesDate')}</p>
       )}
     </div>
   );
 }
 
 export default function ClientDashboard() {
+  const { t, lang } = useTranslation();
   const [bookings, setBookings] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -247,44 +319,44 @@ export default function ClientDashboard() {
 
       {bookingConfirmed && (
         <div className="client-confirm-banner">
-          Booking confirmed! A professional will be assigned soon.
+          {cdt(lang, 'bookingConfirmed')}
           {lastBookingId && <span> ID: {lastBookingId}</span>}
         </div>
       )}
 
       <div className="client-dashboard-header">
         <div>
-          <h1>{greetingForNow()}, {clientName.split(' ')[0]}</h1>
-          <p>Track your active services, assigned professionals and booking history.</p>
+          <h1>{greetingForNow(lang)}, {clientName.split(' ')[0]}</h1>
+          <p>{cdt(lang, 'subtitle')}</p>
         </div>
-        <Link href="/dashboard/new-booking" className="client-primary-action">Book a Service</Link>
+        <Link href="/dashboard/new-booking" className="client-primary-action">{cdt(lang, 'bookService')}</Link>
       </div>
 
       <div className="client-stats-row">
         <div className="client-stat-card" style={{ background: `linear-gradient(135deg, ${C.navy}, ${C.blue})` }}>
           <strong>{activeBookings.length}</strong>
-          <span>Active services</span>
+          <span>{cdt(lang, 'activeServices')}</span>
         </div>
         <div className="client-stat-card" style={{ background: `linear-gradient(135deg, ${C.green}, ${C.greenDk})` }}>
           <strong>{completedBookings.length}</strong>
-          <span>Completed services</span>
+          <span>{cdt(lang, 'completedServices')}</span>
         </div>
         <div className="client-stat-card" style={{ background: 'linear-gradient(135deg, #64748B, #334155)' }}>
           <strong>${totalSpent.toFixed(0)}</strong>
-          <span>Total spent</span>
+          <span>{cdt(lang, 'totalSpent')}</span>
         </div>
       </div>
 
-      <CalendarStrip bookings={activeBookings} />
+      <CalendarStrip bookings={activeBookings} t={t} lang={lang} />
 
       <div className="client-card">
-        <div className="client-section-title">My Services</div>
+        <div className="client-section-title">{cdt(lang, 'myServices')}</div>
         {nextServices.length === 0 ? (
           <div className="client-empty-state">
             <div>+</div>
-            <h3>No active services</h3>
-            <p>Book your next cleaning and it will appear here as soon as it is created.</p>
-            <Link href="/dashboard/new-booking" className="client-primary-action">Book a Service</Link>
+            <h3>{cdt(lang, 'noActiveServices')}</h3>
+            <p>{cdt(lang, 'emptyCopy')}</p>
+            <Link href="/dashboard/new-booking" className="client-primary-action">{cdt(lang, 'bookService')}</Link>
           </div>
         ) : (
           <div className="client-services-list">
@@ -295,16 +367,16 @@ export default function ClientDashboard() {
               return (
                 <article className="client-service-card" key={booking.id}>
                   <div>
-                    <h3>{serviceName(booking.service_type)}</h3>
-                    <p>{bookingAddress(booking) || 'Address pending'}</p>
+                    <h3>{serviceName(booking.service_type, t)}</h3>
+                    <p>{bookingAddress(booking) || cdt(lang, 'addressPending')}</p>
                     <div className="client-service-meta">
-                      <span>{bookingDate(booking)}</span>
-                      <span>{status.note}</span>
+                      <span>{bookingDate(booking, lang)}</span>
+                      <span>{statusNote(booking.status, lang) || status.note}</span>
                       {pro?.fullName || pro?.full_name ? <span>{pro.fullName || pro.full_name}</span> : null}
                     </div>
                   </div>
                   <div>
-                    <StatusBadge status={booking.status} />
+                    <StatusBadge status={booking.status} t={t} />
                     {amount > 0 && <div className="client-service-price">${amount.toFixed(2)}</div>}
                   </div>
                 </article>

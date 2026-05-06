@@ -7,7 +7,7 @@ import Image from 'next/image';
 import LanguageSelector from '../../lib/i18n/LanguageSelector';
 import { useTranslation } from '../../lib/i18n/useTranslation';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup.replit.app/api';
 
 const C = {
   navy: '#0D3781', navyDark: '#081f4a', blue: '#1565C0',
@@ -44,13 +44,34 @@ const STATUS: Record<string, { label: string; bg: string; color: string; dot: st
 };
 
 const SVC_ICONS: Record<string, string> = {
-  HOUSE_CLEANING: '🏠', DEEP_CLEANING: '✨', MOVE_IN_OUT: '📦',
-  SAME_DAY_CLEANING: '⚡', OFFICE_CLEANING: '🏢', POST_CONSTRUCTION: '🔨',
-  MEDICAL_CLEANING: '🏥', CARPET_CLEANING: '🛋', WINDOW_CLEANING: '🪟',
-  ORGANIZING: '📋', CAR_WASH: '🚗', LAUNDRY_PICKUP: '👕', DRY_CLEANING: '👔',
+  HOUSE_CLEANING: 'HC', DEEP_CLEANING: 'DC', MOVE_IN_OUT: 'MV',
+  SAME_DAY_CLEANING: 'SD', OFFICE_CLEANING: 'OF', POST_CONSTRUCTION: 'PC',
+  MEDICAL_CLEANING: 'MC', CARPET_CLEANING: 'CP', WINDOW_CLEANING: 'WN',
+  ORGANIZING: 'OR', CAR_WASH: 'CW', LAUNDRY_PICKUP: 'LD', DRY_CLEANING: 'DR',
 };
 
-function AddressMapCard({ booking, onClose }: { booking: any; onClose: () => void }) {
+const PRO_LAYOUT_TEXT: Record<string, Record<string, string>> = {
+  en: {
+    proPortal: 'Pro Portal', verified: 'Verified', navigation: 'Navigation', signOut: 'Sign Out',
+    earningsSummary: 'Earnings Summary', active: 'Active', done: 'Done', rating: 'Rating', pending: 'Pending',
+    status: 'Status', backgroundVerified: 'Background Verified', idConfirmed: 'ID Confirmed', payoutActive: 'Payout Active',
+    quickAccess: 'Quick Access', findJobs: 'Find Jobs', myEarnings: 'My Earnings', editProfile: 'Edit Profile', paymentSetup: 'Payment Setup',
+    payments: 'Payments', profile: 'Profile', earnings: 'Earnings', openGoogleMaps: 'Open in Google Maps',
+  },
+  es: {
+    proPortal: 'Portal Pro', verified: 'Verificado', navigation: 'Navegacion', signOut: 'Cerrar sesion',
+    earningsSummary: 'Resumen de ganancias', active: 'Activos', done: 'Completados', rating: 'Calificacion', pending: 'Pendientes',
+    status: 'Estado', backgroundVerified: 'Antecedentes verificados', idConfirmed: 'Identidad confirmada', payoutActive: 'Pagos activos',
+    quickAccess: 'Accesos rapidos', findJobs: 'Buscar trabajos', myEarnings: 'Mis ganancias', editProfile: 'Editar perfil', paymentSetup: 'Configurar pagos',
+    payments: 'Pagos', profile: 'Perfil', earnings: 'Ganancias', openGoogleMaps: 'Abrir en Google Maps',
+  },
+};
+
+function lt(lang: string, key: string) {
+  return PRO_LAYOUT_TEXT[lang]?.[key] || PRO_LAYOUT_TEXT.en[key] || key;
+}
+
+function AddressMapCard({ booking, onClose, t, lang }: { booking: any; onClose: () => void; t: (key: string) => string; lang: string }) {
   const addr = encodeURIComponent(`${booking.address || ''} ${booking.city || ''} ${booking.state || ''}`);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${addr}`;
   const s = STATUS[booking.status] || STATUS.PENDING_ASSIGNMENT;
@@ -69,9 +90,9 @@ function AddressMapCard({ booking, onClose }: { booking: any; onClose: () => voi
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <span style={{ fontSize: 20 }}>{SVC_ICONS[booking.service_type] || '🧹'}</span>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 13, color: C.text }}>{(booking.service_type || '').replace(/_/g, ' ')}</div>
+              <div style={{ fontWeight: 700, fontSize: 13, color: C.text }}>{t('services.' + booking.service_type) === 'services.' + booking.service_type ? (booking.service_type || '').replace(/_/g, ' ') : t('services.' + booking.service_type)}</div>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: s.bg, color: s.color, padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700 }}>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: s.dot, display: 'inline-block' }}/>{s.label}
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: s.dot, display: 'inline-block' }}/>{t('statuses.' + booking.status) === 'statuses.' + booking.status ? s.label : t('statuses.' + booking.status)}
               </span>
             </div>
           </div>
@@ -92,7 +113,7 @@ function AddressMapCard({ booking, onClose }: { booking: any; onClose: () => voi
             </div>
           )}
           <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 0', borderRadius: 12, textDecoration: 'none', background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`, color: '#fff', fontSize: 12, fontWeight: 700 }}>
-            <IC.Map c="#fff" s={14}/> Open in Google Maps
+            <IC.Map c="#fff" s={14}/> {lt(lang, 'openGoogleMaps')}
           </a>
         </div>
       </div>
@@ -130,7 +151,7 @@ function PhotoUpload({ initials }: { initials: string }) {
   );
 }
 
-function RightPanel({ bookings, selectedBooking, onSelectBooking }: { bookings: any[]; selectedBooking: any; onSelectBooking: (b: any) => void }) {
+function RightPanel({ bookings, selectedBooking, onSelectBooking, t, lang }: { bookings: any[]; selectedBooking: any; onSelectBooking: (b: any) => void; t: (key: string) => string; lang: string }) {
   const active = bookings.filter(b => ['CONFIRMED', 'IN_PROGRESS'].includes(b.status));
   const completed = bookings.filter(b => b.status === 'COMPLETED');
   const earnings = completed.reduce((s, b) => s + Number(b.payout_amount || 0), 0);
@@ -140,14 +161,14 @@ function RightPanel({ bookings, selectedBooking, onSelectBooking }: { bookings: 
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {/* Earnings Card */}
       <div style={{ background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`, borderRadius: 16, padding: '16px 18px', color: '#fff', boxShadow: '0 6px 24px rgba(13,55,129,0.25)' }}>
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', opacity: 0.6, marginBottom: 8 }}>Earnings Summary</div>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', opacity: 0.6, marginBottom: 8 }}>{lt(lang, 'earningsSummary')}</div>
         <div style={{ fontSize: 30, fontWeight: 800, fontFamily: 'Poppins, sans-serif', marginBottom: 12 }}>${earnings.toFixed(2)}</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {[
-            { label: 'Active', val: active.length, icon: 'A' },
-            { label: 'Done', val: completed.length, icon: 'D' },
-            { label: 'Rating', val: `${rating} star`, icon: 'R' },
-            { label: 'Pending', val: 0, icon: 'P' },
+            { label: lt(lang, 'active'), val: active.length, icon: 'A' },
+            { label: lt(lang, 'done'), val: completed.length, icon: 'D' },
+            { label: lt(lang, 'rating'), val: lang === 'es' ? `${rating} estrellas` : `${rating} star`, icon: 'R' },
+            { label: lt(lang, 'pending'), val: 0, icon: 'P' },
           ].map(s => (
             <div key={s.label} style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 10, padding: '7px 10px' }}>
               <div style={{ fontSize: 10, opacity: 0.6 }}>{s.icon} {s.label}</div>
@@ -159,11 +180,11 @@ function RightPanel({ bookings, selectedBooking, onSelectBooking }: { bookings: 
 
       {/* Status — clickeable */}
       <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '12px 14px' }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>Status</div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>{lt(lang, 'status')}</div>
         {[
-          { label: 'Background Verified', bg: '#D1FAE5', color: C.greenDk, icon: <IC.Shield c={C.greenDk} s={14}/>, href: '/pro/profile' },
-          { label: 'ID Confirmed', bg: '#D1FAE5', color: C.greenDk, icon: <IC.Check c={C.greenDk} s={14}/>, href: '/pro/profile' },
-          { label: 'Payout Active', bg: '#DBEAFE', color: C.blue, icon: <IC.Card c={C.blue} s={14}/>, href: '/pro/payments' },
+          { label: lt(lang, 'backgroundVerified'), bg: '#D1FAE5', color: C.greenDk, icon: <IC.Shield c={C.greenDk} s={14}/>, href: '/pro/profile' },
+          { label: lt(lang, 'idConfirmed'), bg: '#D1FAE5', color: C.greenDk, icon: <IC.Check c={C.greenDk} s={14}/>, href: '/pro/profile' },
+          { label: lt(lang, 'payoutActive'), bg: '#DBEAFE', color: C.blue, icon: <IC.Card c={C.blue} s={14}/>, href: '/pro/payments' },
         ].map(b => (
           <Link key={b.label} href={b.href} style={{ textDecoration: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 9px', borderRadius: 9, marginBottom: 5, background: b.bg, cursor: 'pointer', transition: 'opacity 0.15s' }}
@@ -179,12 +200,12 @@ function RightPanel({ bookings, selectedBooking, onSelectBooking }: { bookings: 
 
       {/* Quick Access — links reales */}
       <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '12px 14px' }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>Quick Access</div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>{lt(lang, 'quickAccess')}</div>
         {[
-          { label: 'Find Jobs', href: '/pro/marketplace', icon: <IC.Market c={C.blue} s={16}/>, color: C.blue, bg: '#DBEAFE' },
-          { label: 'My Earnings', href: '/pro/earnings', icon: <IC.Dollar c={C.greenDk} s={16}/>, color: C.greenDk, bg: '#D1FAE5' },
-          { label: 'Edit Profile', href: '/pro/profile', icon: <IC.Profile c={C.navy} s={16}/>, color: C.navy, bg: `${C.navy}15` },
-          { label: 'Payment Setup', href: '/pro/payments', icon: <IC.Card c='#7C3AED' s={16}/>, color: '#7C3AED', bg: '#EDE9FE' },
+          { label: lt(lang, 'findJobs'), href: '/pro/marketplace', icon: <IC.Market c={C.blue} s={16}/>, color: C.blue, bg: '#DBEAFE' },
+          { label: lt(lang, 'myEarnings'), href: '/pro/earnings', icon: <IC.Dollar c={C.greenDk} s={16}/>, color: C.greenDk, bg: '#D1FAE5' },
+          { label: lt(lang, 'editProfile'), href: '/pro/profile', icon: <IC.Profile c={C.navy} s={16}/>, color: C.navy, bg: `${C.navy}15` },
+          { label: lt(lang, 'paymentSetup'), href: '/pro/payments', icon: <IC.Card c='#7C3AED' s={16}/>, color: '#7C3AED', bg: '#EDE9FE' },
         ].map(l => (
           <Link key={l.href} href={l.href} style={{ textDecoration: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, marginBottom: 5, border: `1px solid ${C.border}`, cursor: 'pointer', transition: 'background 0.15s' }}
@@ -214,7 +235,7 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
   const [bookings, setBookings] = useState<any[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [rating, setRating] = useState<number | null>(null);
-  const { lang, setLang } = useTranslation();
+  const { t, lang, setLang } = useTranslation();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -240,19 +261,19 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
   function logout() { localStorage.clear(); router.push('/'); }
 
   const NAV = [
-    { href: '/pro/dashboard', label: 'My Jobs', Icon: IC.Jobs },
-    { href: '/pro/marketplace', label: 'Available', Icon: IC.Market },
-    { href: '/pro/history', label: 'History', Icon: IC.History },
-    { href: '/pro/earnings', label: 'Earnings', Icon: IC.Dollar },
-    { href: '/pro/payments', label: 'Payments', Icon: IC.Card },
-    { href: '/pro/profile', label: 'Profile', Icon: IC.Profile },
+    { href: '/pro/dashboard', label: t('sidebar.myJobs'), Icon: IC.Jobs },
+    { href: '/pro/marketplace', label: t('sidebar.available'), Icon: IC.Market },
+    { href: '/pro/history', label: t('sidebar.history'), Icon: IC.History },
+    { href: '/pro/earnings', label: lt(lang, 'earnings'), Icon: IC.Dollar },
+    { href: '/pro/payments', label: lt(lang, 'payments'), Icon: IC.Card },
+    { href: '/pro/profile', label: lt(lang, 'profile'), Icon: IC.Profile },
   ];
 
   const MOBILE_NAV = [
-    { href: '/pro/dashboard', label: 'My Jobs', Icon: IC.Jobs },
-    { href: '/pro/marketplace', label: 'Available', Icon: IC.Market },
-    { href: '/pro/earnings', label: 'Earnings', Icon: IC.Dollar },
-    { href: '/pro/profile', label: 'Profile', Icon: IC.Profile },
+    { href: '/pro/dashboard', label: t('sidebar.myJobs'), Icon: IC.Jobs },
+    { href: '/pro/marketplace', label: t('sidebar.available'), Icon: IC.Market },
+    { href: '/pro/earnings', label: lt(lang, 'earnings'), Icon: IC.Dollar },
+    { href: '/pro/profile', label: lt(lang, 'profile'), Icon: IC.Profile },
   ];
 
   if (!ready) return null;
@@ -267,24 +288,24 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
           <Image src="/logo.jpg" alt="EverClean" width={40} height={40} style={{ borderRadius: 11, boxShadow: '0 3px 10px rgba(0,0,0,0.3)', flexShrink: 0 }}/>
           <div>
             <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 15, color: '#fff' }}>Ever<span style={{ color: C.green }}>Clean</span></div>
-            <div style={{ fontSize: 9, color: `${C.green}bb`, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase' }}>Pro Portal</div>
+            <div style={{ fontSize: 9, color: `${C.green}bb`, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase' }}>{lt(lang, 'proPortal')}</div>
           </div>
         </div>
         <div style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 13, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
           <PhotoUpload initials={proInitials}/>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{proName || 'Professional'}</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{proName || t('sidebar.professional')}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
               {rating && <><IC.Star s={10}/><span style={{ fontSize: 10, color: '#fff', opacity: 0.7 }}>{rating.toFixed(1)}</span></>}
               <IC.Shield c={C.green} s={10}/>
-              <span style={{ fontSize: 9, color: `${C.green}cc`, fontWeight: 600 }}>VERIFIED</span>
+              <span style={{ fontSize: 9, color: `${C.green}cc`, fontWeight: 600 }}>{lt(lang, 'verified').toUpperCase()}</span>
             </div>
           </div>
           <div style={{ width: 7, height: 7, borderRadius: '50%', background: isAvailable ? C.green : C.muted, boxShadow: isAvailable ? `0 0 6px ${C.green}` : 'none', flexShrink: 0 }}/>
         </div>
       </div>
       <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto' }}>
-        <div style={{ fontSize: 9, fontWeight: 600, color: 'rgba(255,255,255,0.25)', letterSpacing: '1.5px', textTransform: 'uppercase', padding: '6px 8px', marginBottom: 4 }}>Navigation</div>
+        <div style={{ fontSize: 9, fontWeight: 600, color: 'rgba(255,255,255,0.25)', letterSpacing: '1.5px', textTransform: 'uppercase', padding: '6px 8px', marginBottom: 4 }}>{lt(lang, 'navigation')}</div>
         {NAV.map(({ href, label, Icon }) => {
           const active = pathname === href || pathname.startsWith(href + '/');
           return (
@@ -308,7 +329,7 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
           onMouseEnter={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.12)')}
           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
           <IC.Logout c="rgba(255,255,255,0.3)" s={16}/>
-          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>Sign Out</span>
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>{lt(lang, 'signOut')}</span>
         </button>
       </div>
     </div>
@@ -366,10 +387,10 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
 
       {/* Right Panel — con padding interno y max-width correcta */}
       <aside className="pro-right-desktop" style={{ width: 300, flexShrink: 0, padding: '20px 16px 20px 12px', borderLeft: `1px solid ${C.border}`, background: C.bg, overflowY: 'auto', minHeight: '100vh' }}>
-        <RightPanel bookings={bookings} selectedBooking={selectedBooking} onSelectBooking={setSelectedBooking}/>
+        <RightPanel bookings={bookings} selectedBooking={selectedBooking} onSelectBooking={setSelectedBooking} t={t} lang={lang}/>
       </aside>
 
-      {selectedBooking && <AddressMapCard booking={selectedBooking} onClose={() => setSelectedBooking(null)}/>}
+      {selectedBooking && <AddressMapCard booking={selectedBooking} onClose={() => setSelectedBooking(null)} t={t} lang={lang}/>} 
 
       <nav className="pro-mobile-nav" style={{ display: 'none', position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, background: '#fff', borderTop: `1px solid ${C.border}`, boxShadow: '0 -4px 20px rgba(13,55,129,0.08)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {MOBILE_NAV.map(({ href, label, Icon }) => {

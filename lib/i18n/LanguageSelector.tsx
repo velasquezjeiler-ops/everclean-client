@@ -2,6 +2,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { LANGUAGE_OPTIONS } from './useTranslation';
 
+const SELECTED_LABELS: Record<string, string> = {
+  en: 'Selected', es: 'Seleccionado', zh: '已选择', tl: 'Napili', vi: 'Đã chọn',
+  ar: 'محدد', fr: 'Sélectionné', ko: '선택됨', ru: 'Выбрано', pt: 'Selecionado',
+};
+
 export default function LanguageSelector({ lang, setLang }: { lang: string; setLang: (code: string) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -57,7 +62,7 @@ export default function LanguageSelector({ lang, setLang }: { lang: string; setL
             >
               <span style={{ width: 28, color: '#64748B', fontSize: 10, letterSpacing: 0.5 }}>{opt.short}</span>
               <span style={{ flex: 1 }}>{opt.label}</span>
-              {lang === opt.code && <span style={{ color: '#388E3C', fontSize: 11 }}>Selected</span>}
+              {lang === opt.code && <span style={{ color: '#388E3C', fontSize: 11 }}>{SELECTED_LABELS[lang] || SELECTED_LABELS.en}</span>}
             </button>
           ))}
         </div>

@@ -16,15 +16,15 @@ const LANGS: Record<string, any> = { en, es, zh, tl, vi, ar, fr, ko, ru, pt };
 
 export const LANGUAGE_OPTIONS = [
   { code: 'en', label: 'English', short: 'EN' },
-  { code: 'es', label: 'Spanish', short: 'ES' },
-  { code: 'zh', label: 'Chinese', short: 'ZH' },
+  { code: 'es', label: 'Español', short: 'ES' },
+  { code: 'zh', label: '中文', short: 'ZH' },
   { code: 'tl', label: 'Tagalog', short: 'TL' },
-  { code: 'vi', label: 'Vietnamese', short: 'VI' },
-  { code: 'ar', label: 'Arabic', short: 'AR' },
-  { code: 'fr', label: 'French', short: 'FR' },
-  { code: 'ko', label: 'Korean', short: 'KO' },
-  { code: 'ru', label: 'Russian', short: 'RU' },
-  { code: 'pt', label: 'Portuguese', short: 'PT' },
+  { code: 'vi', label: 'Tiếng Việt', short: 'VI' },
+  { code: 'ar', label: 'العربية', short: 'AR' },
+  { code: 'fr', label: 'Français', short: 'FR' },
+  { code: 'ko', label: '한국어', short: 'KO' },
+  { code: 'ru', label: 'Русский', short: 'RU' },
+  { code: 'pt', label: 'Português', short: 'PT' },
 ];
 
 function getNestedValue(obj: any, path: string): string {
@@ -41,8 +41,25 @@ export function useTranslation() {
   const [lang, setLangState] = useState('en');
 
   useEffect(() => {
-    const saved = localStorage.getItem('lang');
-    if (saved && LANGS[saved]) setLangState(saved);
+    const applyLanguage = (code: string | null) => {
+      if (code && LANGS[code]) setLangState(code);
+    };
+
+    applyLanguage(localStorage.getItem('lang'));
+
+    const handleLanguageChange = (event: Event) => {
+      applyLanguage((event as CustomEvent<string>).detail || localStorage.getItem('lang'));
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === 'lang') applyLanguage(event.newValue);
+    };
+
+    window.addEventListener('everclean:language-change', handleLanguageChange);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('everclean:language-change', handleLanguageChange);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, []);
 
   const setLang = useCallback((code: string) => {

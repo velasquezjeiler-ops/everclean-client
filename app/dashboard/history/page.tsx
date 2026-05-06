@@ -5,7 +5,7 @@ import { useTranslation } from '../../../lib/i18n/useTranslation';
 
 const API =
   process.env.NEXT_PUBLIC_API_URL ||
-  'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
+  'https://commercial-clean-setup.replit.app/api';
 
 const C = {
   navy: '#0D3781',

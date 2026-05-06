@@ -4,10 +4,32 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslation } from '../lib/i18n/useTranslation';
 
 const API =
   process.env.NEXT_PUBLIC_API_URL ||
-  'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
+  'https://commercial-clean-setup.replit.app/api';
+
+const LOGIN_TEXT: Record<string, Record<string, string>> = {
+  en: {
+    heroTitle: 'The smarter way to manage clean.', heroCopy: 'Book services, track your cleaner in real time, and manage every visit from one focused dashboard.',
+    featurePricing: 'Instant pricing by sqft and state', featureTracking: 'Real-time cleaner tracking', featureScheduling: 'Automated scheduling and billing',
+    welcome: 'Welcome back', subtitle: 'Sign in to your account', forgot: 'Forgot password?', signingIn: 'Signing in...', signIn: 'Sign In',
+    newAccount: 'New to EverClean?', createAccount: 'Create an account', footer: 'Professional Cleaning Platform', invalid: 'Invalid credentials', unable: 'Unable to sign in',
+    resetUpdated: 'Password updated. You can sign in now.', unableReset: 'Unable to reset password', unableCode: 'Unable to send reset code', codeSentEmail: 'Code sent by email.', codeSentSms: 'Code sent by SMS.',
+  },
+  es: {
+    heroTitle: 'La forma más inteligente de gestionar limpieza.', heroCopy: 'Reserva servicios, sigue a tu profesional en tiempo real y administra cada visita desde un solo panel.',
+    featurePricing: 'Precios instantáneos por pies cuadrados y estado', featureTracking: 'Seguimiento del profesional en tiempo real', featureScheduling: 'Programación y facturación automatizadas',
+    welcome: 'Bienvenido', subtitle: 'Inicia sesión en tu cuenta', forgot: '¿Olvidaste tu contraseña?', signingIn: 'Iniciando sesión...', signIn: 'Iniciar sesión',
+    newAccount: '¿Nuevo en EverClean?', createAccount: 'Crear una cuenta', footer: 'Plataforma profesional de limpieza', invalid: 'Credenciales inválidas', unable: 'No se pudo iniciar sesión',
+    resetUpdated: 'Contraseña actualizada. Ya puedes iniciar sesión.', unableReset: 'No se pudo restablecer la contraseña', unableCode: 'No se pudo enviar el código', codeSentEmail: 'Código enviado por correo.', codeSentSms: 'Código enviado por SMS.',
+  },
+};
+
+function ltxt(lang: string, key: string) {
+  return LOGIN_TEXT[lang]?.[key] || LOGIN_TEXT.en[key] || key;
+}
 
 const C = {
   navy: '#0D3781',
@@ -35,6 +57,7 @@ export default function LoginPage() {
   const [resetPassword, setResetPassword] = useState('');
   const [resetMessage, setResetMessage] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
+  const { t, lang } = useTranslation();
 
   async function requestPasswordReset() {
     if (!email || resetLoading) return;
@@ -48,11 +71,11 @@ export default function LoginPage() {
         body: JSON.stringify({ email, method: resetMethod }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Unable to send reset code');
+      if (!res.ok) throw new Error(data.error || ltxt(lang, 'unableCode'));
       setResetStep('confirm');
-      setResetMessage(`Code sent by ${resetMethod === 'sms' ? 'SMS' : 'email'}.`);
+      setResetMessage(resetMethod === 'sms' ? ltxt(lang, 'codeSentSms') : ltxt(lang, 'codeSentEmail'));
     } catch (e: any) {
-      setResetMessage(e.message || 'Unable to send reset code');
+      setResetMessage(e.message || ltxt(lang, 'unableCode'));
     } finally {
       setResetLoading(false);
     }
@@ -70,15 +93,15 @@ export default function LoginPage() {
         body: JSON.stringify({ email, code: resetCode, password: resetPassword }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Unable to reset password');
+      if (!res.ok) throw new Error(data.error || ltxt(lang, 'unableReset'));
       setPassword(resetPassword);
       setResetOpen(false);
       setResetStep('request');
       setResetCode('');
       setResetPassword('');
-      setResetMessage('Password updated. You can sign in now.');
+      setResetMessage(ltxt(lang, 'resetUpdated'));
     } catch (e: any) {
-      setResetMessage(e.message || 'Unable to reset password');
+      setResetMessage(e.message || ltxt(lang, 'unableReset'));
     } finally {
       setResetLoading(false);
     }
@@ -99,7 +122,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Invalid credentials');
+        throw new Error(data.error || ltxt(lang, 'invalid'));
       }
 
       localStorage.setItem('token', data.accessToken);
@@ -114,7 +137,7 @@ export default function LoginPage() {
         router.push('/dashboard');
       }
     } catch (e: any) {
-      setError(e.message || 'Unable to sign in');
+      setError(e.message || ltxt(lang, 'unable'));
     } finally {
       setLoading(false);
     }
@@ -408,7 +431,7 @@ export default function LoginPage() {
           </div>
 
           <div className="client-hero-copy">
-            <h1>The smarter way to manage clean.</h1>
+            <h1>{ltxt(lang, 'heroTitle')}</h1>
             <p>
               Book services, track your cleaner in real time, and manage every visit from one focused dashboard.
             </p>
@@ -439,12 +462,12 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <h2 className="client-title">Welcome back</h2>
-            <p className="client-subtitle">Sign in to your account</p>
+            <h2 className="client-title">{ltxt(lang, 'welcome')}</h2>
+            <p className="client-subtitle">{ltxt(lang, 'subtitle')}</p>
 
             <div className="client-form">
               <div className="client-field">
-                <label>Email</label>
+                <label>{t('common.email')}</label>
                 <input
                   type="email"
                   value={email}
@@ -456,7 +479,7 @@ export default function LoginPage() {
               </div>
 
               <div className="client-field">
-                <label>Password</label>
+                <label>{t('common.password')}</label>
                 <input
                   type="password"
                   value={password}
@@ -467,7 +490,7 @@ export default function LoginPage() {
                 />
               </div>
 
-              <button type="button" onClick={() => { setResetOpen(!resetOpen); setResetStep('request'); setResetMessage(''); }} style={{ alignSelf:'flex-end', background:'none', border:0, color:C.blue, fontWeight:800, fontSize:12, cursor:'pointer', padding:0 }}>Forgot password?</button>
+              <button type="button" onClick={() => { setResetOpen(!resetOpen); setResetStep('request'); setResetMessage(''); }} style={{ alignSelf:'flex-end', background:'none', border:0, color:C.blue, fontWeight:800, fontSize:12, cursor:'pointer', padding:0 }}>{ltxt(lang, 'forgot')}</button>
 
               {error && <div className="client-error">{error}</div>}
 
@@ -498,19 +521,19 @@ export default function LoginPage() {
                 disabled={loading || !email || !password}
                 className="client-submit"
               >
-                {loading ? 'Signing in...' : 'Sign In'}
+                {loading ? ltxt(lang, 'signingIn') : ltxt(lang, 'signIn')}
               </button>
             </div>
 
             <p style={{ margin: '16px 0 0', textAlign: 'center', color: C.muted, fontSize: 12 }}>
-              New to EverClean?{' '}
+              {ltxt(lang, 'newAccount')}{' '}
               <Link href="/register" style={{ color: C.blue, fontWeight: 800, textDecoration: 'none' }}>
                 Create an account
               </Link>
             </p>
 
             <p className="client-footer">
-              (c) 2026 EverClean - Professional Cleaning Platform
+              (c) 2026 EverClean - {ltxt(lang, 'footer')}
             </p>
           </div>
         </section>

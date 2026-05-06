@@ -10,7 +10,7 @@ import { useTranslation } from '../../lib/i18n/useTranslation';
 
 const API =
   process.env.NEXT_PUBLIC_API_URL ||
-  'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
+  'https://commercial-clean-setup.replit.app/api';
 
 const C = {
   navy: '#0D3781',
@@ -65,27 +65,112 @@ const STATUS: Record<string, { label: string; bg: string; color: string; dot: st
 };
 
 const SERVICE_ICONS: Record<string, string> = {
-  HOUSE_CLEANING: '🏠',
-  DEEP_CLEANING: '✨',
-  MOVE_IN_OUT: '📦',
-  SAME_DAY_CLEANING: '⚡',
-  OFFICE_CLEANING: '🏢',
-  POST_CONSTRUCTION: '🔨',
-  MEDICAL_CLEANING: '🏥',
-  CARPET_CLEANING: '🛋',
-  WINDOW_CLEANING: '🪟',
-  ORGANIZING: '📋',
-  CAR_WASH: '🚗',
-  LAUNDRY_PICKUP: '👕',
-  DRY_CLEANING: '👔',
+  HOUSE_CLEANING: 'HC', DEEP_CLEANING: 'DC', MOVE_IN_OUT: 'MV', SAME_DAY_CLEANING: 'SD',
+  OFFICE_CLEANING: 'OF', POST_CONSTRUCTION: 'PC', MEDICAL_CLEANING: 'MC', CARPET_CLEANING: 'CP',
+  WINDOW_CLEANING: 'WN', ORGANIZING: 'OR', CAR_WASH: 'CW', LAUNDRY_PICKUP: 'LD', DRY_CLEANING: 'DR',
 };
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'My Services', icon: '⌂' },
+  { href: '/dashboard', label: 'My Services', icon: 'MS' },
   { href: '/dashboard/new-booking', label: 'Book Now', icon: '+' },
-  { href: '/dashboard/history', label: 'History', icon: '↺' },
-  { href: '/dashboard/profile', label: 'Profile', icon: '◌' },
+  { href: '/dashboard/history', label: 'History', icon: 'H' },
+  { href: '/dashboard/profile', label: 'Profile', icon: 'P' },
 ];
+
+const CLIENT_LAYOUT_TEXT: Record<string, Record<string, string>> = {
+  en: {
+    active: 'Active',
+    done: 'Done',
+    totalSpent: 'Total Spent',
+    status: 'Status',
+    accountActive: 'Client account active',
+    liveMonitoring: 'Live service monitoring',
+    readyToBook: 'Ready to book',
+    mapsReady: 'Google Maps directions ready',
+    quickAccess: 'Quick Access',
+    bookService: 'Book a Service',
+    myServices: 'My Services',
+    viewHistory: 'View History',
+    billingProfile: 'Billing Profile',
+    activeServices: 'Active Services',
+    noActiveServices: 'No active services',
+    assignedProfessional: 'Assigned Professional',
+    findingCleaner: 'Finding your cleaner...',
+    location: 'Location',
+    openGoogleMaps: 'Open in Google Maps',
+    clientPortal: 'Client Portal',
+    member: 'EverClean Member',
+    menu: 'Menu',
+    signOut: 'Sign Out',
+    call: 'Call',
+    matchingProfessional: 'Matching professional',
+    professionalAssigned: 'Professional assigned',
+    serviceInProgress: 'Service in progress',
+    serviceCompleted: 'Service completed',
+    cancelled: 'Cancelled',
+  },
+  es: {
+    active: 'Activos',
+    done: 'Completados',
+    totalSpent: 'Total gastado',
+    status: 'Estado',
+    accountActive: 'Cuenta del cliente activa',
+    liveMonitoring: 'Monitoreo de servicios activo',
+    readyToBook: 'Listo para reservar',
+    mapsReady: 'Direcciones de Google Maps listas',
+    quickAccess: 'Acceso rapido',
+    bookService: 'Reservar servicio',
+    myServices: 'Mis servicios',
+    viewHistory: 'Ver historial',
+    billingProfile: 'Perfil de facturacion',
+    activeServices: 'Servicios activos',
+    noActiveServices: 'No hay servicios activos',
+    assignedProfessional: 'Profesional asignado',
+    findingCleaner: 'Buscando tu profesional...',
+    location: 'Ubicacion',
+    openGoogleMaps: 'Abrir en Google Maps',
+    clientPortal: 'Portal del cliente',
+    member: 'Miembro de EverClean',
+    menu: 'Menu',
+    signOut: 'Cerrar sesion',
+    call: 'Llamar',
+    matchingProfessional: 'Asignando profesional',
+    professionalAssigned: 'Profesional asignado',
+    serviceInProgress: 'Servicio en progreso',
+    serviceCompleted: 'Servicio completado',
+    cancelled: 'Cancelado',
+  },
+};
+
+function clt(lang: string, key: string) {
+  return CLIENT_LAYOUT_TEXT[lang]?.[key] || CLIENT_LAYOUT_TEXT.en[key] || key;
+}
+
+function clientNavLabel(href: string, t: (key: string) => string, lang: string) {
+  if (href === '/dashboard') return t('sidebar.myServices') || clt(lang, 'myServices');
+  if (href === '/dashboard/new-booking') return t('sidebar.bookNow') || clt(lang, 'bookService');
+  if (href === '/dashboard/history') return t('sidebar.history') || clt(lang, 'viewHistory');
+  if (href === '/dashboard/profile') return t('sidebar.profile') || 'Profile';
+  return href;
+}
+
+function serviceLabel(value: string, t: (key: string) => string) {
+  const key = String(value || 'HOUSE_CLEANING').toLowerCase();
+  return t('services.' + key) || serviceName(value);
+}
+
+function statusLabel(value: string, fallback: string, t: (key: string) => string) {
+  return t('statuses.' + value) || fallback;
+}
+
+function etaLabel(value: string, fallback: string, lang: string) {
+  if (value === 'PENDING_ASSIGNMENT') return clt(lang, 'matchingProfessional');
+  if (value === 'CONFIRMED') return clt(lang, 'professionalAssigned');
+  if (value === 'IN_PROGRESS') return clt(lang, 'serviceInProgress');
+  if (value === 'COMPLETED') return clt(lang, 'serviceCompleted');
+  if (value === 'CANCELLED') return clt(lang, 'cancelled');
+  return fallback;
+}
 
 function serviceName(value: string) {
   return String(value || 'HOUSE_CLEANING').replace(/_/g, ' ');
@@ -103,10 +188,14 @@ function RightPanel({
   bookings,
   selectedBooking,
   onSelectBooking,
+  t,
+  lang,
 }: {
   bookings: any[];
   selectedBooking: any;
   onSelectBooking: (booking: any) => void;
+  t: (key: string) => string;
+  lang: string;
 }) {
   const active = bookings.filter((b) => !['COMPLETED', 'CANCELLED'].includes(b.status));
   const completed = bookings.filter((b) => b.status === 'COMPLETED');
@@ -121,25 +210,25 @@ function RightPanel({
       <div className="client-stats-grid">
         <div className="client-stat blue">
           <strong>{active.length}</strong>
-          <span>Active</span>
+          <span>{clt(lang, 'active')}</span>
         </div>
         <div className="client-stat green">
           <strong>{completed.length}</strong>
-          <span>Done</span>
+          <span>{clt(lang, 'done')}</span>
         </div>
       </div>
 
       <div className="client-total-card">
         <strong>${totalSpent.toFixed(0)}</strong>
-        <span>Total Spent</span>
+        <span>{clt(lang, 'totalSpent')}</span>
       </div>
 
       <div className="client-panel-card">
-        <div className="client-panel-title">Status</div>
+        <div className="client-panel-title">{clt(lang, 'status')}</div>
         {[
-          { label: 'Client account active', tone: 'green' },
-          { label: active.length ? 'Live service monitoring' : 'Ready to book', tone: 'blue' },
-          { label: 'Google Maps directions ready', tone: 'green' },
+          { label: clt(lang, 'accountActive'), tone: 'green' },
+          { label: active.length ? clt(lang, 'liveMonitoring') : clt(lang, 'readyToBook'), tone: 'blue' },
+          { label: clt(lang, 'mapsReady'), tone: 'green' },
         ].map((item) => (
           <div key={item.label} className={`client-status-row ${item.tone}`}>
             <span />
@@ -149,12 +238,12 @@ function RightPanel({
       </div>
 
       <div className="client-panel-card">
-        <div className="client-panel-title">Quick Access</div>
+        <div className="client-panel-title">{clt(lang, 'quickAccess')}</div>
         {[
-          { href: '/dashboard/new-booking', label: 'Book a Service', icon: '+' },
-          { href: '/dashboard', label: 'My Services', icon: '⌂' },
-          { href: '/dashboard/history', label: 'View History', icon: '↺' },
-          { href: '/dashboard/profile', label: 'Billing Profile', icon: '◌' },
+          { href: '/dashboard/new-booking', label: clt(lang, 'bookService'), icon: '+' },
+          { href: '/dashboard', label: clt(lang, 'myServices'), icon: 'MS' },
+          { href: '/dashboard/history', label: clt(lang, 'viewHistory'), icon: 'H' },
+          { href: '/dashboard/profile', label: clt(lang, 'billingProfile'), icon: 'P' },
         ].map((item) => (
           <Link key={item.href} href={item.href} className="client-quick-link">
             <span>{item.icon}</span>
@@ -165,11 +254,11 @@ function RightPanel({
       </div>
 
       <div className="client-panel-card">
-        <div className="client-panel-title">Active Services</div>
+        <div className="client-panel-title">{clt(lang, 'activeServices')}</div>
         {active.length === 0 ? (
           <div className="client-empty-mini">
             <div>🧹</div>
-            <p>No active services</p>
+            <p>{clt(lang, 'noActiveServices')}</p>
           </div>
         ) : (
           <div className="client-active-list">
@@ -189,7 +278,7 @@ function RightPanel({
                     <div>
                       <strong>
                         {SERVICE_ICONS[booking.service_type] || '🧹'}{' '}
-                        {serviceName(booking.service_type)}
+                        {serviceLabel(booking.service_type, t)}
                       </strong>
                       {booking.scheduled_at && (
                         <span>{new Date(booking.scheduled_at).toLocaleDateString()}</span>
@@ -197,16 +286,16 @@ function RightPanel({
                     </div>
                     <em style={{ background: status.bg, color: status.color }}>
                       <i style={{ background: status.dot }} />
-                      {status.label}
+                      {statusLabel(booking.status, status.label, t)}
                     </em>
                   </div>
 
                   {bookingAddress(booking) && (
-                    <p className="client-address">📍 {bookingAddress(booking)}</p>
+                    <p className="client-address">{bookingAddress(booking)}</p>
                   )}
 
                   <div className="client-monitor-line">
-                    <span>{status.eta}</span>
+                    <span>{etaLabel(booking.status, status.eta, lang)}</span>
                     {(booking.client_price || booking.total_amount) && (
                       <b>${booking.client_price || booking.total_amount}</b>
                     )}
@@ -215,15 +304,15 @@ function RightPanel({
                   {pro ? (
                     <div className="client-pro-row">
                       <span>{(pro.fullName || 'P')[0]}</span>
-                      <p>{pro.fullName || 'Assigned professional'}</p>
+                      <p>{pro.fullName || clt(lang, 'assignedProfessional')}</p>
                       {pro.phone && (
                         <a href={`tel:${pro.phone}`} onClick={(e) => e.stopPropagation()}>
-                          Call
+                          {clt(lang, 'call')}
                         </a>
                       )}
                     </div>
                   ) : (
-                    <div className="client-finding">Finding your cleaner...</div>
+                    <div className="client-finding">{clt(lang, 'findingCleaner')}</div>
                   )}
                 </button>
               );
@@ -234,7 +323,7 @@ function RightPanel({
 
       {featured && bookingAddress(featured) && (
         <div className="client-panel-card">
-          <div className="client-panel-title">Location</div>
+          <div className="client-panel-title">{clt(lang, 'location')}</div>
           <div className="client-map">
             <iframe
               title="Service location"
@@ -245,7 +334,7 @@ function RightPanel({
             />
           </div>
           <a className="client-map-link" href={mapsUrl(featured)} target="_blank" rel="noreferrer">
-            Open in Google Maps
+            {clt(lang, 'openGoogleMaps')}
           </a>
         </div>
       )}
@@ -260,7 +349,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   const [clientName, setClientName] = useState('');
   const [clientInitial, setClientInitial] = useState('C');
   const [menuOpen, setMenuOpen] = useState(false);
-  const { lang, setLang } = useTranslation();
+  const { t, lang, setLang } = useTranslation();
   const [bookings, setBookings] = useState<any[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
@@ -323,22 +412,22 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
             <strong>
               Ever<span>Clean</span>
             </strong>
-            <small>Client Portal</small>
+            <small>{clt(lang, 'clientPortal')}</small>
           </div>
         </div>
 
         <div className="client-user-card">
           <div className="client-avatar">{clientInitial}</div>
           <div>
-            <strong>{clientName || 'Client'}</strong>
-            <small>EverClean Member</small>
+            <strong>{clientName || t('sidebar.client')}</strong>
+            <small>{clt(lang, 'member')}</small>
           </div>
           {active.length > 0 && <b>{active.length}</b>}
         </div>
       </div>
 
       <nav className="client-nav">
-        <small>Menu</small>
+        <small>{clt(lang, 'menu')}</small>
         {NAV_ITEMS.map((item) => {
           const isActive =
             item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href);
@@ -357,8 +446,8 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
       </div>
 
       <button className="client-logout" onClick={logout} type="button">
-        <span>↩</span>
-        Sign Out
+        <span>SO</span>
+        {clt(lang, 'signOut')}
       </button>
     </div>
   );
@@ -1048,6 +1137,8 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
             bookings={bookings}
             selectedBooking={selectedBooking}
             onSelectBooking={setSelectedBooking}
+            t={t}
+            lang={lang}
           />
         </div>
       </div>
