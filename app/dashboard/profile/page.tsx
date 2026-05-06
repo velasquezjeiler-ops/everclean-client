@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, useRef, useCallback } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
@@ -11,6 +11,8 @@ export default function ClientProfile() {
   const [message, setMessage] = useState('');
   const [photo, setPhoto] = useState<string|null>(null);
   const [stats, setStats] = useState({ total:0, spent:0 });
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [payingBooking, setPayingBooking] = useState<string|null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -34,7 +36,9 @@ export default function ClientProfile() {
         state: ur.state||'NJ',
         zipCode: ur.zip_code||ur.zipCode||'',
       });
-      const completed = (br.data||[]).filter((b:any) => b.status==='COMPLETED');
+      const bookingRows = Array.isArray(br.data) ? br.data : [];
+      setBookings(bookingRows);
+      const completed = bookingRows.filter((b:any) => b.status==='COMPLETED');
       const spent = completed.reduce((s:number,b:any) => s+Number(b.client_price||b.total_amount||0), 0);
       setStats({ total: completed.length, spent });
     } catch(e) {}
@@ -71,6 +75,28 @@ export default function ClientProfile() {
     setSaving(false);
   }
 
+  async function startCheckout(bookingId: string) {
+    setPayingBooking(bookingId); setMessage('');
+    const token = localStorage.getItem('token') || '';
+    try {
+      const res = await fetch(API+'/stripe/checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', Authorization:'Bearer '+token },
+        body: JSON.stringify({ bookingId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Unable to start payment');
+      if (data.url) window.location.href = data.url;
+      else throw new Error('Stripe checkout URL missing');
+    } catch(e:any) {
+      setMessage('Error: '+(e.message || 'Unable to start payment'));
+      setPayingBooking(null);
+    }
+  }
+
+  const payableBookings = bookings.filter((b:any) => !['CANCELLED'].includes(b.status) && Number(b.client_price || b.total_amount || 0) > 0);
+  const latestPayable = payableBookings[0];
+
   const initials = (form.fullName||'C').split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase();
   const inputStyle = { width:'100%', border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 12px', fontSize:13, color:C.text, outline:'none', fontFamily:'Poppins, sans-serif', background:'#fff' };
   const labelStyle = { fontSize:11, fontWeight:600 as const, color:C.muted, display:'block' as const, marginBottom:5, textTransform:'uppercase' as const, letterSpacing:'0.5px' };
@@ -91,7 +117,7 @@ export default function ClientProfile() {
       {message && (
         <div style={{ marginBottom:16, padding:'10px 14px', borderRadius:10, fontSize:13, background: message.startsWith('Error') ? '#FEE2E2' : '#D1FAE5', color: message.startsWith('Error') ? '#991B1B' : C.greenDk, display:'flex', justifyContent:'space-between' }}>
           {message}
-          <button onClick={()=>setMessage('')} style={{ background:'none', border:'none', cursor:'pointer', opacity:0.6 }}>✕</button>
+          <button onClick={()=>setMessage('')} style={{ background:'none', border:'none', cursor:'pointer', opacity:0.6 }}>âœ•</button>
         </div>
       )}
 
@@ -116,6 +142,26 @@ export default function ClientProfile() {
               <div><label style={labelStyle}>ZIP code</label><input value={form.zipCode} onChange={e=>setForm({...form,zipCode:e.target.value})} style={inputStyle}/></div>
             </div>
           </div>
+          <div style={cardStyle}>
+            <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:12 }}>Payment Method</div>
+            <div style={{ fontSize:12, color:C.muted, marginBottom:12 }}>Secure card payments are processed by Stripe Checkout.</div>
+            {latestPayable ? (
+              <div>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 14px', border:`1px solid ${C.border}`, borderRadius:12, background:C.bg, marginBottom:12 }}>
+                  <div>
+                    <div style={{ fontSize:12, fontWeight:700, color:C.text }}>{String(latestPayable.service_type || 'Service').replaceAll('_',' ')}</div>
+                    <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>{latestPayable.scheduled_at ? new Date(latestPayable.scheduled_at).toLocaleDateString() : 'Pending schedule'}</div>
+                  </div>
+                  <div style={{ fontSize:14, fontWeight:800, color:C.navy }}>${Number(latestPayable.client_price || latestPayable.total_amount || 0).toFixed(2)}</div>
+                </div>
+                <button onClick={()=>startCheckout(latestPayable.id)} disabled={payingBooking===latestPayable.id} style={{ width:'100%', padding:'12px 0', borderRadius:12, border:'none', cursor:'pointer', background:`linear-gradient(135deg, ${C.green}, ${C.greenDk})`, color:'#fff', fontSize:13, fontWeight:700 }}>
+                  {payingBooking===latestPayable.id ? 'Opening checkout...' : 'Pay with card'}
+                </button>
+              </div>
+            ) : (
+              <div style={{ padding:'12px 14px', borderRadius:12, background:C.bg, color:C.muted, fontSize:12 }}>No payable services yet.</div>
+            )}
+          </div>
 
           <button onClick={save} disabled={saving} style={{
             width:'100%', padding:'13px 0', borderRadius:12, border:'none', cursor:'pointer',
@@ -135,7 +181,7 @@ export default function ClientProfile() {
                 ? <img src={photo} alt="Profile" style={{ width:80, height:80, borderRadius:'50%', objectFit:'cover', border:`3px solid ${C.blue}` }}/>
                 : <div style={{ width:80, height:80, borderRadius:'50%', background:`linear-gradient(135deg, ${C.blue}, ${C.navy})`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, fontWeight:800, color:'#fff', margin:'0 auto' }}>{initials}</div>
               }
-              <div style={{ position:'absolute', bottom:0, right:0, width:24, height:24, background:C.blue, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid #fff', fontSize:11, color:'#fff' }}>📷</div>
+              <div style={{ position:'absolute', bottom:0, right:0, width:24, height:24, background:C.blue, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid #fff', fontSize:11, color:'#fff' }}>ðŸ“·</div>
             </div>
             <div style={{ fontSize:11, color:C.muted, marginBottom:8 }}>Click to upload photo</div>
             <div style={{ fontWeight:700, fontSize:15, color:C.text }}>{form.fullName||'Client'}</div>
@@ -164,3 +210,4 @@ export default function ClientProfile() {
     </div>
   );
 }
+

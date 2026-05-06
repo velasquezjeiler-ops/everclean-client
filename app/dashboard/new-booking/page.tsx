@@ -45,6 +45,14 @@ const STATE_OPTIONS = [
 
 const STATE_MULTIPLIERS: Record<string, number> = { A: 1.2, B: 1, C: 0.9, D: 0.85 };
 
+function money(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
+function stateRate(rate: number, tier: string) {
+  return money(rate * (STATE_MULTIPLIERS[tier] ?? 1));
+}
+
 const CLEANING_SERVICES: Record<string, { label: string; icon: string; rate: number; min: number; commercial: boolean; desc: string }> = {
   HOUSE_CLEANING: { label: 'House Cleaning', icon: 'Home', rate: 0.15, min: 120, commercial: false, desc: 'Regular residential cleaning' },
   DEEP_CLEANING: { label: 'Deep Cleaning', icon: 'Deep', rate: 0.2, min: 150, commercial: false, desc: 'Detailed top-to-bottom cleaning' },
@@ -164,10 +172,12 @@ function calcCleaningPrice(
   if (sqftUsed <= 0) return null;
 
   const addonTotal = cleaningAddonPrice(addons);
-  const base = Math.max(sqftUsed * cfg.rate * multi, cfg.min * multi);
-  const price = Math.round((base * (1 - disc) + addonTotal) * 100) / 100;
+  const effectiveRate = stateRate(cfg.rate, tier);
+  const minPrice = money(cfg.min * multi);
+  const base = Math.max(sqftUsed * effectiveRate, minPrice);
+  const price = money(base * (1 - disc) + addonTotal);
 
-  return { price, hours: estimatedHours(sqftUsed, addonTotal), sqftUsed, corrected, addonTotal, roomSqft };
+  return { price, hours: estimatedHours(sqftUsed, addonTotal), sqftUsed, corrected, addonTotal, roomSqft, effectiveRate };
 }
 
 function laundryPrice(weight: string) {
@@ -251,12 +261,12 @@ export default function NewBookingPage() {
     if (isCarWash && vehicleCode && carPkg) {
       const base = CAR_WASH_RATES[vehicleCode]?.[carPkg] ?? 0;
       const addonsTotal = selectedCarAddons.reduce((sum, addon) => sum + (CAR_ADDONS.find((x) => x.code === addon)?.price ?? 0), 0);
-      return { price: base + addonsTotal, hours: null, sqftUsed: null, corrected: false, addonTotal: addonsTotal };
+      return { price: base + addonsTotal, hours: null, sqftUsed: null, corrected: false, addonTotal: addonsTotal, effectiveRate: null };
     }
 
     if (isLaundry) {
       const calc = laundryPrice(weightLbs);
-      return { price: calc.price, hours: null, sqftUsed: null, corrected: false, addonTotal: 0 };
+      return { price: calc.price, hours: null, sqftUsed: null, corrected: false, addonTotal: 0, effectiveRate: null };
     }
 
     return null;
@@ -408,7 +418,7 @@ export default function NewBookingPage() {
                     <button key={key} onClick={() => setServiceType(key)} className={`booking-option ${serviceType === key ? 'selected' : ''}`} type="button">
                       <div className="booking-option-icon">{cfg.icon}</div>
                       <strong>{cfg.label}</strong>
-                      <span>${(cfg.rate * STATE_MULTIPLIERS[stateTier]).toFixed(2)}/sqft</span>
+                      <span>${stateRate(cfg.rate, stateTier).toFixed(2)}/sqft</span>
                       <span>{cfg.desc}</span>
                       {cfg.commercial && <em>Commercial</em>}
                     </button>
@@ -503,6 +513,7 @@ export default function NewBookingPage() {
                   <div className="booking-price-meta">
                     {priceCalc.hours && <span>{priceCalc.hours} estimated hours</span>}
                     {priceCalc.sqftUsed && <span>{priceCalc.sqftUsed} sqft</span>}
+                    {priceCalc.sqftUsed && priceCalc.effectiveRate && <span>{priceCalc.sqftUsed} sqft x ${priceCalc.effectiveRate.toFixed(2)}/sqft</span>}
                     {priceCalc.addonTotal ? <span>${priceCalc.addonTotal.toFixed(2)} add-ons</span> : null}
                     {(FREQ_OPTIONS.find((f) => f.key === frequency)?.disc ?? 0) > 0 && <span>-{(FREQ_OPTIONS.find((f) => f.key === frequency)?.disc ?? 0) * 100}% frequency</span>}
                     {priceCalc.corrected && <span>Sqft validated</span>}
@@ -546,3 +557,5 @@ export default function NewBookingPage() {
     </div>
   );
 }
+
+

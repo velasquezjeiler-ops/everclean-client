@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -28,7 +28,61 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetStep, setResetStep] = useState<'request'|'confirm'>('request');
+  const [resetMethod, setResetMethod] = useState<'email'|'sms'>('email');
+  const [resetCode, setResetCode] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
 
+  async function requestPasswordReset() {
+    if (!email || resetLoading) return;
+    setResetLoading(true);
+    setResetMessage('');
+    setError('');
+    try {
+      const res = await fetch(API + '/auth/password-reset/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, method: resetMethod }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Unable to send reset code');
+      setResetStep('confirm');
+      setResetMessage(`Code sent by ${resetMethod === 'sms' ? 'SMS' : 'email'}.`);
+    } catch (e: any) {
+      setResetMessage(e.message || 'Unable to send reset code');
+    } finally {
+      setResetLoading(false);
+    }
+  }
+
+  async function confirmPasswordReset() {
+    if (!email || !resetCode || !resetPassword || resetLoading) return;
+    setResetLoading(true);
+    setResetMessage('');
+    setError('');
+    try {
+      const res = await fetch(API + '/auth/password-reset/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code: resetCode, password: resetPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Unable to reset password');
+      setPassword(resetPassword);
+      setResetOpen(false);
+      setResetStep('request');
+      setResetCode('');
+      setResetPassword('');
+      setResetMessage('Password updated. You can sign in now.');
+    } catch (e: any) {
+      setResetMessage(e.message || 'Unable to reset password');
+    } finally {
+      setResetLoading(false);
+    }
+  }
   async function handleLogin() {
     if (loading || !email || !password) return;
 
@@ -408,12 +462,36 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                  placeholder="••••••••"
+                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                   autoComplete="current-password"
                 />
               </div>
 
+              <button type="button" onClick={() => { setResetOpen(!resetOpen); setResetStep('request'); setResetMessage(''); }} style={{ alignSelf:'flex-end', background:'none', border:0, color:C.blue, fontWeight:800, fontSize:12, cursor:'pointer', padding:0 }}>Forgot password?</button>
+
               {error && <div className="client-error">{error}</div>}
+
+              {resetOpen && (
+                <div style={{ border:`1px solid ${C.border}`, background:C.bg, borderRadius:14, padding:14, display:'flex', flexDirection:'column', gap:10 }}>
+                  <div style={{ fontSize:13, fontWeight:800, color:C.text }}>Reset password</div>
+                  {resetStep === 'request' ? (
+                    <>
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                        <button type="button" onClick={() => setResetMethod('email')} style={{ border:`1px solid ${resetMethod==='email'?C.blue:C.border}`, background:resetMethod==='email'?'#fff':'transparent', borderRadius:10, padding:'9px 10px', color:C.text, fontWeight:800, cursor:'pointer' }}>Email</button>
+                        <button type="button" onClick={() => setResetMethod('sms')} style={{ border:`1px solid ${resetMethod==='sms'?C.blue:C.border}`, background:resetMethod==='sms'?'#fff':'transparent', borderRadius:10, padding:'9px 10px', color:C.text, fontWeight:800, cursor:'pointer' }}>SMS</button>
+                      </div>
+                      <button type="button" onClick={requestPasswordReset} disabled={!email || resetLoading} className="client-submit" style={{ minHeight:40 }}>{resetLoading ? 'Sending...' : 'Send security code'}</button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="client-field"><label>Security code</label><input value={resetCode} onChange={(e) => setResetCode(e.target.value)} placeholder="6-digit code" /></div>
+                      <div className="client-field"><label>New password</label><input type="password" value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} placeholder="At least 8 characters" autoComplete="new-password" /></div>
+                      <button type="button" onClick={confirmPasswordReset} disabled={!resetCode || !resetPassword || resetLoading} className="client-submit" style={{ minHeight:40 }}>{resetLoading ? 'Updating...' : 'Update password'}</button>
+                    </>
+                  )}
+                  {resetMessage && <div style={{ fontSize:12, fontWeight:700, color:resetMessage.includes('Unable') || resetMessage.includes('configured') || resetMessage.includes('Invalid') ? C.danger : C.greenDk }}>{resetMessage}</div>}
+                </div>
+              )}
 
               <button
                 onClick={handleLogin}
@@ -432,7 +510,7 @@ export default function LoginPage() {
             </p>
 
             <p className="client-footer">
-              © 2026 EverClean · Professional Cleaning Platform
+              Â© 2026 EverClean Â· Professional Cleaning Platform
             </p>
           </div>
         </section>
@@ -440,3 +518,4 @@ export default function LoginPage() {
     </main>
   );
 }
+
