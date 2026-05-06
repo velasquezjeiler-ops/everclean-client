@@ -462,7 +462,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                  placeholder="Password"
                   autoComplete="current-password"
                 />
               </div>
@@ -510,7 +510,7 @@ export default function LoginPage() {
             </p>
 
             <p className="client-footer">
-              Â© 2026 EverClean Â· Professional Cleaning Platform
+              (c) 2026 EverClean - Professional Cleaning Platform
             </p>
           </div>
         </section>
@@ -518,4 +518,5 @@ export default function LoginPage() {
     </main>
   );
 }
+
 
