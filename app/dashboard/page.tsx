@@ -361,19 +361,21 @@ export default function ClientDashboard() {
               const status = STATUS[booking.status] || STATUS.PENDING_ASSIGNMENT;
               const pro = booking.professionals?.[0]?.professional || booking.professional;
               return (
-                <article className="client-service-card" key={booking.id}>
-                  <div>
-                    <h3>{serviceName(booking.service_type, t)}</h3>
-                    <p>{bookingAddress(booking) || cdt(lang, 'addressPending')}</p>
-                    <div className="client-service-meta">
-                      <span>{bookingDate(booking, lang)}</span>
-                      <span>{statusNote(booking.status, lang) || status.note}</span>
-                      {pro?.fullName || pro?.full_name ? <span>{pro.fullName || pro.full_name}</span> : null}
+                                <article key={booking.id} style={{background:"#fff",borderRadius:14,border:"1px solid #E2E8F0",padding:"14px 16px",boxShadow:"0 2px 8px rgba(13,55,129,0.05)"}}>
+                  <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:10,marginBottom:8}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
+                      <div style={{width:40,height:40,borderRadius:11,flexShrink:0,background:"rgba(13,55,129,0.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"#0D3781"}}>{serviceName(booking.service_type, t).split(" ").map((w) => w[0]).join("").slice(0,2).toUpperCase()}</div>
+                      <div style={{minWidth:0}}>
+                        <div style={{fontWeight:700,fontSize:13,color:"#0D1B2A"}}>{serviceName(booking.service_type, t)}</div>
+                        {bookingAddress(booking) && <div style={{color:"#1565C0",fontSize:11,marginTop:2}}>{bookingAddress(booking)}</div>}
+                      </div>
                     </div>
-                  </div>
-                  <div>
                     <StatusBadge status={booking.status} t={t} />
-                    {amount > 0 && <div className="client-service-price">${amount.toFixed(2)}</div>}
+                  </div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                    <span style={{background:"#F5F7FA",color:"#64748B",padding:"4px 10px",borderRadius:8,fontSize:11,border:"1px solid #E2E8F0"}}>{bookingDate(booking, lang)}</span>
+                    {amount > 0 && <span style={{background:"#D1FAE5",color:"#388E3C",padding:"4px 10px",borderRadius:8,fontSize:11,fontWeight:700}}>{"$"}{amount.toFixed(2)}</span>}
+                    {(pro?.fullName || pro?.full_name) && <span style={{background:"#EFF6FF",color:"#1565C0",padding:"4px 10px",borderRadius:8,fontSize:11}}>{pro.fullName || pro.full_name}</span>}
                   </div>
                 </article>
               );
