@@ -287,6 +287,30 @@ export default function ClientDashboard() {
           color: ${C.text};
           letter-spacing: 0;
         }
+        .client-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+        .client-stat-card { border-radius: 14px; padding: 18px 20px; color: #fff; box-shadow: 0 2px 8px rgba(13,55,129,0.10); }
+        .client-stat-card strong { display: block; font-size: 26px; font-weight: 700; line-height: 1; }
+        .client-stat-card span { font-size: 12px; opacity: 0.8; margin-top: 4px; display: block; }
+        .client-card { background: #fff; border-radius: 14px; border: 1px solid #E2E8F0; padding: 20px 22px; margin-bottom: 16px; }
+        .client-section-title { font-size: 15px; font-weight: 600; color: #0D1B2A; margin-bottom: 14px; }
+        .client-empty-state { text-align: center; padding: 32px 16px; }
+        .client-primary-action { display: inline-block; padding: 12px 24px; background: #4CAF50; color: #fff; border-radius: 9999px; font-size: 14px; font-weight: 600; text-decoration: none; }
+        .client-services-list { display: flex; flex-direction: column; gap: 10px; }
+        .client-service-card { background: #fff; border-radius: 12px; border: 1px solid #E2E8F0; padding: 14px 16px; }
+        .client-service-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .client-service-name { font-size: 14px; font-weight: 600; color: #0D1B2A; }
+        .client-service-address { font-size: 12px; color: #64748B; margin-top: 2px; }
+        .client-service-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .client-status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+        .client-meta-chip { background: #F5F7FA; color: #64748B; padding: 3px 9px; border-radius: 8px; font-size: 11px; }
+        .client-confirm-banner { background: #D1FAE5; color: #065F46; padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; }
+        .client-schedule-card { background: #fff; border-radius: 14px; border: 1px solid #E2E8F0; padding: 16px 20px; margin-bottom: 16px; }
+        .client-calendar-strip { display: flex; gap: 6px; overflow-x: auto; }
+        .client-day-btn { min-width: 44px; padding: 8px 4px; border-radius: 10px; border: none; background: transparent; cursor: pointer; text-align: center; font-size: 12px; color: #64748B; }
+        .client-day-btn.active { background: #0D3781; color: #fff; }
+        .client-day-btn strong { display: block; font-size: 16px; font-weight: 700; }
+        .client-empty-line { font-size: 13px; color: #64748B; text-align: center; padding: 16px 0; }
+        @media (max-width: 640px) { .client-stats-row { grid-template-columns: 1fr; } }
       `}</style>
 
       {bookingConfirmed && (
