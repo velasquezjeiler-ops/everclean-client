@@ -254,7 +254,7 @@ function RightPanel({
           { href: '/dashboard/profile', label: clt(lang, 'billingProfile'), Icon: IC.Profile },
         ].map((item) => (
           <Link key={item.href} href={item.href} className="client-quick-link">
-            <span><item.Icon c={"rgba(255,255,255,0.7)"} s={16} /></span>
+            <span><item.Icon c={"#0D3781"} s={16} /></span>
             <p>{item.label}</p>
             <b>›</b>
           </Link>
