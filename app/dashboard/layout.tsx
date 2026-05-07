@@ -78,10 +78,10 @@ const SERVICE_ICONS: Record<string, string> = {
 };
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'My Services', icon: '🧹' },
-  { href: '/dashboard/new-booking', label: 'Book Now', icon: '➕' },
-  { href: '/dashboard/history', label: 'History', icon: '📋' },
-  { href: '/dashboard/profile', label: 'Profile', icon: '👤' },
+  { href: '/dashboard', label: 'My Services', Icon: IC.Services },
+  { href: '/dashboard/new-booking', label: 'Book Now', Icon: IC.Add },
+  { href: '/dashboard/history', label: 'History', Icon: IC.History },
+  { href: '/dashboard/profile', label: 'Profile', Icon: IC.Profile },
 ];
 
 const CLIENT_LAYOUT_TEXT: Record<string, Record<string, string>> = {
@@ -248,13 +248,13 @@ function RightPanel({
       <div className="client-panel-card">
         <div className="client-panel-title">{clt(lang, 'quickAccess')}</div>
         {[
-          { href: '/dashboard/new-booking', label: clt(lang, 'bookService'), icon: '➕' },
-          { href: '/dashboard', label: clt(lang, 'myServices'), icon: '🧹' },
-          { href: '/dashboard/history', label: clt(lang, 'viewHistory'), icon: '📋' },
-          { href: '/dashboard/profile', label: clt(lang, 'billingProfile'), icon: '👤' },
+          { href: '/dashboard/new-booking', label: clt(lang, 'bookService'), Icon: IC.Add },
+          { href: '/dashboard', label: clt(lang, 'myServices'), Icon: IC.Services },
+          { href: '/dashboard/history', label: clt(lang, 'viewHistory'), Icon: IC.History },
+          { href: '/dashboard/profile', label: clt(lang, 'billingProfile'), Icon: IC.Profile },
         ].map((item) => (
           <Link key={item.href} href={item.href} className="client-quick-link">
-            <span style={{fontSize:18}}>{item.icon}</span>
+            <span><item.Icon c={"rgba(255,255,255,0.7)"} s={16} /></span>
             <p>{item.label}</p>
             <b>›</b>
           </Link>
