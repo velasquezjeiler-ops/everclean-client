@@ -118,7 +118,7 @@ function greetingForNow(lang: string) {
 }
 
 function serviceName(value: string, t: (key: string) => string) {
-  const key = String(value || 'HOUSE_CLEANING').toLowerCase();
+  const key = String(value || 'HOUSE_CLEANING').toUpperCase();
   return t('services.' + key) || SERVICE_LABELS[value] || String(value || 'Service').replace(/_/g, ' ');
 }
 
