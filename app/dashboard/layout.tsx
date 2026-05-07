@@ -78,10 +78,10 @@ const SERVICE_ICONS: Record<string, string> = {
 };
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'My Services', Icon: IC.Services },
-  { href: '/dashboard/new-booking', label: 'Book Now', Icon: IC.Add },
-  { href: '/dashboard/history', label: 'History', Icon: IC.History },
-  { href: '/dashboard/profile', label: 'Profile', Icon: IC.Profile },
+  { href: '/dashboard', labelKey: 'myServices', Icon: IC.Services },
+  { href: '/dashboard/new-booking', labelKey: 'bookService', Icon: IC.Add },
+  { href: '/dashboard/history', labelKey: 'viewHistory', Icon: IC.History },
+  { href: '/dashboard/profile', labelKey: 'billingProfile', Icon: IC.Profile },
 ];
 
 const CLIENT_LAYOUT_TEXT: Record<string, Record<string, string>> = {
@@ -438,11 +438,11 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
         {NAV_ITEMS.map((item) => {
           const isActive =
             item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href);
-
+          const label = clt(lang, item.labelKey);
           return (
             <Link key={item.href} href={item.href} className={isActive ? 'active' : ''}>
               <span><item.Icon c={isActive ? "#fff" : "rgba(255,255,255,0.55)"} s={18} /></span>
-              <p>{item.label}</p>
+              <p>{label}</p>
             </Link>
           );
         })}
@@ -453,7 +453,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
       </div>
 
       <button className="client-logout" onClick={logout} type="button">
-        <span>SO</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/><path d="M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>
         {clt(lang, 'signOut')}
       </button>
     </div>
