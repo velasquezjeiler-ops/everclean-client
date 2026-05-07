@@ -1,10 +1,12 @@
 ﻿'use client';
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { useTranslation } from '../../../lib/i18n/useTranslation';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup.replit.app/api';
 const C = { navy:'#0D3781', blue:'#1565C0', green:'#4CAF50', greenDk:'#388E3C', bg:'#F5F7FA', text:'#0D1B2A', muted:'#64748B', border:'#E2E8F0' };
 
 export default function ClientProfile() {
+  const { t } = useTranslation();
   const [form, setForm] = useState({ fullName:'', phone:'', email:'', address:'', city:'', state:'NJ', zipCode:'' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -76,9 +78,9 @@ export default function ClientProfile() {
           zipCode: form.zipCode,
         }),
       });
-      if (res.ok) { setMessage('Profile saved!'); load(); }
+      if (res.ok) { setMessage(t('client.profileExtra.profileSaved')); load(); }
       else { const e = await res.json(); setMessage('Error: '+e.error); }
-    } catch(e) { setMessage('Error saving profile'); }
+    } catch(e) { setMessage(t('client.profileExtra.errorSaving')); }
     setSaving(false);
   }
 
@@ -92,11 +94,11 @@ export default function ClientProfile() {
         body: JSON.stringify({ bookingId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Unable to start payment');
+      if (!res.ok) throw new Error(data.error || t('client.profileExtra.errorPayment'));
       if (data.url) window.location.href = data.url;
-      else throw new Error('Stripe checkout URL missing');
+      else throw new Error(t('client.profileExtra.errorPayment'));
     } catch(e:any) {
-      setMessage('Error: '+(e.message || 'Unable to start payment'));
+      setMessage('Error: '+(e.message || t('client.profileExtra.errorPayment')));
       setPayingBooking(null);
     }
   }
@@ -132,41 +134,41 @@ export default function ClientProfile() {
         <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
 
           <div style={cardStyle}>
-            <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:16 }}>Personal Information</div>
+            <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:16 }}>{t('client.profileExtra.personalInfo')}</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-              <div><label style={labelStyle}>Full name</label><input value={form.fullName} onChange={e=>setForm({...form,fullName:e.target.value})} style={inputStyle}/></div>
-              <div><label style={labelStyle}>Phone</label><input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} style={inputStyle}/></div>
-              <div style={{ gridColumn:'1/-1' }}><label style={labelStyle}>Email</label><input value={form.email} readOnly style={{ ...inputStyle, background:C.bg, cursor:'not-allowed' }}/></div>
+              <div><label style={labelStyle}>{t('profile.fullName')}</label><input value={form.fullName} onChange={e=>setForm({...form,fullName:e.target.value})} style={inputStyle}/></div>
+              <div><label style={labelStyle}>{t('profile.phone')}</label><input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} style={inputStyle}/></div>
+              <div style={{ gridColumn:'1/-1' }}><label style={labelStyle}>{t('profile.email')}</label><input value={form.email} readOnly style={{ ...inputStyle, background:C.bg, cursor:'not-allowed' }}/></div>
             </div>
           </div>
 
           <div style={cardStyle}>
-            <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:16 }}>Billing Address</div>
+            <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:16 }}>{t('client.profileExtra.billingAddress')}</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-              <div style={{ gridColumn:'1/-1' }}><label style={labelStyle}>Street address</label><input value={form.address} onChange={e=>setForm({...form,address:e.target.value})} style={inputStyle}/></div>
-              <div><label style={labelStyle}>City</label><input value={form.city} onChange={e=>setForm({...form,city:e.target.value})} style={inputStyle}/></div>
-              <div><label style={labelStyle}>State</label><input value={form.state} onChange={e=>setForm({...form,state:e.target.value})} style={inputStyle}/></div>
-              <div><label style={labelStyle}>ZIP code</label><input value={form.zipCode} onChange={e=>setForm({...form,zipCode:e.target.value})} style={inputStyle}/></div>
+              <div style={{ gridColumn:'1/-1' }}><label style={labelStyle}>{t('client.profileExtra.streetAddress')}</label><input value={form.address} onChange={e=>setForm({...form,address:e.target.value})} style={inputStyle}/></div>
+              <div><label style={labelStyle}>{t('profile.city')}</label><input value={form.city} onChange={e=>setForm({...form,city:e.target.value})} style={inputStyle}/></div>
+              <div><label style={labelStyle}>{t('profile.state')}</label><input value={form.state} onChange={e=>setForm({...form,state:e.target.value})} style={inputStyle}/></div>
+              <div><label style={labelStyle}>{t('client.profileExtra.zipCode')}</label><input value={form.zipCode} onChange={e=>setForm({...form,zipCode:e.target.value})} style={inputStyle}/></div>
             </div>
           </div>
           <div style={cardStyle}>
-            <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:12 }}>Payment Method</div>
-            <div style={{ fontSize:12, color:C.muted, marginBottom:12 }}>Secure card payments are processed by Stripe Checkout.</div>
+            <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:12 }}>{t('client.profileExtra.paymentMethod')}</div>
+            <div style={{ fontSize:12, color:C.muted, marginBottom:12 }}>{t('client.profileExtra.stripeText')}</div>
             {latestPayable ? (
               <div>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 14px', border:`1px solid ${C.border}`, borderRadius:12, background:C.bg, marginBottom:12 }}>
                   <div>
                     <div style={{ fontSize:12, fontWeight:700, color:C.text }}>{String(latestPayable.service_type || 'Service').replaceAll('_',' ')}</div>
-                    <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>{latestPayable.scheduled_at ? new Date(latestPayable.scheduled_at).toLocaleDateString() : 'Pending schedule'}</div>
+                    <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>{latestPayable.scheduled_at ? new Date(latestPayable.scheduled_at).toLocaleDateString() : t('client.profileExtra.pendingSchedule')}</div>
                   </div>
                   <div style={{ fontSize:14, fontWeight:800, color:C.navy }}>${Number(latestPayable.client_price || latestPayable.total_amount || 0).toFixed(2)}</div>
                 </div>
                 <button onClick={()=>startCheckout(latestPayable.id)} disabled={payingBooking===latestPayable.id} style={{ width:'100%', padding:'12px 0', borderRadius:12, border:'none', cursor:'pointer', background:`linear-gradient(135deg, ${C.green}, ${C.greenDk})`, color:'#fff', fontSize:13, fontWeight:700 }}>
-                  {payingBooking===latestPayable.id ? 'Opening checkout...' : 'Pay with card'}
+                  {payingBooking===latestPayable.id ? t('client.profileExtra.openingCheckout') : t('client.profileExtra.payWithCard')}
                 </button>
               </div>
             ) : (
-              <div style={{ padding:'12px 14px', borderRadius:12, background:C.bg, color:C.muted, fontSize:12 }}>No payable services yet.</div>
+              <div style={{ padding:'12px 14px', borderRadius:12, background:C.bg, color:C.muted, fontSize:12 }}>{t('client.profileExtra.noPayable')}</div>
             )}
           </div>
 
@@ -177,7 +179,7 @@ export default function ClientProfile() {
             boxShadow:'0 4px 16px rgba(13,55,129,0.3)',
             opacity: saving ? 0.7 : 1, fontFamily:'Poppins, sans-serif',
           }}>
-            {saving ? 'Saving...' : 'Save profile'}
+            {saving ? t('client.profileExtra.saving') : t('client.profileExtra.saveProfile')}
           </button>
         </div>
 
@@ -188,18 +190,18 @@ export default function ClientProfile() {
                 ? <img src={photo} alt="Profile" style={{ width:80, height:80, borderRadius:'50%', objectFit:'cover', border:`3px solid ${C.blue}` }}/>
                 : <div style={{ width:80, height:80, borderRadius:'50%', background:`linear-gradient(135deg, ${C.blue}, ${C.navy})`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, fontWeight:800, color:'#fff', margin:'0 auto' }}>{initials}</div>
               }
-              <div style={{ position:'absolute', bottom:0, right:0, width:30, height:24, background:C.blue, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid #fff', fontSize:9, color:'#fff', fontWeight:700 }}>Photo</div>
+              <div style={{ position:'absolute', bottom:0, right:0, width:30, height:24, background:C.blue, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid #fff', fontSize:9, color:'#fff', fontWeight:700 }}>{t('client.profileExtra.photo')}</div>
             </div>
-            <div style={{ fontSize:11, color:C.muted, marginBottom:8 }}>Click to upload photo</div>
-            <div style={{ fontWeight:700, fontSize:15, color:C.text }}>{form.fullName||'Client'}</div>
+            <div style={{ fontSize:11, color:C.muted, marginBottom:8 }}>{t('client.profileExtra.clickPhoto')}</div>
+            <div style={{ fontWeight:700, fontSize:15, color:C.text }}>{form.fullName || t('client.profileExtra.client')}</div>
             <div style={{ fontSize:12, color:C.muted, marginTop:3 }}>{form.city||''}{form.city&&form.state?', ':''}{form.state}</div>
           </div>
 
           <div style={cardStyle}>
-            <div style={{ fontSize:13, fontWeight:700, color:C.text, marginBottom:12 }}>Account Summary</div>
+            <div style={{ fontSize:13, fontWeight:700, color:C.text, marginBottom:12 }}>{t('client.profileExtra.accountSummary')}</div>
             {[
-              { label:'Services completed', val:stats.total },
-              { label:'Total spent', val:`$${stats.spent.toFixed(2)}` },
+              { label: t('client.profileExtra.servicesCompleted'), val:stats.total },
+              { label: t('client.profileExtra.totalSpent'), val:`${stats.spent.toFixed(2)}` },
             ].map(s => (
               <div key={s.label} style={{ display:'flex', justifyContent:'space-between', padding:'7px 0', borderBottom:`1px solid ${C.border}` }}>
                 <span style={{ fontSize:12, color:C.muted }}>{s.label}</span>
@@ -209,8 +211,8 @@ export default function ClientProfile() {
           </div>
 
           <div style={{ ...cardStyle, background:C.bg, textAlign:'center' }}>
-            <div style={{ fontSize:12, color:C.muted, marginBottom:8 }}>Need help?</div>
-            <button style={{ fontSize:12, color:C.blue, fontWeight:600, background:'none', border:'none', cursor:'pointer' }}>Contact support</button>
+            <div style={{ fontSize:12, color:C.muted, marginBottom:8 }}>{t('client.profileExtra.needHelp')}</div>
+            <button style={{ fontSize:12, color:C.blue, fontWeight:600, background:'none', border:'none', cursor:'pointer' }}>{t('client.profileExtra.contactSupport')}</button>
           </div>
         </div>
       </div>

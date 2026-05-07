@@ -19,20 +19,19 @@ const C = {
   warning: '#F59E0B',
 };
 
-const SERVICE_ICONS: Record<string, string> = {
-  HOUSE_CLEANING: '🏠',
-  DEEP_CLEANING: '✨',
-  MOVE_IN_OUT: '📦',
-  SAME_DAY_CLEANING: '⚡',
-  OFFICE_CLEANING: '🏢',
-  POST_CONSTRUCTION: '🔨',
-  MEDICAL_CLEANING: '🏥',
-  CARPET_CLEANING: '🛋',
-  WINDOW_CLEANING: '🪟',
-  ORGANIZING: '📋',
-  CAR_WASH: '🚗',
-  LAUNDRY_PICKUP: '👕',
-  DRY_CLEANING: '👔',
+const SERVICE_MARKS: Record<string, string> = {
+  HOUSE_CLEANING: 'HC',
+  DEEP_CLEANING: 'DC',
+  MOVE_IN_OUT: 'MV',
+  SAME_DAY_CLEANING: 'SD',
+  OFFICE_CLEANING: 'OF',
+  POST_CONSTRUCTION: 'PC',
+  MEDICAL_CLEANING: 'MC',
+  CARPET_CLEANING: 'CP',
+  WINDOW_CLEANING: 'WN',
+  ORGANIZING: 'OR',
+  CAR_WASH: 'CW',
+  LAUNDRY_PICKUP: 'LD',
 };
 
 type Booking = {
@@ -57,12 +56,19 @@ type Booking = {
   }>;
 };
 
-function serviceName(booking: Booking) {
-  return String(booking.service_type || booking.serviceType || 'HOUSE_CLEANING').replace(/_/g, ' ');
+function serviceName(booking: Booking, t: (key: string) => string) {
+  const key = String(booking.service_type || booking.serviceType || 'HOUSE_CLEANING');
+  const translated = t(`services.${key}`);
+  return translated === `services.${key}` ? key.replace(/_/g, ' ') : translated;
 }
 
 function serviceIcon(booking: Booking) {
-  return SERVICE_ICONS[String(booking.service_type || booking.serviceType)] || '🧹';
+  return SERVICE_MARKS[String(booking.service_type || booking.serviceType)] || 'EC';
+}
+
+function localeFor(lang: string) {
+  const map: Record<string, string> = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', pt: 'pt-BR', ru: 'ru-RU', ko: 'ko-KR', zh: 'zh-CN', vi: 'vi-VN', tl: 'fil-PH', ar: 'ar' };
+  return map[lang] || 'en-US';
 }
 
 function bookingAddress(booking: Booking) {
@@ -96,12 +102,13 @@ function StatCard({
 }
 
 export default function ClientHistory() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [ratingModal, setRatingModal] = useState<Booking | null>(null);
   const [stars, setStars] = useState(5);
   const [tip, setTip] = useState(0);
+  const locale = localeFor(lang);
 
   const load = useCallback(async () => {
     const token = localStorage.getItem('token') || '';
@@ -476,7 +483,7 @@ export default function ClientHistory() {
         <div>
           <h1 className="client-history-title">{t('client.history.title')}</h1>
           <p className="client-history-subtitle">
-            Completed services, invoices, ratings and tips in one place.
+            {t('client.historyExtra.subtitle')}
           </p>
         </div>
       </div>
@@ -506,21 +513,21 @@ export default function ClientHistory() {
             {t('client.history.noCompleted')}
           </div>
           <div style={{ fontSize: 14, color: C.muted }}>
-            Finished services will appear here after completion.
+            {t('client.historyExtra.noCompletedDesc')}
           </div>
         </div>
       ) : (
         <div className="client-history-panel">
           <div className="client-history-panel-head">
             <div style={{ fontSize: 24, fontWeight: 900, color: C.text }}>
-              Completed Services
+              {t('client.historyExtra.completedServices')}
             </div>
             <div className="client-history-count">{bookings.length}</div>
           </div>
 
           <div className="client-history-list">
             {bookings.map((booking) => {
-              const name = serviceName(booking);
+              const name = serviceName(booking, t);
               const address = bookingAddress(booking);
               const amount = bookingAmount(booking);
               const professional = proName(booking);
@@ -534,24 +541,20 @@ export default function ClientHistory() {
                         <div style={{ minWidth: 0 }}>
                           <div className="client-history-name">{name}</div>
                           <div className="client-history-address">
-                            📍 {address || 'Address unavailable'}
+                            {address || t('client.historyExtra.addressUnavailable')}
                           </div>
                         </div>
                       </div>
 
                       <div className="client-history-badge">
-                        {t('statuses.COMPLETED') || 'Completed'}
+                        {t('statuses.COMPLETED')}
                       </div>
                     </div>
 
                     <div className="client-history-chips">
                       {booking.scheduled_at && (
                         <span className="client-history-chip">
-                          🕒 {new Date(booking.scheduled_at).toLocaleDateString()} ·{' '}
-                          {new Date(booking.scheduled_at).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
+                          {new Date(booking.scheduled_at).toLocaleDateString(locale)} ? {new Date(booking.scheduled_at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       )}
 
@@ -562,7 +565,7 @@ export default function ClientHistory() {
                       )}
 
                       {booking.rated && (
-                        <span className="client-history-chip amber">⭐ Rated</span>
+                        <span className="client-history-chip amber">{t('client.history.rated')}</span>
                       )}
                     </div>
 
@@ -586,18 +589,12 @@ export default function ClientHistory() {
                           setTip(0);
                         }}
                         type="button"
-                      >
-                        ⭐ {t('client.history.rateAndTip')}
-                      </button>
+                      >{t('client.history.rateAndTip')}</button>
                     ) : (
-                      <div className="client-history-action done">
-                        ⭐ {t('client.history.rated')}
-                      </div>
+                      <div className="client-history-action done">{t('client.history.rated')}</div>
                     )}
 
-                    <button className="client-history-action" type="button">
-                      📄 {t('client.history.invoice')}
-                    </button>
+                    <button className="client-history-action" type="button">{t('client.history.invoice')}</button>
                   </div>
                 </div>
               );

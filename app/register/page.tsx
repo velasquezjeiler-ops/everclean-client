@@ -4,10 +4,54 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useTranslation } from '../../lib/i18n/useTranslation';
 
 const API =
   process.env.NEXT_PUBLIC_API_URL ||
   'https://commercial-clean-setup.replit.app/api';
+
+const REGISTER_TEXT: Record<string, Record<string, string>> = {
+  en: {
+    brandSubtitle: 'Professional Cleaning',
+    proTitle: 'Join the pro network.',
+    clientTitle: 'Start booking clean.',
+    proCopy: 'Create your professional profile, set your service radius, and get ready for available jobs in your area.',
+    clientCopy: 'Create your client account to book services, track visits, and manage your cleaning history.',
+    createAccount: 'Create account',
+    subtitle: 'Choose your account type and complete the basics.',
+    client: 'Client',
+    professional: 'Professional',
+    baseAddress: 'Base address',
+    address: 'Address',
+    zipCode: 'ZIP code',
+    creating: 'Creating account...',
+    already: 'Already have an account?',
+    signIn: 'Sign in',
+    unable: 'Unable to create account',
+  },
+  es: {
+    brandSubtitle: 'Limpieza profesional',
+    proTitle: 'Unete a la red profesional.',
+    clientTitle: 'Comienza a reservar limpieza.',
+    proCopy: 'Crea tu perfil profesional, define tu radio de servicio y preparate para recibir trabajos disponibles en tu zona.',
+    clientCopy: 'Crea tu cuenta de cliente para reservar servicios, seguir visitas y administrar tu historial de limpieza.',
+    createAccount: 'Crear cuenta',
+    subtitle: 'Elige tu tipo de cuenta y completa los datos basicos.',
+    client: 'Cliente',
+    professional: 'Profesional',
+    baseAddress: 'Direccion base',
+    address: 'Direccion',
+    zipCode: 'Codigo ZIP',
+    creating: 'Creando cuenta...',
+    already: 'Ya tienes una cuenta?',
+    signIn: 'Iniciar sesion',
+    unable: 'No se pudo crear la cuenta',
+  },
+};
+
+function rt(lang: string, key: string) {
+  return REGISTER_TEXT[lang]?.[key] || REGISTER_TEXT.en[key] || key;
+}
 
 const C = {
   navy: '#0D3781',
@@ -22,6 +66,7 @@ const C = {
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { t, lang } = useTranslation();
   const [role, setRole] = useState<'CLIENT' | 'PROFESSIONAL'>('CLIENT');
   const [form, setForm] = useState({
     fullName: '',
@@ -52,7 +97,7 @@ export default function RegisterPage() {
       });
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error || 'Unable to create account');
+      if (!res.ok) throw new Error(data.error || rt(lang, 'unable'));
 
       localStorage.setItem('token', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
@@ -60,7 +105,7 @@ export default function RegisterPage() {
 
       router.push(data.role === 'PROFESSIONAL' ? '/pro/profile' : '/dashboard/profile');
     } catch (e: any) {
-      setError(e.message || 'Unable to create account');
+      setError(e.message || rt(lang, 'unable'));
     } finally {
       setLoading(false);
     }
@@ -246,24 +291,24 @@ export default function RegisterPage() {
             <div>
               Ever<span style={{ color: C.green }}>Clean</span>
               <div style={{ fontSize: 10, letterSpacing: 1.6, color: C.green, textTransform: 'uppercase' }}>
-                Professional Cleaning
+                {rt(lang, 'brandSubtitle')}
               </div>
             </div>
           </div>
 
           <div className="register-copy">
-            <h1>{role === 'PROFESSIONAL' ? 'Join the pro network.' : 'Start booking clean.'}</h1>
+            <h1>{role === 'PROFESSIONAL' ? rt(lang, 'proTitle') : rt(lang, 'clientTitle')}</h1>
             <p>
               {role === 'PROFESSIONAL'
-                ? 'Create your professional profile, set your service radius, and get ready for available jobs in your area.'
-                : 'Create your client account to book services, track visits, and manage your cleaning history.'}
+                ? rt(lang, 'proCopy')
+                : rt(lang, 'clientCopy')}
             </p>
           </div>
         </section>
 
         <section className="register-panel">
-          <h2 className="register-title">Create account</h2>
-          <p className="register-subtitle">Choose your account type and complete the basics.</p>
+          <h2 className="register-title">{rt(lang, 'createAccount')}</h2>
+          <p className="register-subtitle">{rt(lang, 'subtitle')}</p>
 
           <div className="role-switch">
             <button type="button" className={role === 'CLIENT' ? 'active' : ''} onClick={() => setRole('CLIENT')}>
@@ -280,7 +325,7 @@ export default function RegisterPage() {
 
           <div className="register-grid">
             <div className="register-field full">
-              <label>Full name</label>
+              <label>{t('profile.fullName')}</label>
               <input
                 value={form.fullName}
                 onChange={(e) => setForm({ ...form, fullName: e.target.value })}
@@ -288,7 +333,7 @@ export default function RegisterPage() {
               />
             </div>
             <div className="register-field">
-              <label>Email</label>
+              <label>{t('profile.email')}</label>
               <input
                 type="email"
                 value={form.email}
@@ -297,7 +342,7 @@ export default function RegisterPage() {
               />
             </div>
             <div className="register-field">
-              <label>Phone</label>
+              <label>{t('profile.phone')}</label>
               <input
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -305,7 +350,7 @@ export default function RegisterPage() {
               />
             </div>
             <div className="register-field full">
-              <label>Password</label>
+              <label>{t('common.password')}</label>
               <input
                 type="password"
                 value={form.password}
@@ -314,7 +359,7 @@ export default function RegisterPage() {
               />
             </div>
             <div className="register-field full">
-              <label>{role === 'PROFESSIONAL' ? 'Base address' : 'Address'}</label>
+              <label>{role === 'PROFESSIONAL' ? rt(lang, 'baseAddress') : rt(lang, 'address')}</label>
               <input
                 value={form.address}
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
@@ -322,15 +367,15 @@ export default function RegisterPage() {
               />
             </div>
             <div className="register-field">
-              <label>City</label>
+              <label>{t('profile.city')}</label>
               <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
             </div>
             <div className="register-field">
-              <label>State</label>
+              <label>{t('profile.state')}</label>
               <input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
             </div>
             <div className="register-field">
-              <label>ZIP code</label>
+              <label>{rt(lang, 'zipCode')}</label>
               <input value={form.zipCode} onChange={(e) => setForm({ ...form, zipCode: e.target.value })} />
             </div>
           </div>
@@ -338,11 +383,11 @@ export default function RegisterPage() {
           {error && <div className="register-error">{error}</div>}
 
           <button className="register-submit" type="button" disabled={loading || !canSubmit} onClick={submit}>
-            {loading ? 'Creating account...' : 'Create account'}
+            {loading ? rt(lang, 'creating') : rt(lang, 'createAccount')}
           </button>
 
           <p className="register-login">
-            Already have an account? <Link href="/">Sign in</Link>
+            {rt(lang, 'already')} <Link href="/">{rt(lang, 'signIn')}</Link>
           </p>
         </section>
       </div>

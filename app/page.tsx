@@ -13,17 +13,17 @@ const API =
 const LOGIN_TEXT: Record<string, Record<string, string>> = {
   en: {
     heroTitle: 'The smarter way to manage clean.', heroCopy: 'Book services, track your cleaner in real time, and manage every visit from one focused dashboard.',
-    featurePricing: 'Instant pricing by sqft and state', featureTracking: 'Real-time cleaner tracking', featureScheduling: 'Automated scheduling and billing',
+    featurePricing: 'Instant pricing by sqft and state', featureTracking: 'Real-time cleaner tracking', featureScheduling: 'Automated scheduling and billing', brandSubtitle: 'Professional Cleaning',
     welcome: 'Welcome back', subtitle: 'Sign in to your account', forgot: 'Forgot password?', signingIn: 'Signing in...', signIn: 'Sign In',
     newAccount: 'New to EverClean?', createAccount: 'Create an account', footer: 'Professional Cleaning Platform', invalid: 'Invalid credentials', unable: 'Unable to sign in',
-    resetUpdated: 'Password updated. You can sign in now.', unableReset: 'Unable to reset password', unableCode: 'Unable to send reset code', codeSentEmail: 'Code sent by email.', codeSentSms: 'Code sent by SMS.',
+    resetUpdated: 'Password updated. You can sign in now.', unableReset: 'Unable to reset password', unableCode: 'Unable to send reset code', codeSentEmail: 'Code sent by email.', codeSentSms: 'Code sent by SMS.', resetPassword: 'Reset password', emailMethod: 'Email', smsMethod: 'SMS', sending: 'Sending...', sendCode: 'Send security code', securityCode: 'Security code', codePlaceholder: '6-digit code', newPassword: 'New password', passwordPlaceholder: 'At least 8 characters', updating: 'Updating...', updatePassword: 'Update password',
   },
   es: {
     heroTitle: 'La forma más inteligente de gestionar limpieza.', heroCopy: 'Reserva servicios, sigue a tu profesional en tiempo real y administra cada visita desde un solo panel.',
-    featurePricing: 'Precios instantáneos por pies cuadrados y estado', featureTracking: 'Seguimiento del profesional en tiempo real', featureScheduling: 'Programación y facturación automatizadas',
+    featurePricing: 'Precios instantaneos por pies cuadrados y estado', featureTracking: 'Seguimiento del profesional en tiempo real', featureScheduling: 'Programacion y facturacion automatizadas', brandSubtitle: 'Limpieza profesional',
     welcome: 'Bienvenido', subtitle: 'Inicia sesión en tu cuenta', forgot: '¿Olvidaste tu contraseña?', signingIn: 'Iniciando sesión...', signIn: 'Iniciar sesión',
     newAccount: '¿Nuevo en EverClean?', createAccount: 'Crear una cuenta', footer: 'Plataforma profesional de limpieza', invalid: 'Credenciales inválidas', unable: 'No se pudo iniciar sesión',
-    resetUpdated: 'Contraseña actualizada. Ya puedes iniciar sesión.', unableReset: 'No se pudo restablecer la contraseña', unableCode: 'No se pudo enviar el código', codeSentEmail: 'Código enviado por correo.', codeSentSms: 'Código enviado por SMS.',
+    resetUpdated: 'Contraseña actualizada. Ya puedes iniciar sesión.', unableReset: 'No se pudo restablecer la contraseña', unableCode: 'No se pudo enviar el código', codeSentEmail: 'Codigo enviado por correo.', codeSentSms: 'Codigo enviado por SMS.', resetPassword: 'Restablecer contrasena', emailMethod: 'Correo', smsMethod: 'SMS', sending: 'Enviando...', sendCode: 'Enviar codigo de seguridad', securityCode: 'Codigo de seguridad', codePlaceholder: 'Codigo de 6 digitos', newPassword: 'Nueva contrasena', passwordPlaceholder: 'Minimo 8 caracteres', updating: 'Actualizando...', updatePassword: 'Actualizar contrasena',
   },
 };
 
@@ -144,9 +144,9 @@ export default function LoginPage() {
   }
 
   const features = [
-    'Instant pricing by sqft and state',
-    'Real-time cleaner tracking',
-    'Automated scheduling and billing',
+    ltxt(lang, 'featurePricing'),
+    ltxt(lang, 'featureTracking'),
+    ltxt(lang, 'featureScheduling'),
   ];
 
   return (
@@ -425,7 +425,7 @@ export default function LoginPage() {
                 Ever<span style={{ color: C.green }}>Clean</span>
               </div>
               <div style={{ color: `${C.green}dd`, fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 5 }}>
-                Professional Cleaning
+                {ltxt(lang, 'brandSubtitle')}
               </div>
             </div>
           </div>
@@ -433,7 +433,7 @@ export default function LoginPage() {
           <div className="client-hero-copy">
             <h1>{ltxt(lang, 'heroTitle')}</h1>
             <p>
-              Book services, track your cleaner in real time, and manage every visit from one focused dashboard.
+              {ltxt(lang, 'heroCopy')}
             </p>
           </div>
 
@@ -485,7 +485,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                  placeholder="Password"
+                  placeholder={t('common.password')}
                   autoComplete="current-password"
                 />
               </div>
@@ -496,20 +496,20 @@ export default function LoginPage() {
 
               {resetOpen && (
                 <div style={{ border:`1px solid ${C.border}`, background:C.bg, borderRadius:14, padding:14, display:'flex', flexDirection:'column', gap:10 }}>
-                  <div style={{ fontSize:13, fontWeight:800, color:C.text }}>Reset password</div>
+                  <div style={{ fontSize:13, fontWeight:800, color:C.text }}>{ltxt(lang, 'resetPassword')}</div>
                   {resetStep === 'request' ? (
                     <>
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-                        <button type="button" onClick={() => setResetMethod('email')} style={{ border:`1px solid ${resetMethod==='email'?C.blue:C.border}`, background:resetMethod==='email'?'#fff':'transparent', borderRadius:10, padding:'9px 10px', color:C.text, fontWeight:800, cursor:'pointer' }}>Email</button>
-                        <button type="button" onClick={() => setResetMethod('sms')} style={{ border:`1px solid ${resetMethod==='sms'?C.blue:C.border}`, background:resetMethod==='sms'?'#fff':'transparent', borderRadius:10, padding:'9px 10px', color:C.text, fontWeight:800, cursor:'pointer' }}>SMS</button>
+                        <button type="button" onClick={() => setResetMethod('email')} style={{ border:`1px solid ${resetMethod==='email'?C.blue:C.border}`, background:resetMethod==='email'?'#fff':'transparent', borderRadius:10, padding:'9px 10px', color:C.text, fontWeight:800, cursor:'pointer' }}>{ltxt(lang, 'emailMethod')}</button>
+                        <button type="button" onClick={() => setResetMethod('sms')} style={{ border:`1px solid ${resetMethod==='sms'?C.blue:C.border}`, background:resetMethod==='sms'?'#fff':'transparent', borderRadius:10, padding:'9px 10px', color:C.text, fontWeight:800, cursor:'pointer' }}>{ltxt(lang, 'smsMethod')}</button>
                       </div>
-                      <button type="button" onClick={requestPasswordReset} disabled={!email || resetLoading} className="client-submit" style={{ minHeight:40 }}>{resetLoading ? 'Sending...' : 'Send security code'}</button>
+                      <button type="button" onClick={requestPasswordReset} disabled={!email || resetLoading} className="client-submit" style={{ minHeight:40 }}>{resetLoading ? ltxt(lang, 'sending') : ltxt(lang, 'sendCode')}</button>
                     </>
                   ) : (
                     <>
-                      <div className="client-field"><label>Security code</label><input value={resetCode} onChange={(e) => setResetCode(e.target.value)} placeholder="6-digit code" /></div>
-                      <div className="client-field"><label>New password</label><input type="password" value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} placeholder="At least 8 characters" autoComplete="new-password" /></div>
-                      <button type="button" onClick={confirmPasswordReset} disabled={!resetCode || !resetPassword || resetLoading} className="client-submit" style={{ minHeight:40 }}>{resetLoading ? 'Updating...' : 'Update password'}</button>
+                      <div className="client-field"><label>{ltxt(lang, 'securityCode')}</label><input value={resetCode} onChange={(e) => setResetCode(e.target.value)} placeholder={ltxt(lang, 'codePlaceholder')} /></div>
+                      <div className="client-field"><label>{ltxt(lang, 'newPassword')}</label><input type="password" value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} placeholder={ltxt(lang, 'passwordPlaceholder')} autoComplete="new-password" /></div>
+                      <button type="button" onClick={confirmPasswordReset} disabled={!resetCode || !resetPassword || resetLoading} className="client-submit" style={{ minHeight:40 }}>{resetLoading ? ltxt(lang, 'updating') : ltxt(lang, 'updatePassword')}</button>
                     </>
                   )}
                   {resetMessage && <div style={{ fontSize:12, fontWeight:700, color:resetMessage.includes('Unable') || resetMessage.includes('configured') || resetMessage.includes('Invalid') ? C.danger : C.greenDk }}>{resetMessage}</div>}
@@ -528,12 +528,12 @@ export default function LoginPage() {
             <p style={{ margin: '16px 0 0', textAlign: 'center', color: C.muted, fontSize: 12 }}>
               {ltxt(lang, 'newAccount')}{' '}
               <Link href="/register" style={{ color: C.blue, fontWeight: 800, textDecoration: 'none' }}>
-                Create an account
+                {ltxt(lang, 'createAccount')}
               </Link>
             </p>
 
             <p className="client-footer">
-              (c) 2026 EverClean - {ltxt(lang, 'footer')}
+              Copyright 2026 EverClean - {ltxt(lang, 'footer')}
             </p>
           </div>
         </section>
@@ -541,5 +541,4 @@ export default function LoginPage() {
     </main>
   );
 }
-
 

@@ -1,6 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from '../../../lib/i18n/useTranslation';
 
 const API =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -28,6 +29,28 @@ const SERVICES_LIST = [
   'Medical Facility',
   'Industrial',
 ];
+
+const SERVICE_NAME_KEYS: Record<string, string> = {
+  'House Cleaning': 'HOUSE_CLEANING',
+  'Deep Cleaning': 'DEEP_CLEANING',
+  'Move In/Out': 'MOVE_IN_OUT',
+  'Office Cleaning': 'OFFICE_CLEANING',
+  'Post Construction': 'POST_CONSTRUCTION',
+  'Carpet Cleaning': 'CARPET_CLEANING',
+  'Medical Facility': 'MEDICAL_FACILITY',
+  Industrial: 'INDUSTRIAL',
+};
+
+const LANGUAGE_NAME_KEYS: Record<string, string> = {
+  English: 'en',
+  Spanish: 'es',
+  Portuguese: 'pt',
+  French: 'fr',
+  Mandarin: 'zh',
+  Hindi: 'hi',
+  Korean: 'ko',
+  Arabic: 'ar',
+};
 
 const LANGUAGES = [
   'English',
@@ -77,6 +100,7 @@ function loadGoogleMaps() {
 }
 
 export default function ProProfile() {
+  const { t } = useTranslation();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -187,14 +211,14 @@ export default function ProProfile() {
   const fallbackCenter = { lat: 40.4862, lng: -74.4518 };
   const coverageBand =
     clampedRadius <= 10
-      ? { label: 'Excellent coverage', tone: 'Fastest response', color: '#15803D', bg: '#DCFCE7' }
+      ? { label: t('pro.profileExtra.excellentCoverage'), tone: t('pro.profileExtra.fastestResponse'), color: '#15803D', bg: '#DCFCE7' }
       : clampedRadius <= 20
-        ? { label: 'Good coverage', tone: 'Strong response window', color: '#65A30D', bg: '#ECFCCB' }
+        ? { label: t('pro.profileExtra.goodCoverage'), tone: t('pro.profileExtra.strongWindow'), color: '#65A30D', bg: '#ECFCCB' }
         : clampedRadius <= 30
-          ? { label: 'Medium coverage', tone: 'Balanced travel time', color: '#CA8A04', bg: '#FEF9C3' }
+          ? { label: t('pro.profileExtra.mediumCoverage'), tone: t('pro.profileExtra.balancedTravel'), color: '#CA8A04', bg: '#FEF9C3' }
           : clampedRadius <= 40
-            ? { label: 'Low coverage', tone: 'Longer drive times', color: '#EA580C', bg: '#FFEDD5' }
-            : { label: 'Minimum priority', tone: 'Longest travel times', color: '#DC2626', bg: '#FEE2E2' };
+            ? { label: t('pro.profileExtra.lowCoverage'), tone: t('pro.profileExtra.longerDrive'), color: '#EA580C', bg: '#FFEDD5' }
+            : { label: t('pro.profileExtra.minimumCoverage'), tone: t('pro.profileExtra.longestDrive'), color: '#DC2626', bg: '#FEE2E2' };
 
   const syncCoverageMap = useCallback(() => {
     const map = googleMapRef.current;
@@ -236,7 +260,7 @@ export default function ProProfile() {
           coverageMarkerRef.current ||
           new maps.Marker({
             map,
-            title: 'Base address',
+            title: t('pro.profileExtra.baseAddress'),
           });
         coverageCircleRef.current =
           coverageCircleRef.current ||
@@ -264,10 +288,10 @@ export default function ProProfile() {
               applyCenter({ lat: loc.lat(), lng: loc.lng() });
             } else if (hasProfileCoords) {
               applyCenter({ lat: profileLat, lng: profileLng });
-              setMapError('Using saved coordinates. Verify your base address.');
+              setMapError(t('pro.profileExtra.verifyAddress'));
             } else {
               applyCenter(fallbackCenter);
-              setMapError('Unable to locate this address on Google Maps.');
+              setMapError(t('pro.profileExtra.unableLocate'));
             }
           });
           return;
@@ -279,7 +303,7 @@ export default function ProProfile() {
         }
 
         applyCenter(fallbackCenter);
-        setMapError('Add your professional address to center coverage precisely.');
+        setMapError(t('pro.profileExtra.addAddress'));
       })
       .catch(() => {
         if (!cancelled) setMapError('Google Maps key is required for exact radius coverage.');
@@ -331,14 +355,14 @@ export default function ProProfile() {
       });
 
       if (res.ok) {
-        setMessage('Profile saved successfully!');
+        setMessage(t('client.profileExtra.profileSaved'));
         loadProfile();
       } else {
         const e = await res.json();
         setMessage('Error: ' + e.error);
       }
     } catch (e) {
-      setMessage('Error: Unable to save profile');
+      setMessage(t('client.profileExtra.errorSaving'));
     } finally {
       setSaving(false);
     }
@@ -636,12 +660,10 @@ export default function ProProfile() {
                 color: C.text,
                 marginBottom: 16,
               }}
-            >
-              Personal Information
-            </div>
+            >{t('client.profileExtra.personalInfo')}</div>
             <div className="pro-profile-grid">
               <div>
-                <label style={labelStyle}>Full name</label>
+                <label style={labelStyle}>{t('profile.fullName')}</label>
                 <input
                   value={form.fullName}
                   onChange={(e) => setForm({ ...form, fullName: e.target.value })}
@@ -649,7 +671,7 @@ export default function ProProfile() {
                 />
               </div>
               <div>
-                <label style={labelStyle}>Phone</label>
+                <label style={labelStyle}>{t('profile.phone')}</label>
                 <input
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -657,7 +679,7 @@ export default function ProProfile() {
                 />
               </div>
               <div style={{ gridColumn: '1/-1' }}>
-                <label style={labelStyle}>Email</label>
+                <label style={labelStyle}>{t('profile.email')}</label>
                 <input
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -665,12 +687,12 @@ export default function ProProfile() {
                 />
               </div>
               <div style={{ gridColumn: '1/-1' }}>
-                <label style={labelStyle}>Bio</label>
+                <label style={labelStyle}>{t('profile.bio')}</label>
                 <textarea
                   value={form.bio}
                   onChange={(e) => setForm({ ...form, bio: e.target.value })}
                   rows={3}
-                  placeholder="Tell clients about yourself and your experience..."
+                  placeholder={t('profile.bioPlaceholder')}
                   style={{ ...inputStyle, resize: 'none' }}
                 />
               </div>
@@ -690,7 +712,7 @@ export default function ProProfile() {
             </div>
             <div className="pro-profile-grid">
               <div style={{ gridColumn: '1/-1' }}>
-                <label style={labelStyle}>Street address</label>
+                <label style={labelStyle}>{t('client.profileExtra.streetAddress')}</label>
                 <input
                   value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
@@ -698,7 +720,7 @@ export default function ProProfile() {
                 />
               </div>
               <div>
-                <label style={labelStyle}>City</label>
+                <label style={labelStyle}>{t('profile.city')}</label>
                 <input
                   value={form.city}
                   onChange={(e) => setForm({ ...form, city: e.target.value })}
@@ -706,7 +728,7 @@ export default function ProProfile() {
                 />
               </div>
               <div>
-                <label style={labelStyle}>State</label>
+                <label style={labelStyle}>{t('profile.state')}</label>
                 <input
                   value={form.state}
                   onChange={(e) => setForm({ ...form, state: e.target.value })}
@@ -714,7 +736,7 @@ export default function ProProfile() {
                 />
               </div>
               <div>
-                <label style={labelStyle}>ZIP code</label>
+                <label style={labelStyle}>{t('client.profileExtra.zipCode')}</label>
                 <input
                   value={form.zipCode}
                   onChange={(e) => setForm({ ...form, zipCode: e.target.value })}
@@ -722,7 +744,7 @@ export default function ProProfile() {
                 />
               </div>
               <div style={{ gridColumn: '1/-1' }}>
-                <label style={labelStyle}>Service radius ({form.serviceRadiusMiles} mi)</label>
+                <label style={labelStyle}>{t('profile.serviceRadius')} ({form.serviceRadiusMiles} {t('units.miles')})</label>
                 <div className="pro-radius-panel">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div
@@ -739,14 +761,14 @@ export default function ProProfile() {
                         flexShrink: 0,
                       }}
                     >
-                      Home
+                      Base
                     </div>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>
-                        Base address
+                        {t('pro.profileExtra.baseAddress')}
                       </div>
                       <div style={{ fontSize: 12, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {baseAddress || 'Add your professional address to center coverage'}
+                        {baseAddress || t('pro.profileExtra.addAddress')}
                       </div>
                     </div>
                   </div>
@@ -833,18 +855,18 @@ export default function ProProfile() {
                     </a>
                     <div className="coverage-map-note">
                       {hasGoogleMapsKey
-                        ? mapError || `${clampedRadius} mi radius from your base address`
-                        : 'NEXT_PUBLIC_GOOGLE_MAPS_API_KEY missing in this Vercel build'}
+                        ? mapError || t('pro.profileExtra.radiusFromBase').replace('{{miles}}', String(clampedRadius))
+                        : t('pro.profileExtra.mapsKeyMissing')}
                     </div>
                   </div>
 
                   <div className="coverage-legend">
                     {[
-                      { label: '0-10 mi', text: 'Excellent', color: '#15803D', bg: '#DCFCE7' },
-                      { label: '11-20 mi', text: 'Good', color: '#65A30D', bg: '#ECFCCB' },
-                      { label: '21-30 mi', text: 'Medium', color: '#CA8A04', bg: '#FEF9C3' },
-                      { label: '31-40 mi', text: 'Low', color: '#EA580C', bg: '#FFEDD5' },
-                      { label: '41+ mi', text: 'Slowest', color: '#DC2626', bg: '#FEE2E2' },
+                      { label: '0-10 mi', text: t('pro.profileExtra.excellent'), color: '#15803D', bg: '#DCFCE7' },
+                      { label: '11-20 mi', text: t('pro.profileExtra.good'), color: '#65A30D', bg: '#ECFCCB' },
+                      { label: '21-30 mi', text: t('pro.profileExtra.medium'), color: '#CA8A04', bg: '#FEF9C3' },
+                      { label: '31-40 mi', text: t('pro.profileExtra.low'), color: '#EA580C', bg: '#FFEDD5' },
+                      { label: '41+ mi', text: t('pro.profileExtra.slowest'), color: '#DC2626', bg: '#FEE2E2' },
                     ].map((zone) => (
                       <div key={zone.label} className="coverage-legend-item" style={{ background: zone.bg, borderColor: `${zone.color}33` }}>
                         <div style={{ fontWeight: 800, color: zone.color }}>{zone.label}</div>
@@ -896,8 +918,7 @@ export default function ProProfile() {
                     }}
                     className="pro-profile-chip"
                   >
-                    {selected ? 'Selected: ' : ''}
-                    {svc}
+                    {selected ? `${t('common.selected')}: ` : ''}{t(`services.${SERVICE_NAME_KEYS[svc] || svc}`)}
                   </button>
                 );
               })}
@@ -943,8 +964,7 @@ export default function ProProfile() {
                     }}
                     className="pro-profile-chip"
                   >
-                    {selected ? 'Selected: ' : ''}
-                    {lang}
+                    {selected ? `${t('common.selected')}: ` : ''}{t(`languages.${LANGUAGE_NAME_KEYS[lang] || lang}`)}
                   </button>
                 );
               })}
@@ -969,7 +989,7 @@ export default function ProProfile() {
               fontFamily: 'Poppins, sans-serif',
             }}
           >
-            {saving ? 'Saving...' : 'Save profile'}
+            {saving ? t('client.profileExtra.saving') : t('client.profileExtra.saveProfile')}
           </button>
         </div>
 
@@ -1046,11 +1066,9 @@ export default function ProProfile() {
               </div>
             </div>
 
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 10 }}>
-              Click to upload photo
-            </div>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 10 }}>{t('pro.profileExtra.clickPhoto')}</div>
             <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>
-              {form.fullName || 'Professional'}
+              {form.fullName || t('pro.profileExtra.professional')}
             </div>
             <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>
               {form.city || 'NJ'}, {form.state}
@@ -1067,7 +1085,7 @@ export default function ProProfile() {
                 }}
               >
                 <span style={{ color: C.warning, fontSize: 13 }}>
-                  {`${rating.toFixed(1)} stars`}
+                  {`${rating.toFixed(1)} ${t('pro.layout.stars')}`}
                 </span>
                 <span style={{ fontSize: 12, color: C.muted }}>{rating.toFixed(1)}</span>
               </div>
@@ -1083,7 +1101,7 @@ export default function ProProfile() {
                 marginBottom: 12,
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Hourly rate</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{t('pro.profileExtra.hourlyRate')}</div>
               <button
                 onClick={() => setEditingRate(!editingRate)}
                 style={{
@@ -1095,7 +1113,7 @@ export default function ProProfile() {
                   fontWeight: 600,
                 }}
               >
-                {editingRate ? 'Cancel' : 'Edit'}
+                {editingRate ? t('common.cancel') : t('common.edit')}
               </button>
             </div>
 
@@ -1167,11 +1185,11 @@ export default function ProProfile() {
               Performance
             </div>
             {[
-              { label: 'Total earnings', val: `$${earnings.toFixed(2)}` },
-              { label: 'Services completed', val: services },
-              { label: 'Completion rate', val: `${completion}%` },
-              { label: 'Service radius', val: `${form.serviceRadiusMiles} mi` },
-              { label: 'Payout schedule', val: form.payoutSchedule },
+              { label: t('pro.dashboard.totalEarnings'), val: `${earnings.toFixed(2)}` },
+              { label: t('pro.dashboard.servicesCompleted'), val: services },
+              { label: t('profile.completionRate'), val: `${completion}%` },
+              { label: t('profile.serviceRadius'), val: `${form.serviceRadiusMiles} ${t('units.miles')}` },
+              { label: t('profile.payoutSchedule'), val: form.payoutSchedule },
             ].map((s) => (
               <div
                 key={s.label}
@@ -1194,9 +1212,9 @@ export default function ProProfile() {
               Verifications
             </div>
             {[
-              { label: 'Background check', done: profile?.background_checked },
-              { label: 'ID verified', done: profile?.id_verified },
-              { label: 'Payout setup', done: !!profile?.stripe_account_id },
+              { label: t('pro.profileExtra.backgroundCheck'), done: profile?.background_checked },
+              { label: t('pro.profileExtra.idVerified'), done: profile?.id_verified },
+              { label: t('pro.profileExtra.payoutSetup'), done: !!profile?.stripe_account_id },
             ].map((v) => (
               <div
                 key={v.label}
@@ -1209,7 +1227,7 @@ export default function ProProfile() {
                 }}
               >
                 <span style={{ fontSize: 13, color: v.done ? C.green : C.warning }}>
-                  {v.done ? 'Done' : 'Pending'}
+                  {v.done ? t('common.done') : t('common.pending')}
                 </span>
                 <span style={{ fontSize: 12, color: v.done ? C.text : C.muted }}>
                   {v.label}
@@ -1219,7 +1237,7 @@ export default function ProProfile() {
           </div>
 
           <div style={{ ...cardStyle, textAlign: 'center', background: C.bg }}>
-            <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>Need help?</div>
+            <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>{t('client.profileExtra.needHelp')}</div>
             <button
               style={{
                 fontSize: 12,
@@ -1229,14 +1247,11 @@ export default function ProProfile() {
                 border: 'none',
                 cursor: 'pointer',
               }}
-            >
-              Contact support
-            </button>
+            >{t('client.profileExtra.contactSupport')}</button>
           </div>
         </div>
       </div>
     </div>
   );
 }
-
 
