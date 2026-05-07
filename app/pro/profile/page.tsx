@@ -716,7 +716,7 @@ export default function ProProfile() {
                 marginBottom: 16,
               }}
             >
-              Address
+              {t('profile.address')}
             </div>
             <div className="pro-profile-grid">
               <div style={{ gridColumn: '1/-1' }}>
@@ -769,7 +769,7 @@ export default function ProProfile() {
                         flexShrink: 0,
                       }}
                     >
-                      Base
+                      {t('pro.profileExtra.baseShort')}
                     </div>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
@@ -853,13 +853,13 @@ export default function ProProfile() {
                     ) : (
                       <iframe
                         className="coverage-map-frame"
-                        title="Professional coverage map"
+                        title={t('pro.profileExtra.mapTitle')}
                         loading="lazy"
                         src={embedMapUrl}
                       />
                     )}
                     <a className="coverage-map-link" href={mapsSearchUrl} target="_blank" rel="noreferrer">
-                      Open in Maps
+                      {t('pro.profileExtra.openInMaps')}
                     </a>
                     <div className="coverage-map-note">
                       {hasGoogleMapsKey
@@ -896,7 +896,7 @@ export default function ProProfile() {
                 marginBottom: 14,
               }}
             >
-              Services offered
+              {t('profile.servicesOffered')}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {SERVICES_LIST.map((svc) => {
@@ -942,7 +942,7 @@ export default function ProProfile() {
                 marginBottom: 14,
               }}
             >
-              Languages
+              {t('profile.languages')}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {LANGUAGES.map((lang) => {
@@ -1142,7 +1142,7 @@ export default function ProProfile() {
                       padding: '8px',
                     }}
                   />
-                  <span style={{ fontSize: 13, color: C.muted }}>/hr</span>
+                  <span style={{ fontSize: 13, color: C.muted }}>/{t('units.hour')}</span>
                 </div>
                 <div
                   style={{
@@ -1154,7 +1154,7 @@ export default function ProProfile() {
                     marginBottom: 10,
                   }}
                 >
-                  Lower rate = higher auction priority
+                  {t('pro.profileExtra.lowerRatePriority')}
                 </div>
                 <button
                   onClick={saveRate}
@@ -1170,7 +1170,7 @@ export default function ProProfile() {
                     fontWeight: 600,
                   }}
                 >
-                  Save rate
+                  {t('pro.profileExtra.saveRate')}
                 </button>
               </div>
             ) : (
@@ -1183,14 +1183,14 @@ export default function ProProfile() {
                 }}
               >
                 ${form.hourlyRate}
-                <span style={{ fontSize: 14, fontWeight: 400, color: C.muted }}>/hr</span>
+                <span style={{ fontSize: 14, fontWeight: 400, color: C.muted }}>/{t('units.hour')}</span>
               </div>
             )}
           </div>
 
           <div style={cardStyle}>
             <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 12 }}>
-              Performance
+              {t('pro.profileExtra.performance')}
             </div>
             {[
               { label: t('pro.dashboard.totalEarnings'), val: `${earnings.toFixed(2)}` },
@@ -1217,7 +1217,7 @@ export default function ProProfile() {
 
           <div style={cardStyle}>
             <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 12 }}>
-              Verifications
+              {t('pro.profileExtra.verifications')}
             </div>
             {[
               { label: t('pro.profileExtra.backgroundCheck'), done: profile?.background_checked },

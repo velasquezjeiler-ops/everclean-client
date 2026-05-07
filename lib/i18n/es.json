@@ -234,6 +234,8 @@
     },
     "profileExtra": {
       "baseAddress": "Direccion base",
+      "baseShort": "Base",
+      "openInMaps": "Abrir en Maps",
       "addAddress": "Agrega tu direccion profesional para centrar la cobertura",
       "excellentCoverage": "Cobertura excelente",
       "fastestResponse": "Respuesta mas rapida",
@@ -253,7 +255,7 @@
       "good": "Buena",
       "medium": "Media",
       "low": "Baja",
-      "slowest": "M?s lenta",
+      "slowest": "Mas lenta",
       "clickPhoto": "Haz clic para subir foto",
       "professional": "Profesional",
       "hourlyRate": "Tarifa por hora",

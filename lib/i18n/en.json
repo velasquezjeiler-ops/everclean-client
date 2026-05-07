@@ -234,6 +234,8 @@
     },
     "profileExtra": {
       "baseAddress": "Base address",
+      "baseShort": "Base",
+      "openInMaps": "Open in Maps",
       "addAddress": "Add your professional address to center coverage",
       "excellentCoverage": "Excellent coverage",
       "fastestResponse": "Fastest response",
