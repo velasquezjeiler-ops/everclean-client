@@ -8,6 +8,13 @@ import Image from 'next/image';
 import LanguageSelector from '../../lib/i18n/LanguageSelector';
 import { useTranslation } from '../../lib/i18n/useTranslation';
 
+const IC = {
+  Services: (p) => (<svg width={p.s||20} height={p.s||20} viewBox='0 0 24 24' fill='none'><rect x='3' y='4' width='18' height='16' rx='2.5' stroke={p.c||'currentColor'} strokeWidth='1.7'/><path d='M8 11h3M8 15h6' stroke={p.c||'currentColor'} strokeWidth='1.7' strokeLinecap='round'/></svg>),
+  Add: (p) => (<svg width={p.s||20} height={p.s||20} viewBox='0 0 24 24' fill='none'><circle cx='12' cy='12' r='9' stroke={p.c||'currentColor'} strokeWidth='1.7'/><path d='M12 8v8M8 12h8' stroke={p.c||'currentColor'} strokeWidth='1.7' strokeLinecap='round'/></svg>),
+  History: (p) => (<svg width={p.s||20} height={p.s||20} viewBox='0 0 24 24' fill='none'><path d='M12 8v4l2.5 2.5' stroke={p.c||'currentColor'} strokeWidth='1.7' strokeLinecap='round'/><path d='M3.1 11A9 9 0 1 0 4 8' stroke={p.c||'currentColor'} strokeWidth='1.7' strokeLinecap='round'/></svg>),
+  Profile: (p) => (<svg width={p.s||20} height={p.s||20} viewBox='0 0 24 24' fill='none'><circle cx='12' cy='8' r='4' stroke={p.c||'currentColor'} strokeWidth='1.7'/><path d='M4 20c0-4 3.6-7 8-7s8 3 8 7' stroke={p.c||'currentColor'} strokeWidth='1.7' strokeLinecap='round'/></svg>),
+};
+
 const API =
   process.env.NEXT_PUBLIC_API_URL ||
   'https://commercial-clean-setup.replit.app/api';
@@ -246,7 +253,7 @@ function RightPanel({
           { href: '/dashboard/profile', label: clt(lang, 'billingProfile'), icon: '👤' },
         ].map((item) => (
           <Link key={item.href} href={item.href} className="client-quick-link">
-            <span>{item.icon}</span>
+            <item.Icon c={isActive ? "#fff" : "rgba(255,255,255,0.5)"} s={18} />
             <p>{item.label}</p>
             <b>›</b>
           </Link>
@@ -434,7 +441,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
 
           return (
             <Link key={item.href} href={item.href} className={isActive ? 'active' : ''}>
-              <span>{item.icon}</span>
+              <item.Icon c={"rgba(255,255,255,0.7)"} s={16} />
               <p>{item.label}</p>
             </Link>
           );
