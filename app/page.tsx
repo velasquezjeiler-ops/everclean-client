@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -12,10 +12,10 @@ const API =
 
 const LOGIN_TEXT: Record<string, Record<string, string>> = {
   en: {
-    heroTitle: 'The smarter way to manage clean.', heroCopy: 'Book services, track your cleaner in real time, and manage every visit from one focused dashboard.',
+    heroTitle: 'Cleaning, managed with less effort.', heroCopy: 'Book services, track your cleaner in real time, and manage every visit from one focused dashboard.',
     featurePricing: 'Instant pricing by sqft and state', featureTracking: 'Real-time cleaner tracking', featureScheduling: 'Automated scheduling and billing', brandSubtitle: 'Professional Cleaning',
     welcome: 'Welcome back', subtitle: 'Sign in to your account', forgot: 'Forgot password?', signingIn: 'Signing in...', signIn: 'Sign In',
-    newAccount: 'New to EverClean?', createAccount: 'Create an account', footer: 'Professional Cleaning Platform', invalid: 'Invalid credentials', unable: 'Unable to sign in',
+    newAccount: 'New to EverClean?', createAccount: 'Create an account', bookCleaning: 'Book a cleaning', workWithUs: 'Work with us', footer: 'Professional Cleaning Platform', invalid: 'Invalid credentials', unable: 'Unable to sign in',
     resetUpdated: 'Password updated. You can sign in now.', unableReset: 'Unable to reset password', unableCode: 'Unable to send reset code', codeSentEmail: 'Code sent by email.', codeSentSms: 'Code sent by SMS.', resetPassword: 'Reset password', emailMethod: 'Email', smsMethod: 'SMS', sending: 'Sending...', sendCode: 'Send security code', securityCode: 'Security code', codePlaceholder: '6-digit code', newPassword: 'New password', passwordPlaceholder: 'At least 8 characters', updating: 'Updating...', updatePassword: 'Update password',
   },
   es: {
@@ -37,12 +37,19 @@ const C = {
   blue: '#1565C0',
   green: '#4CAF50',
   greenDk: '#388E3C',
-  bg: '#F5F7FA',
-  text: '#0D1B2A',
+  canvas: '#FFFFFF',
+  soft: '#F5F7FA',
+  ink: '#0D1B2A',
   muted: '#64748B',
   border: '#E2E8F0',
+  shadow: '0 2px 8px rgba(13,55,129,0.06)',
+  bg: '#F5F7FA',
+  text: '#0D1B2A',
+  warning: '#F59E0B',
   danger: '#DC2626',
 };
+const R = { sm: '8px', md: '14px', lg: '20px', full: '9999px' };
+const font = "'Inter', system-ui, sans-serif";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -177,14 +184,14 @@ export default function LoginPage() {
         .client-hero {
           position: relative;
           overflow: hidden;
-          border-radius: 24px;
+          border-radius: ${R.lg};
           background: linear-gradient(135deg, ${C.navyDark} 0%, #123a62 48%, #0d4a2e 100%);
           color: #fff;
           padding: 42px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          box-shadow: 0 20px 60px rgba(13, 55, 129, 0.2);
+          box-shadow: ${C.shadow};
         }
 
         .client-hero::before {
@@ -193,7 +200,7 @@ export default function LoginPage() {
           inset: auto -110px -130px auto;
           width: 320px;
           height: 320px;
-          border-radius: 999px;
+          border-radius: ${R.full};
           background: rgba(76, 175, 80, 0.16);
         }
 
@@ -206,8 +213,8 @@ export default function LoginPage() {
         }
 
         .client-brand-logo {
-          border-radius: 14px;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+          border-radius: ${R.md};
+          box-shadow: ${C.shadow};
         }
 
         .client-hero-copy {
@@ -218,9 +225,9 @@ export default function LoginPage() {
         }
 
         .client-hero-copy h1 {
-          font-size: clamp(38px, 5vw, 64px);
-          line-height: 0.96;
-          font-weight: 900;
+          font-size: clamp(32px, 4.4vw, 56px);
+          line-height: 1.02;
+          font-weight: 600;
           letter-spacing: 0;
           margin: 0 0 18px;
         }
@@ -233,6 +240,27 @@ export default function LoginPage() {
           margin: 0;
         }
 
+        .client-hero-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 24px;
+        }
+        .client-hero-actions a {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 40px;
+          padding: 0 18px;
+          border-radius: ${R.full};
+          border: 1px solid rgba(255,255,255,0.34);
+          color: #fff;
+          font-size: 13px;
+          font-weight: 500;
+          text-decoration: none;
+          background: rgba(255,255,255,0.06);
+        }
+
         .client-feature-list {
           position: relative;
           z-index: 1;
@@ -243,10 +271,10 @@ export default function LoginPage() {
 
         .client-feature {
           min-width: 0;
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          border: 1px solid rgba(255, 255, 255, 0.16);
           background: rgba(255, 255, 255, 0.08);
-          border-radius: 14px;
-          padding: 12px;
+          border-radius: ${R.md};
+          padding: 14px;
           display: flex;
           align-items: flex-start;
           gap: 9px;
@@ -255,7 +283,7 @@ export default function LoginPage() {
         .client-check {
           width: 20px;
           height: 20px;
-          border-radius: 999px;
+          border-radius: ${R.full};
           background: ${C.green};
           display: flex;
           align-items: center;
@@ -267,8 +295,8 @@ export default function LoginPage() {
         .client-login-panel {
           background: #fff;
           border: 1px solid ${C.border};
-          border-radius: 24px;
-          box-shadow: 0 20px 60px rgba(13, 55, 129, 0.12);
+          border-radius: ${R.lg};
+          box-shadow: ${C.shadow};
           padding: 34px;
           display: flex;
           align-items: center;
@@ -283,9 +311,9 @@ export default function LoginPage() {
         }
 
         .client-title {
-          font-size: 30px;
+          font-size: 26px;
           line-height: 1.08;
-          font-weight: 900;
+          font-weight: 600;
           color: ${C.text};
           margin: 0 0 6px;
         }
@@ -304,17 +332,20 @@ export default function LoginPage() {
 
         .client-field label {
           display: block;
-          font-size: 13px;
-          font-weight: 700;
-          color: #334155;
+          font-size: 11px;
+          font-weight: 600;
+          color: ${C.muted};
           margin-bottom: 7px;
+          text-transform: uppercase;
+          letter-spacing: 0.6px;
         }
 
         .client-field input {
           width: 100%;
-          border: 1px solid #d7dee8;
-          border-radius: 14px;
-          padding: 13px 14px;
+          height: 52px;
+          border: 1px solid ${C.border};
+          border-radius: ${R.sm};
+          padding: 0 14px;
           font-size: 14px;
           color: ${C.text};
           background: #fff;
@@ -323,15 +354,15 @@ export default function LoginPage() {
         }
 
         .client-field input:focus {
-          border-color: ${C.blue};
-          box-shadow: 0 0 0 4px rgba(21, 101, 192, 0.12);
+          border-color: ${C.green};
+          box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.14);
         }
 
         .client-error {
           border: 1px solid #fecaca;
           background: #fef2f2;
           color: ${C.danger};
-          border-radius: 14px;
+          border-radius: ${R.md};
           padding: 12px 14px;
           font-size: 13px;
           font-weight: 600;
@@ -339,13 +370,13 @@ export default function LoginPage() {
 
         .client-submit {
           width: 100%;
-          min-height: 46px;
+          min-height: 52px;
           border: 0;
-          border-radius: 14px;
-          background: linear-gradient(135deg, ${C.navy}, ${C.blue});
+          border-radius: ${R.full};
+          background: ${C.green};
           color: #fff;
           font-size: 14px;
-          font-weight: 800;
+          font-weight: 600;
           cursor: pointer;
           transition: opacity 0.15s, transform 0.15s;
         }
@@ -421,10 +452,10 @@ export default function LoginPage() {
           <div className="client-brand">
             <Image src="/logo.jpg" alt="EverClean" width={54} height={54} className="client-brand-logo" />
             <div>
-              <div style={{ fontSize: 24, fontWeight: 900, lineHeight: 1 }}>
+              <div style={{ fontSize: 24, fontWeight: 600, lineHeight: 1 }}>
                 Ever<span style={{ color: C.green }}>Clean</span>
               </div>
-              <div style={{ color: `${C.green}dd`, fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 5 }}>
+              <div style={{ color: `${C.green}dd`, fontSize: 12, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 5 }}>
                 {ltxt(lang, 'brandSubtitle')}
               </div>
             </div>
@@ -435,6 +466,10 @@ export default function LoginPage() {
             <p>
               {ltxt(lang, 'heroCopy')}
             </p>
+            <div className="client-hero-actions">
+              <Link href="/dashboard/new-booking">{ltxt(lang, 'bookCleaning')}</Link>
+              <Link href="/register">{ltxt(lang, 'workWithUs')}</Link>
+            </div>
           </div>
 
           <div className="client-feature-list">
@@ -456,8 +491,8 @@ export default function LoginPage() {
         <section className="client-login-panel" aria-label="Sign in">
           <div className="client-login-inner">
             <div className="client-mobile-brand">
-              <Image src="/logo.jpg" alt="EverClean" width={44} height={44} style={{ borderRadius: 12 }} />
-              <div style={{ fontSize: 21, fontWeight: 900, color: C.text }}>
+              <Image src="/logo.jpg" alt="EverClean" width={44} height={44} style={{ borderRadius: 8 }} />
+              <div style={{ fontSize: 21, fontWeight: 600, color: C.text }}>
                 Ever<span style={{ color: C.green }}>Clean</span>
               </div>
             </div>
@@ -490,18 +525,18 @@ export default function LoginPage() {
                 />
               </div>
 
-              <button type="button" onClick={() => { setResetOpen(!resetOpen); setResetStep('request'); setResetMessage(''); }} style={{ alignSelf:'flex-end', background:'none', border:0, color:C.blue, fontWeight:800, fontSize:12, cursor:'pointer', padding:0 }}>{ltxt(lang, 'forgot')}</button>
+              <button type="button" onClick={() => { setResetOpen(!resetOpen); setResetStep('request'); setResetMessage(''); }} style={{ alignSelf:'flex-end', background:'none', border:0, color:C.blue, fontWeight: 600, fontSize:12, cursor:'pointer', padding:0 }}>{ltxt(lang, 'forgot')}</button>
 
               {error && <div className="client-error">{error}</div>}
 
               {resetOpen && (
-                <div style={{ border:`1px solid ${C.border}`, background:C.bg, borderRadius:14, padding:14, display:'flex', flexDirection:'column', gap:10 }}>
-                  <div style={{ fontSize:13, fontWeight:800, color:C.text }}>{ltxt(lang, 'resetPassword')}</div>
+                <div style={{ border:`1px solid ${C.border}`, background:C.bg, borderRadius: 14, padding:14, display:'flex', flexDirection:'column', gap:10 }}>
+                  <div style={{ fontSize:13, fontWeight: 600, color:C.text }}>{ltxt(lang, 'resetPassword')}</div>
                   {resetStep === 'request' ? (
                     <>
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-                        <button type="button" onClick={() => setResetMethod('email')} style={{ border:`1px solid ${resetMethod==='email'?C.blue:C.border}`, background:resetMethod==='email'?'#fff':'transparent', borderRadius:10, padding:'9px 10px', color:C.text, fontWeight:800, cursor:'pointer' }}>{ltxt(lang, 'emailMethod')}</button>
-                        <button type="button" onClick={() => setResetMethod('sms')} style={{ border:`1px solid ${resetMethod==='sms'?C.blue:C.border}`, background:resetMethod==='sms'?'#fff':'transparent', borderRadius:10, padding:'9px 10px', color:C.text, fontWeight:800, cursor:'pointer' }}>{ltxt(lang, 'smsMethod')}</button>
+                        <button type="button" onClick={() => setResetMethod('email')} style={{ border:`1px solid ${resetMethod==='email'?C.blue:C.border}`, background:resetMethod==='email'?'#fff':'transparent', borderRadius: 8, padding:'9px 10px', color:C.text, fontWeight: 600, cursor:'pointer' }}>{ltxt(lang, 'emailMethod')}</button>
+                        <button type="button" onClick={() => setResetMethod('sms')} style={{ border:`1px solid ${resetMethod==='sms'?C.blue:C.border}`, background:resetMethod==='sms'?'#fff':'transparent', borderRadius: 8, padding:'9px 10px', color:C.text, fontWeight: 600, cursor:'pointer' }}>{ltxt(lang, 'smsMethod')}</button>
                       </div>
                       <button type="button" onClick={requestPasswordReset} disabled={!email || resetLoading} className="client-submit" style={{ minHeight:40 }}>{resetLoading ? ltxt(lang, 'sending') : ltxt(lang, 'sendCode')}</button>
                     </>
@@ -512,7 +547,7 @@ export default function LoginPage() {
                       <button type="button" onClick={confirmPasswordReset} disabled={!resetCode || !resetPassword || resetLoading} className="client-submit" style={{ minHeight:40 }}>{resetLoading ? ltxt(lang, 'updating') : ltxt(lang, 'updatePassword')}</button>
                     </>
                   )}
-                  {resetMessage && <div style={{ fontSize:12, fontWeight:700, color:resetMessage.includes('Unable') || resetMessage.includes('configured') || resetMessage.includes('Invalid') ? C.danger : C.greenDk }}>{resetMessage}</div>}
+                  {resetMessage && <div style={{ fontSize:12, fontWeight: 600, color:resetMessage.includes('Unable') || resetMessage.includes('configured') || resetMessage.includes('Invalid') ? C.danger : C.greenDk }}>{resetMessage}</div>}
                 </div>
               )}
 
@@ -527,13 +562,13 @@ export default function LoginPage() {
 
             <p style={{ margin: '16px 0 0', textAlign: 'center', color: C.muted, fontSize: 12 }}>
               {ltxt(lang, 'newAccount')}{' '}
-              <Link href="/register" style={{ color: C.blue, fontWeight: 800, textDecoration: 'none' }}>
+              <Link href="/register" style={{ color: C.blue, fontWeight: 600, textDecoration: 'none' }}>
                 {ltxt(lang, 'createAccount')}
               </Link>
             </p>
 
             <p className="client-footer">
-              Copyright 2026 EverClean - {ltxt(lang, 'footer')}
+              (c) 2026 EverClean - {ltxt(lang, 'footer')}
             </p>
           </div>
         </section>

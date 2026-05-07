@@ -27,7 +27,7 @@ const REGISTER_TEXT: Record<string, Record<string, string>> = {
     creating: 'Creating account...',
     already: 'Already have an account?',
     signIn: 'Sign in',
-    unable: 'Unable to create account',
+    unable: 'Unable to create account', proConfirm: 'Professional applications start with your profile. Add your coverage radius and services after registration.',
   },
   es: {
     brandSubtitle: 'Limpieza profesional',
@@ -45,7 +45,7 @@ const REGISTER_TEXT: Record<string, Record<string, string>> = {
     creating: 'Creando cuenta...',
     already: 'Ya tienes una cuenta?',
     signIn: 'Iniciar sesion',
-    unable: 'No se pudo crear la cuenta',
+    unable: 'No se pudo crear la cuenta', proConfirm: 'Las solicitudes profesionales comienzan con tu perfil. Agrega radio de cobertura y servicios despues del registro.',
   },
 };
 
@@ -55,14 +55,23 @@ function rt(lang: string, key: string) {
 
 const C = {
   navy: '#0D3781',
+  navyDark: '#081f4a',
   blue: '#1565C0',
   green: '#4CAF50',
   greenDk: '#388E3C',
-  bg: '#F5F7FA',
-  text: '#0D1B2A',
+  canvas: '#FFFFFF',
+  soft: '#F5F7FA',
+  ink: '#0D1B2A',
   muted: '#64748B',
   border: '#E2E8F0',
+  shadow: '0 2px 8px rgba(13,55,129,0.06)',
+  bg: '#F5F7FA',
+  text: '#0D1B2A',
+  warning: '#F59E0B',
+  danger: '#DC2626',
 };
+const R = { sm: '8px', md: '14px', lg: '20px', full: '9999px' };
+const font = "'Inter', system-ui, sans-serif";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -123,7 +132,7 @@ export default function RegisterPage() {
           align-items:center;
           justify-content:center;
           padding:28px;
-          font-family:Poppins, sans-serif;
+          font-family:'Inter', system-ui, sans-serif;
         }
         .register-shell{
           width:100%;
@@ -132,9 +141,9 @@ export default function RegisterPage() {
           grid-template-columns:0.9fr 1.1fr;
           background:#fff;
           border:1px solid ${C.border};
-          border-radius:22px;
+          border-radius: ${R.lg};
           overflow:hidden;
-          box-shadow:0 20px 60px rgba(13,55,129,0.12);
+          box-shadow: ${C.shadow};
         }
         .register-aside{
           background:linear-gradient(135deg, ${C.navy}, ${C.blue} 58%, #0d4a2e);
@@ -149,7 +158,7 @@ export default function RegisterPage() {
           display:flex;
           align-items:center;
           gap:12px;
-          font-weight:900;
+          font-weight: 600;
           font-size:20px;
         }
         .register-copy h1{
@@ -170,8 +179,8 @@ export default function RegisterPage() {
         .register-title{
           margin:0;
           color:${C.text};
-          font-size:24px;
-          font-weight:900;
+          font-size:26px;
+          font-weight:600;
           letter-spacing:0;
         }
         .register-subtitle{
@@ -184,17 +193,17 @@ export default function RegisterPage() {
           grid-template-columns:1fr 1fr;
           gap:8px;
           padding:5px;
-          border-radius:14px;
+          border-radius: ${R.md};
           background:${C.bg};
           border:1px solid ${C.border};
           margin-bottom:18px;
         }
         .role-switch button{
           border:0;
-          border-radius:10px;
+          border-radius: ${R.sm};
           background:transparent;
           color:${C.muted};
-          font-weight:800;
+          font-weight: 600;
           font-size:13px;
           min-height:40px;
           cursor:pointer;
@@ -204,6 +213,30 @@ export default function RegisterPage() {
           color:${C.navy};
           box-shadow:0 2px 10px rgba(13,55,129,0.08);
         }
+        .register-pro-confirm{
+          display:flex;
+          align-items:flex-start;
+          gap:10px;
+          padding:14px 16px;
+          margin-bottom:18px;
+          border-radius:${R.md};
+          background:#ECFDF5;
+          color:${C.greenDk};
+          font-size:13px;
+          line-height:1.45;
+        }
+        .register-pro-confirm span{
+          width:22px;
+          height:22px;
+          border-radius:${R.full};
+          background:${C.green};
+          color:#fff;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          flex:0 0 auto;
+        }
+        .register-pro-confirm p{ margin:0; }
         .register-grid{
           display:grid;
           grid-template-columns:1fr 1fr;
@@ -214,46 +247,46 @@ export default function RegisterPage() {
         }
         .register-field label{
           display:block;
-          color:${C.text};
+          color:${C.muted};
           font-size:11px;
-          font-weight:800;
-          margin-bottom:6px;
+          font-weight:600;
+          margin-bottom:7px;
           text-transform:uppercase;
-          letter-spacing:0.5px;
+          letter-spacing:0.6px;
         }
         .register-field input{
           width:100%;
-          min-height:44px;
+          height:52px;
           border:1px solid ${C.border};
-          border-radius:12px;
-          padding:0 12px;
+          border-radius:${R.sm};
+          padding:0 14px;
           color:${C.text};
           font-size:14px;
           outline:none;
         }
         .register-field input:focus{
-          border-color:${C.blue};
-          box-shadow:0 0 0 3px rgba(21,101,192,0.08);
+          border-color:${C.green};
+          box-shadow:0 0 0 3px rgba(76,175,80,0.14);
         }
         .register-error{
           margin-top:14px;
           padding:11px 13px;
-          border-radius:12px;
+          border-radius: ${R.sm};
           background:#FEE2E2;
           color:#991B1B;
           font-size:13px;
-          font-weight:700;
+          font-weight: 600;
         }
         .register-submit{
           width:100%;
-          min-height:46px;
+          min-height:52px;
           margin-top:16px;
           border:0;
-          border-radius:14px;
+          border-radius:${R.full};
           color:#fff;
-          background:linear-gradient(135deg, ${C.navy}, ${C.blue});
+          background:${C.green};
           font-size:15px;
-          font-weight:900;
+          font-weight:600;
           cursor:pointer;
         }
         .register-submit:disabled{
@@ -268,7 +301,7 @@ export default function RegisterPage() {
         }
         .register-login a{
           color:${C.blue};
-          font-weight:800;
+          font-weight: 600;
           text-decoration:none;
         }
         @media (max-width:820px){
@@ -287,7 +320,7 @@ export default function RegisterPage() {
       <div className="register-shell">
         <section className="register-aside">
           <div className="register-brand">
-            <Image src="/logo.jpg" alt="EverClean" width={44} height={44} style={{ borderRadius: 12 }} />
+            <Image src="/logo.jpg" alt="EverClean" width={44} height={44} style={{ borderRadius: 8 }} />
             <div>
               Ever<span style={{ color: C.green }}>Clean</span>
               <div style={{ fontSize: 10, letterSpacing: 1.6, color: C.green, textTransform: 'uppercase' }}>
@@ -319,9 +352,16 @@ export default function RegisterPage() {
               className={role === 'PROFESSIONAL' ? 'active' : ''}
               onClick={() => setRole('PROFESSIONAL')}
             >
-              Professional
+              {rt(lang, 'professional')}
             </button>
           </div>
+
+          {role === 'PROFESSIONAL' && (
+            <div className="register-pro-confirm">
+              <span>?</span>
+              <p>{rt(lang, 'proConfirm')}</p>
+            </div>
+          )}
 
           <div className="register-grid">
             <div className="register-field full">

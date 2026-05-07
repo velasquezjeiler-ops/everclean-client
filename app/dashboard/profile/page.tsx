@@ -1,9 +1,27 @@
-﻿'use client';
+'use client';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup.replit.app/api';
-const C = { navy:'#0D3781', blue:'#1565C0', green:'#4CAF50', greenDk:'#388E3C', bg:'#F5F7FA', text:'#0D1B2A', muted:'#64748B', border:'#E2E8F0' };
+const C = {
+  navy: '#0D3781',
+  navyDark: '#081f4a',
+  blue: '#1565C0',
+  green: '#4CAF50',
+  greenDk: '#388E3C',
+  canvas: '#FFFFFF',
+  soft: '#F5F7FA',
+  ink: '#0D1B2A',
+  muted: '#64748B',
+  border: '#E2E8F0',
+  shadow: '0 2px 8px rgba(13,55,129,0.06)',
+  bg: '#F5F7FA',
+  text: '#0D1B2A',
+  warning: '#F59E0B',
+  danger: '#DC2626',
+};
+const R = { sm: '8px', md: '14px', lg: '20px', full: '9999px' };
+const font = "'Inter', system-ui, sans-serif";
 
 export default function ClientProfile() {
   const { t } = useTranslation();
@@ -107,9 +125,9 @@ export default function ClientProfile() {
   const latestPayable = payableBookings[0];
 
   const initials = (form.fullName||'C').split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase();
-  const inputStyle = { width:'100%', border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 12px', fontSize:13, color:C.text, outline:'none', fontFamily:'Poppins, sans-serif', background:'#fff' };
+  const inputStyle = { width:'100%', border:`1px solid ${C.border}`, borderRadius: 8, padding:'10px 12px', fontSize:13, color:C.text, outline:'none', fontFamily:font, background:'#fff' };
   const labelStyle = { fontSize:11, fontWeight:600 as const, color:C.muted, display:'block' as const, marginBottom:5, textTransform:'uppercase' as const, letterSpacing:'0.5px' };
-  const cardStyle = { background:'#fff', borderRadius:16, border:`1px solid ${C.border}`, padding:'20px 22px', boxShadow:'0 2px 12px rgba(13,55,129,0.06)' };
+  const cardStyle = { background:'#fff', borderRadius: 14, border:`1px solid ${C.border}`, padding:'24px', boxShadow:C.shadow };
 
   if (loading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh' }}>
@@ -119,12 +137,12 @@ export default function ClientProfile() {
   );
 
   return (
-    <div style={{ maxWidth:860, fontFamily:'Poppins, sans-serif' }}>
+    <div style={{ maxWidth:860, fontFamily:font }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} input:focus,textarea:focus{border-color:${C.blue}!important;box-shadow:0 0 0 3px ${C.blue}15;}`}</style>
       <input ref={inputRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handlePhoto}/>
 
       {message && (
-        <div style={{ marginBottom:16, padding:'10px 14px', borderRadius:10, fontSize:13, background: message.startsWith('Error') ? '#FEE2E2' : '#D1FAE5', color: message.startsWith('Error') ? '#991B1B' : C.greenDk, display:'flex', justifyContent:'space-between' }}>
+        <div style={{ marginBottom:16, padding:'10px 14px', borderRadius: 8, fontSize:13, background: message.startsWith('Error') ? '#FEE2E2' : '#D1FAE5', color: message.startsWith('Error') ? '#991B1B' : C.greenDk, display:'flex', justifyContent:'space-between' }}>
           {message}
           <button onClick={()=>setMessage('')} style={{ background:'none', border:'none', cursor:'pointer', opacity:0.6 }}>x</button>
         </div>
@@ -134,7 +152,7 @@ export default function ClientProfile() {
         <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
 
           <div style={cardStyle}>
-            <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:16 }}>{t('client.profileExtra.personalInfo')}</div>
+            <div style={{ fontSize:14, fontWeight: 600, color:C.text, marginBottom:16 }}>{t('client.profileExtra.personalInfo')}</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
               <div><label style={labelStyle}>{t('profile.fullName')}</label><input value={form.fullName} onChange={e=>setForm({...form,fullName:e.target.value})} style={inputStyle}/></div>
               <div><label style={labelStyle}>{t('profile.phone')}</label><input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} style={inputStyle}/></div>
@@ -143,7 +161,7 @@ export default function ClientProfile() {
           </div>
 
           <div style={cardStyle}>
-            <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:16 }}>{t('client.profileExtra.billingAddress')}</div>
+            <div style={{ fontSize:14, fontWeight: 600, color:C.text, marginBottom:16 }}>{t('client.profileExtra.billingAddress')}</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
               <div style={{ gridColumn:'1/-1' }}><label style={labelStyle}>{t('client.profileExtra.streetAddress')}</label><input value={form.address} onChange={e=>setForm({...form,address:e.target.value})} style={inputStyle}/></div>
               <div><label style={labelStyle}>{t('profile.city')}</label><input value={form.city} onChange={e=>setForm({...form,city:e.target.value})} style={inputStyle}/></div>
@@ -152,32 +170,32 @@ export default function ClientProfile() {
             </div>
           </div>
           <div style={cardStyle}>
-            <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:12 }}>{t('client.profileExtra.paymentMethod')}</div>
+            <div style={{ fontSize:14, fontWeight: 600, color:C.text, marginBottom:12 }}>{t('client.profileExtra.paymentMethod')}</div>
             <div style={{ fontSize:12, color:C.muted, marginBottom:12 }}>{t('client.profileExtra.stripeText')}</div>
             {latestPayable ? (
               <div>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 14px', border:`1px solid ${C.border}`, borderRadius:12, background:C.bg, marginBottom:12 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 14px', border:`1px solid ${C.border}`, borderRadius: 8, background:C.bg, marginBottom:12 }}>
                   <div>
-                    <div style={{ fontSize:12, fontWeight:700, color:C.text }}>{String(latestPayable.service_type || 'Service').replaceAll('_',' ')}</div>
+                    <div style={{ fontSize:12, fontWeight: 600, color:C.text }}>{String(latestPayable.service_type || 'Service').replaceAll('_',' ')}</div>
                     <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>{latestPayable.scheduled_at ? new Date(latestPayable.scheduled_at).toLocaleDateString() : t('client.profileExtra.pendingSchedule')}</div>
                   </div>
-                  <div style={{ fontSize:14, fontWeight:800, color:C.navy }}>${Number(latestPayable.client_price || latestPayable.total_amount || 0).toFixed(2)}</div>
+                  <div style={{ fontSize:14, fontWeight: 600, color:C.navy }}>${Number(latestPayable.client_price || latestPayable.total_amount || 0).toFixed(2)}</div>
                 </div>
-                <button onClick={()=>startCheckout(latestPayable.id)} disabled={payingBooking===latestPayable.id} style={{ width:'100%', padding:'12px 0', borderRadius:12, border:'none', cursor:'pointer', background:`linear-gradient(135deg, ${C.green}, ${C.greenDk})`, color:'#fff', fontSize:13, fontWeight:700 }}>
+                <button onClick={()=>startCheckout(latestPayable.id)} disabled={payingBooking===latestPayable.id} style={{ width:'100%', padding:'12px 0', borderRadius: 8, border:'none', cursor:'pointer', background:C.green, color:'#fff', fontSize:13, fontWeight: 600 }}>
                   {payingBooking===latestPayable.id ? t('client.profileExtra.openingCheckout') : t('client.profileExtra.payWithCard')}
                 </button>
               </div>
             ) : (
-              <div style={{ padding:'12px 14px', borderRadius:12, background:C.bg, color:C.muted, fontSize:12 }}>{t('client.profileExtra.noPayable')}</div>
+              <div style={{ padding:'12px 14px', borderRadius: 8, background:C.bg, color:C.muted, fontSize:12 }}>{t('client.profileExtra.noPayable')}</div>
             )}
           </div>
 
           <button onClick={save} disabled={saving} style={{
-            width:'100%', padding:'13px 0', borderRadius:12, border:'none', cursor:'pointer',
-            background:`linear-gradient(135deg, ${C.navy}, ${C.blue})`,
-            color:'#fff', fontSize:14, fontWeight:700,
-            boxShadow:'0 4px 16px rgba(13,55,129,0.3)',
-            opacity: saving ? 0.7 : 1, fontFamily:'Poppins, sans-serif',
+            width:'100%', padding:'13px 0', borderRadius: 8, border:'none', cursor:'pointer',
+            background:C.navy,
+            color:'#fff', fontSize:14, fontWeight: 600,
+            boxShadow: C.shadow,
+            opacity: saving ? 0.7 : 1, fontFamily:font,
           }}>
             {saving ? t('client.profileExtra.saving') : t('client.profileExtra.saveProfile')}
           </button>
@@ -188,24 +206,24 @@ export default function ClientProfile() {
             <div style={{ position:'relative', display:'inline-block', marginBottom:12, cursor:'pointer' }} onClick={()=>inputRef.current?.click()}>
               {photo
                 ? <img src={photo} alt="Profile" style={{ width:80, height:80, borderRadius:'50%', objectFit:'cover', border:`3px solid ${C.blue}` }}/>
-                : <div style={{ width:80, height:80, borderRadius:'50%', background:`linear-gradient(135deg, ${C.blue}, ${C.navy})`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, fontWeight:800, color:'#fff', margin:'0 auto' }}>{initials}</div>
+                : <div style={{ width:80, height:80, borderRadius:'50%', background:`linear-gradient(135deg, ${C.blue}, ${C.navy})`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, fontWeight: 600, color:'#fff', margin:'0 auto' }}>{initials}</div>
               }
-              <div style={{ position:'absolute', bottom:0, right:0, width:30, height:24, background:C.blue, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid #fff', fontSize:9, color:'#fff', fontWeight:700 }}>{t('client.profileExtra.photo')}</div>
+              <div style={{ position:'absolute', bottom:0, right:0, width:30, height:24, background:C.blue, borderRadius: 8, display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid #fff', fontSize:9, color:'#fff', fontWeight: 600 }}>{t('client.profileExtra.photo')}</div>
             </div>
             <div style={{ fontSize:11, color:C.muted, marginBottom:8 }}>{t('client.profileExtra.clickPhoto')}</div>
-            <div style={{ fontWeight:700, fontSize:15, color:C.text }}>{form.fullName || t('client.profileExtra.client')}</div>
+            <div style={{ fontWeight: 600, fontSize:15, color:C.text }}>{form.fullName || t('client.profileExtra.client')}</div>
             <div style={{ fontSize:12, color:C.muted, marginTop:3 }}>{form.city||''}{form.city&&form.state?', ':''}{form.state}</div>
           </div>
 
           <div style={cardStyle}>
-            <div style={{ fontSize:13, fontWeight:700, color:C.text, marginBottom:12 }}>{t('client.profileExtra.accountSummary')}</div>
+            <div style={{ fontSize:13, fontWeight: 600, color:C.text, marginBottom:12 }}>{t('client.profileExtra.accountSummary')}</div>
             {[
               { label: t('client.profileExtra.servicesCompleted'), val:stats.total },
               { label: t('client.profileExtra.totalSpent'), val:`${stats.spent.toFixed(2)}` },
             ].map(s => (
               <div key={s.label} style={{ display:'flex', justifyContent:'space-between', padding:'7px 0', borderBottom:`1px solid ${C.border}` }}>
                 <span style={{ fontSize:12, color:C.muted }}>{s.label}</span>
-                <span style={{ fontSize:12, fontWeight:700, color:C.text }}>{s.val}</span>
+                <span style={{ fontSize:12, fontWeight: 600, color:C.text }}>{s.val}</span>
               </div>
             ))}
           </div>

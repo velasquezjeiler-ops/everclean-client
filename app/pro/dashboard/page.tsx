@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
@@ -6,11 +6,24 @@ import { useTranslation } from '../../../lib/i18n/useTranslation';
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup.replit.app/api';
 
 const C = {
-  navy: '#0D3781', navyDark: '#081f4a', blue: '#1565C0',
-  green: '#4CAF50', greenDk: '#388E3C', bg: '#F5F7FA',
-  text: '#0D1B2A', muted: '#64748B', border: '#E2E8F0',
-  warning: '#F59E0B', danger: '#DC2626',
+  navy: '#0D3781',
+  navyDark: '#081f4a',
+  blue: '#1565C0',
+  green: '#4CAF50',
+  greenDk: '#388E3C',
+  canvas: '#FFFFFF',
+  soft: '#F5F7FA',
+  ink: '#0D1B2A',
+  muted: '#64748B',
+  border: '#E2E8F0',
+  shadow: '0 2px 8px rgba(13,55,129,0.06)',
+  bg: '#F5F7FA',
+  text: '#0D1B2A',
+  warning: '#F59E0B',
+  danger: '#DC2626',
 };
+const R = { sm: '8px', md: '14px', lg: '20px', full: '9999px' };
+const font = "'Inter', system-ui, sans-serif";
 
 const IC = {
   ETA: (p: any) => <svg width={p.s||16} height={p.s||16} viewBox="0 0 24 24" fill="none"><path d="M3 12h18M15 6l6 6-6 6" stroke={p.c||'#fff'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>,
@@ -133,7 +146,7 @@ function StatusBadge({ status, t }: { status: string; t: (key: string) => string
   const translated = t('statuses.' + status);
   const label = translated === 'statuses.' + status ? s.fallback : translated;
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: s.bg, color: s.color, padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: s.bg, color: s.color, padding: '3px 10px', borderRadius: 9999, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.dot, display: 'inline-block' }}/>
       {label}
     </span>
@@ -160,13 +173,13 @@ function CalendarStrip({ jobs, t, lang }: { jobs: any[]; t: (key: string) => str
             return (
               <button key={i} onClick={() => setSelected(key)} style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                padding: '8px 10px', borderRadius: 12, border: 'none', cursor: 'pointer', minWidth: 50,
+                padding: '8px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', minWidth: 50,
                 background: isSel ? `linear-gradient(135deg, ${C.navy}, ${C.blue})` : isToday ? `${C.blue}15` : C.bg,
                 boxShadow: isSel ? '0 4px 12px rgba(13,55,129,0.3)' : 'none',
                 transition: 'all 0.2s',
               }}>
                 <span style={{ fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: isSel ? 'rgba(255,255,255,0.7)' : C.muted }}>{d.toLocaleDateString(locale, { weekday: 'short' })}</span>
-                <span style={{ fontSize: 17, fontWeight: 800, color: isSel ? '#fff' : isToday ? C.blue : C.text, marginTop: 2 }}>{d.getDate()}</span>
+                <span style={{ fontSize: 17, fontWeight: 600, color: isSel ? '#fff' : isToday ? C.blue : C.text, marginTop: 2 }}>{d.getDate()}</span>
                 <div style={{ width: 5, height: 5, borderRadius: '50%', background: busy ? (isSel ? '#fff' : C.green) : 'transparent', marginTop: 3 }}/>
               </button>
             );
@@ -174,8 +187,8 @@ function CalendarStrip({ jobs, t, lang }: { jobs: any[]; t: (key: string) => str
         </div>
       </div>
       {dayJobs.length > 0 ? (
-        <div style={{ marginTop: 10, padding: '10px 12px', background: `${C.green}10`, border: `1px solid ${C.green}25`, borderRadius: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.greenDk, marginBottom: 6 }}>
+        <div style={{ marginTop: 10, padding: '10px 12px', background: `${C.green}10`, border: `1px solid ${C.green}25`, borderRadius: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: C.greenDk, marginBottom: 6 }}>
             {dayJobs.length} {dayJobs.length > 1 ? copy(lang, 'jobs') : copy(lang, 'job')} - {new Date(selected + 'T12:00:00').toLocaleDateString(locale, { month: 'long', day: 'numeric' })}
           </div>
           {dayJobs.map(j => (
@@ -269,19 +282,19 @@ export default function ProDashboard() {
   );
 
   return (
-    <div style={{ width: '100%', fontFamily: 'Poppins, sans-serif' }}>
+    <div style={{ width: '100%', fontFamily: font }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontFamily: 'Poppins, sans-serif', fontSize: 22, fontWeight: 700, color: C.text, margin: 0 }}>
+          <h1 style={{ fontFamily: font, fontSize: 22, fontWeight: 600, color: C.text, margin: 0 }}>
             {greetingForNow(lang)}, {proName.split(' ')[0]}
           </h1>
           <p style={{ color: C.muted, fontSize: 13, margin: '3px 0 0' }}>{copy(lang, 'overview')}</p>
         </div>
         <button onClick={toggleAvail} style={{
-          display: 'flex', alignItems: 'center', gap: 7, padding: '8px 18px', borderRadius: 999,
-          border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+          display: 'flex', alignItems: 'center', gap: 7, padding: '8px 18px', borderRadius: 9999,
+          border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
           background: isAvailable ? `linear-gradient(135deg, ${C.green}, ${C.greenDk})` : 'rgba(100,116,139,0.15)',
           color: isAvailable ? '#fff' : C.muted,
           boxShadow: isAvailable ? '0 4px 12px rgba(76,175,80,0.35)' : 'none',
@@ -294,39 +307,38 @@ export default function ProDashboard() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
         {[
-          { label: copy(lang, 'totalEarnings'), val: `$${earnings.toFixed(0)}`, gradient: `linear-gradient(135deg, ${C.green}, ${C.greenDk})`, icon: '$' },
-          { label: copy(lang, 'activeJobs'), val: active.length, gradient: `linear-gradient(135deg, ${C.blue}, ${C.navy})`, icon: 'A' },
-          { label: copy(lang, 'completed'), val: completed.length, gradient: 'linear-gradient(135deg, #7C3AED, #5B21B6)', icon: 'C' },
+          { label: copy(lang, 'totalEarnings'), val: '$' + earnings.toFixed(0), icon: '$' },
+          { label: copy(lang, 'activeJobs'), val: active.length, icon: 'A' },
+          { label: copy(lang, 'completed'), val: completed.length, icon: 'C' },
         ].map(s => (
-          <div key={s.label} style={{ background: s.gradient, borderRadius: 16, padding: '18px 16px', color: '#fff', boxShadow: '0 4px 20px rgba(13,55,129,0.2)', position: 'relative', overflow: 'hidden', animation: 'fadeIn 0.4s ease' }}>
-            <div style={{ position: 'absolute', top: -10, right: -10, width: 70, height: 70, background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }}/>
-            <div style={{ fontSize: 22, marginBottom: 6 }}>{s.icon}</div>
-            <div style={{ fontSize: 28, fontWeight: 800, fontFamily: 'Poppins, sans-serif', lineHeight: 1 }}>{s.val}</div>
-            <div style={{ fontSize: 11, opacity: 0.75, marginTop: 4, fontWeight: 500 }}>{s.label}</div>
+          <div key={s.label} style={{ background: '#fff', borderRadius: 14, padding: '24px', color: C.text, border: `1px solid ${C.border}`, boxShadow: C.shadow, position: 'relative', overflow: 'hidden', animation: 'fadeIn 0.4s ease' }}>
+            <div style={{ fontSize: 16, marginBottom: 10, color: C.green }}>{s.icon}</div>
+            <div style={{ fontSize: 30, fontWeight: 600, fontFamily: font, lineHeight: 1, color: C.navy }}>{s.val}</div>
+            <div style={{ fontSize: 12, color: C.muted, marginTop: 6, fontWeight: 500 }}>{s.label}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ background: '#fff', borderRadius: 16, border: `1px solid ${C.border}`, padding: 18, marginBottom: 16, boxShadow: '0 2px 12px rgba(13,55,129,0.06)' }}>
+      <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: 18, marginBottom: 16, boxShadow: C.shadow }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
           <IC.Clock c={C.navy} s={16}/>
-          <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 14, color: C.text }}>{copy(lang, 'schedule')}</span>
+          <span style={{ fontFamily: font, fontWeight: 600, fontSize: 14, color: C.text }}>{copy(lang, 'schedule')}</span>
         </div>
         <CalendarStrip jobs={myJobs} t={t} lang={lang}/>
       </div>
 
-      <div style={{ background: '#fff', borderRadius: 16, border: `1px solid ${C.border}`, padding: 18, boxShadow: '0 2px 12px rgba(13,55,129,0.06)' }}>
+      <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: 18, boxShadow: C.shadow }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 14, color: C.text }}>{copy(lang, 'myJobs')}</span>
-          {myJobs.length > 0 && <span style={{ background: `${C.navy}15`, color: C.navy, padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700 }}>{myJobs.length}</span>}
+          <span style={{ fontFamily: font, fontWeight: 600, fontSize: 14, color: C.text }}>{copy(lang, 'myJobs')}</span>
+          {myJobs.length > 0 && <span style={{ background: `${C.navy}15`, color: C.navy, padding: '3px 10px', borderRadius: 9999, fontSize: 11, fontWeight: 600 }}>{myJobs.length}</span>}
         </div>
 
         {myJobs.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 16px' }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: C.muted, marginBottom: 10 }}>{copy(lang, 'noJobsCode')}</div>
-            <div style={{ fontWeight: 700, color: C.text, marginBottom: 4 }}>{copy(lang, 'noActiveJobs')}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.muted, marginBottom: 10 }}>{copy(lang, 'noJobsCode')}</div>
+            <div style={{ fontWeight: 600, color: C.text, marginBottom: 4 }}>{copy(lang, 'noActiveJobs')}</div>
             <div style={{ color: C.muted, fontSize: 13, marginBottom: 16 }}>{copy(lang, 'findNearby')}</div>
-            <Link href="/pro/marketplace" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`, color: '#fff', textDecoration: 'none', fontSize: 13, fontWeight: 700 }}>
+            <Link href="/pro/marketplace" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 8, background: C.navy, color: '#fff', textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>
               {copy(lang, 'findAvailable')}
             </Link>
           </div>
@@ -342,11 +354,11 @@ export default function ProDashboard() {
                 <div key={job.id} style={{ background: C.bg, borderRadius: 14, border: `1px solid ${C.border}`, overflow: 'hidden', transition: 'box-shadow 0.2s' }}>
                   <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                      <div style={{ width: 40, height: 40, background: `${C.navy}12`, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, flexShrink: 0 }}>
+                      <div style={{ width: 40, height: 40, background: `${C.navy}12`, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, flexShrink: 0 }}>
                         {SVC[job.service_type] || 'CL'}
                       </div>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, fontSize: 13, color: C.text, marginBottom: 3 }}>{serviceLabel(job.service_type, t)}</div>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: C.text, marginBottom: 3 }}>{serviceLabel(job.service_type, t)}</div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: C.blue, fontSize: 11, fontWeight: 500 }}>
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke={C.blue} strokeWidth="1.8"/><circle cx="12" cy="9" r="2.5" stroke={C.blue} strokeWidth="1.8"/></svg>
                           <a href={jobMapsUrl(job)} target="_blank" rel="noopener noreferrer" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260, color: C.blue, textDecoration: 'none' }}>
@@ -374,7 +386,7 @@ export default function ProDashboard() {
                       {hours}h {copy(lang, 'estimated')}
                     </span>
                     {payout > 0 && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#D1FAE5', color: C.greenDk, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#D1FAE5', color: C.greenDk, padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600 }}>
                         <IC.Dollar s={11} c={C.greenDk}/> {copy(lang, 'yourPay')}: ${payout.toFixed(2)}
                       </span>
                     )}
@@ -383,26 +395,26 @@ export default function ProDashboard() {
                   {(job.status === 'CONFIRMED' || job.status === 'IN_PROGRESS') && (
                     <div style={{ padding: '0 14px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {eta ? (
-                        <div style={{ background: '#EFF6FF', border: `1px solid ${C.blue}25`, borderRadius: 12, padding: '10px 14px' }}>
+                        <div style={{ background: '#EFF6FF', border: `1px solid ${C.blue}25`, borderRadius: 8, padding: '10px 14px' }}>
                           <div style={{ fontSize: 12, fontWeight: 600, color: C.blue, marginBottom: 8 }}>{eta.distanceMiles} mi - ETA {eta.etaText}</div>
-                          <a href={eta.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '9px 0', borderRadius: 10, background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`, color: '#fff', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+                          <a href={eta.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '9px 0', borderRadius: 8, background: C.navy, color: '#fff', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
                             {copy(lang, 'openNavigation')}
                           </a>
                           <div style={{ textAlign: 'center', marginTop: 6, fontSize: 11, color: C.green, fontWeight: 600 }}>{t('pro.dashboard.etaSent')}</div>
                         </div>
                       ) : (
-                        <button onClick={() => fetchETA(job.id)} style={{ width: '100%', padding: '10px 0', borderRadius: 11, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`, color: '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <button onClick={() => fetchETA(job.id)} style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: 'none', cursor: 'pointer', background: C.navy, color: '#fff', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                           <IC.ETA c="#fff" s={14}/> {t('pro.dashboard.sendEta')}
                         </button>
                       )}
 
                       {job.status === 'CONFIRMED' && (
-                        <button onClick={() => doAction(job.id, 'checkin')} disabled={acting === job.id} style={{ width: '100%', padding: '10px 0', borderRadius: 11, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${C.blue}, #1976D2)`, color: '#fff', fontSize: 12, fontWeight: 700, opacity: acting === job.id ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <button onClick={() => doAction(job.id, 'checkin')} disabled={acting === job.id} style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: 'none', cursor: 'pointer', background: C.blue, color: '#fff', fontSize: 12, fontWeight: 600, opacity: acting === job.id ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                           <IC.Check c="#fff" s={14}/> {t('pro.dashboard.checkIn')}
                         </button>
                       )}
                       {job.status === 'IN_PROGRESS' && (
-                        <button onClick={() => doAction(job.id, 'checkout')} disabled={acting === job.id} style={{ width: '100%', padding: '10px 0', borderRadius: 11, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${C.green}, ${C.greenDk})`, color: '#fff', fontSize: 12, fontWeight: 700, opacity: acting === job.id ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <button onClick={() => doAction(job.id, 'checkout')} disabled={acting === job.id} style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: 'none', cursor: 'pointer', background: C.green, color: '#fff', fontSize: 12, fontWeight: 600, opacity: acting === job.id ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                           <IC.Check c="#fff" s={14}/> {copy(lang, 'completeJob')}
                         </button>
                       )}

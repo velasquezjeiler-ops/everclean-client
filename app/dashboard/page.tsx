@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -10,16 +10,23 @@ const API =
 
 const C = {
   navy: '#0D3781',
+  navyDark: '#081f4a',
   blue: '#1565C0',
   green: '#4CAF50',
   greenDk: '#388E3C',
-  bg: '#F5F7FA',
-  text: '#0D1B2A',
+  canvas: '#FFFFFF',
+  soft: '#F5F7FA',
+  ink: '#0D1B2A',
   muted: '#64748B',
   border: '#E2E8F0',
+  shadow: '0 2px 8px rgba(13,55,129,0.06)',
+  bg: '#F5F7FA',
+  text: '#0D1B2A',
   warning: '#F59E0B',
   danger: '#DC2626',
 };
+const R = { sm: '8px', md: '14px', lg: '20px', full: '9999px' };
+const font = "'Inter', system-ui, sans-serif";
 
 const STATUS: Record<string, { label: string; bg: string; color: string; dot: string; note: string }> = {
   PENDING_ASSIGNMENT: { label: 'Finding Cleaner', bg: '#FEF3C7', color: '#92400E', dot: C.warning, note: 'Matching professional' },
@@ -273,47 +280,12 @@ export default function ClientDashboard() {
         .client-loading { display: flex; align-items: center; justify-content: center; min-height: 60vh; }
         .client-loading div { width: 40px; height: 40px; border: 3px solid ${C.border}; border-top-color: ${C.blue}; border-radius: 50%; animation: spin .8s linear infinite; }
         .client-dashboard-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
-        .client-dashboard-header h1 { color: ${C.text}; font-size: 26px; line-height: 1.1; margin: 0; font-weight: 900; }
-        .client-dashboard-header p { color: ${C.muted}; font-size: 13px; margin: 5px 0 0; }
-        .client-primary-action { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 18px; border-radius: 999px; background: linear-gradient(135deg, ${C.navy}, ${C.blue}); color: #fff; text-decoration: none; font-size: 12px; font-weight: 900; box-shadow: 0 8px 20px rgba(13,55,129,.18); white-space: nowrap; }
-        .client-confirm-banner { margin-bottom: 16px; padding: 12px 14px; border-radius: 13px; background: #D1FAE5; color: ${C.greenDk}; border: 1px solid rgba(76,175,80,.25); font-size: 13px; font-weight: 800; }
-        .client-stats-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
-        .client-stat-card { border-radius: 16px; padding: 18px 16px; color: #fff; box-shadow: 0 4px 20px rgba(13,55,129,.16); position: relative; overflow: hidden; min-height: 110px; }
-        .client-stat-card::after { content: ''; position: absolute; top: -18px; right: -18px; width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,.1); }
-        .client-stat-card strong { display: block; font-size: 31px; line-height: 1; font-weight: 900; margin-top: 18px; }
-        .client-stat-card span { display: block; font-size: 11px; font-weight: 700; opacity: .82; margin-top: 6px; }
-        .client-card { background: #fff; border: 1px solid ${C.border}; border-radius: 16px; padding: 18px; box-shadow: 0 2px 12px rgba(13,55,129,.06); margin-bottom: 16px; }
-        .client-section-title { color: ${C.text}; font-size: 15px; font-weight: 900; margin-bottom: 14px; }
-        .client-schedule-card { background: #fff; border: 1px solid ${C.border}; border-radius: 16px; padding: 18px; box-shadow: 0 2px 12px rgba(13,55,129,.06); margin-bottom: 16px; }
-        .client-calendar-strip { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 8px; }
-        .client-calendar-strip button { min-width: 54px; border: 0; border-radius: 13px; padding: 9px 10px; background: ${C.bg}; color: ${C.text}; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
-        .client-calendar-strip button.active { background: linear-gradient(135deg, ${C.navy}, ${C.blue}); color: #fff; box-shadow: 0 6px 14px rgba(13,55,129,.22); }
-        .client-calendar-strip span { font-size: 9px; font-weight: 800; text-transform: uppercase; opacity: .72; }
-        .client-calendar-strip strong { font-size: 18px; font-weight: 900; margin-top: 2px; }
-        .client-calendar-strip i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin-top: 4px; }
-        .client-day-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .client-day-list div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; background: ${C.bg}; border-radius: 12px; padding: 10px 12px; }
-        .client-day-list strong { font-size: 12px; color: ${C.text}; }
-        .client-day-list span:not(.client-status-badge):not(.client-status-badge span) { font-size: 11px; color: ${C.muted}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .client-status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 900; white-space: nowrap; }
-        .client-status-badge span { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-        .client-empty-line { text-align: center; color: ${C.muted}; font-size: 12px; margin: 8px 0 0; }
-        .client-services-list { display: flex; flex-direction: column; gap: 12px; }
-        .client-service-card { border: 1px solid ${C.border}; border-radius: 14px; background: ${C.bg}; padding: 14px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; }
-        .client-service-card h3 { margin: 0 0 5px; color: ${C.text}; font-size: 14px; font-weight: 900; }
-        .client-service-card p { margin: 0; color: ${C.muted}; font-size: 12px; line-height: 1.5; }
-        .client-service-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .client-service-meta span { display: inline-flex; padding: 4px 9px; border-radius: 8px; border: 1px solid ${C.border}; background: #fff; color: ${C.muted}; font-size: 11px; font-weight: 700; }
-        .client-service-price { color: ${C.greenDk}; font-size: 15px; font-weight: 900; text-align: right; white-space: nowrap; }
-        .client-empty-state { text-align: center; padding: 44px 16px; }
-        .client-empty-state div { font-size: 34px; font-weight: 900; color: ${C.blue}; margin-bottom: 10px; }
-        .client-empty-state h3 { margin: 0 0 6px; color: ${C.text}; font-size: 17px; font-weight: 900; }
-        .client-empty-state p { margin: 0 0 18px; color: ${C.muted}; font-size: 13px; }
-        @media (max-width: 760px) {
-          .client-dashboard-header { align-items: stretch; flex-direction: column; }
-          .client-stats-row { grid-template-columns: 1fr; }
-          .client-service-card { grid-template-columns: 1fr; }
-          .client-service-price { text-align: left; }
+        .client-dashboard-header h1 {
+          margin: 0;
+          font-size: clamp(24px, 3vw, 32px);
+          font-weight: 600;
+          color: ${C.text};
+          letter-spacing: 0;
         }
       `}</style>
 

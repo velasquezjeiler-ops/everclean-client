@@ -3,29 +3,17 @@ import { useState, useEffect, useCallback } from 'react';
 
 import en from './en.json';
 import es from './es.json';
-import zh from './zh.json';
-import tl from './tl.json';
-import vi from './vi.json';
-import ar from './ar.json';
-import fr from './fr.json';
-import ko from './ko.json';
-import ru from './ru.json';
-import pt from './pt.json';
 
-const LANGS: Record<string, any> = { en, es, zh, tl, vi, ar, fr, ko, ru, pt };
+const LANGS: Record<string, any> = { en, es };
 
 export const LANGUAGE_OPTIONS = [
   { code: 'en', label: 'English', short: 'EN' },
-  { code: 'es', label: 'Español', short: 'ES' },
-  { code: 'zh', label: '中文', short: 'ZH' },
-  { code: 'tl', label: 'Tagalog', short: 'TL' },
-  { code: 'vi', label: 'Tiếng Việt', short: 'VI' },
-  { code: 'ar', label: 'العربية', short: 'AR' },
-  { code: 'fr', label: 'Français', short: 'FR' },
-  { code: 'ko', label: '한국어', short: 'KO' },
-  { code: 'ru', label: 'Русский', short: 'RU' },
-  { code: 'pt', label: 'Português', short: 'PT' },
+  { code: 'es', label: 'Espanol', short: 'ES' },
 ];
+
+function normalizeLang(code: string | null) {
+  return code && LANGS[code] ? code : 'en';
+}
 
 function getNestedValue(obj: any, path: string): string {
   const keys = path.split('.');
@@ -42,7 +30,9 @@ export function useTranslation() {
 
   useEffect(() => {
     const applyLanguage = (code: string | null) => {
-      if (code && LANGS[code]) setLangState(code);
+      const next = normalizeLang(code);
+      setLangState(next);
+      if (code !== next) localStorage.setItem('lang', next);
     };
 
     applyLanguage(localStorage.getItem('lang'));
@@ -63,11 +53,10 @@ export function useTranslation() {
   }, []);
 
   const setLang = useCallback((code: string) => {
-    if (LANGS[code]) {
-      setLangState(code);
-      localStorage.setItem('lang', code);
-      window.dispatchEvent(new CustomEvent('everclean:language-change', { detail: code }));
-    }
+    const next = normalizeLang(code);
+    setLangState(next);
+    localStorage.setItem('lang', next);
+    window.dispatchEvent(new CustomEvent('everclean:language-change', { detail: next }));
   }, []);
 
   const t = useCallback((key: string): string => {

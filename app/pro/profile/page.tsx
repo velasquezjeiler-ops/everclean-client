@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
@@ -9,15 +9,23 @@ const API =
 
 const C = {
   navy: '#0D3781',
+  navyDark: '#081f4a',
   blue: '#1565C0',
   green: '#4CAF50',
   greenDk: '#388E3C',
-  bg: '#F5F7FA',
-  text: '#0D1B2A',
+  canvas: '#FFFFFF',
+  soft: '#F5F7FA',
+  ink: '#0D1B2A',
   muted: '#64748B',
   border: '#E2E8F0',
+  shadow: '0 2px 8px rgba(13,55,129,0.06)',
+  bg: '#F5F7FA',
+  text: '#0D1B2A',
   warning: '#F59E0B',
+  danger: '#DC2626',
 };
+const R = { sm: '8px', md: '14px', lg: '20px', full: '9999px' };
+const font = "'Inter', system-ui, sans-serif";
 
 const SERVICES_LIST = [
   'House Cleaning',
@@ -426,12 +434,12 @@ export default function ProProfile() {
     width: '100%',
     boxSizing: 'border-box',
     border: `1px solid ${C.border}`,
-    borderRadius: 10,
+    borderRadius: 8,
     padding: '10px 12px',
     fontSize: 13,
     color: C.text,
     outline: 'none',
-    fontFamily: 'Poppins, sans-serif',
+    fontFamily: font,
     background: '#fff',
   };
 
@@ -447,15 +455,15 @@ export default function ProProfile() {
 
   const cardStyle: React.CSSProperties = {
     background: '#fff',
-    borderRadius: 16,
+    borderRadius: 14,
     border: `1px solid ${C.border}`,
-    padding: '20px 22px',
-    boxShadow: '0 2px 12px rgba(13,55,129,0.06)',
+    padding: '24px',
+    boxShadow: C.shadow,
     boxSizing: 'border-box',
   };
 
   return (
-    <div style={{ width: '100%', fontFamily: 'Poppins, sans-serif' }}>
+    <div style={{ width: '100%', fontFamily: font }}>
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
         input:focus,textarea:focus{
@@ -484,7 +492,7 @@ export default function ProProfile() {
           gap:14px;
           padding:14px;
           border:1px solid ${C.border};
-          border-radius:12px;
+          border-radius: ${R.sm};
           background:linear-gradient(180deg, #fff 0%, ${C.bg} 100%);
           overflow:hidden;
         }
@@ -498,7 +506,7 @@ export default function ProProfile() {
           appearance:none;
           width:100%;
           height:8px;
-          border-radius:999px;
+          border-radius: ${R.full};
           outline:none;
           background:
             linear-gradient(90deg, #16A34A 0 20%, #84CC16 20% 40%, #FACC15 40% 60%, #FB923C 60% 80%, #EF4444 80% 100%);
@@ -525,7 +533,7 @@ export default function ProProfile() {
         .coverage-map{
           position:relative;
           min-height:280px;
-          border-radius:14px;
+          border-radius: ${R.md};
           border:1px solid ${C.border};
           overflow:hidden;
           background:#E5E7EB;
@@ -553,7 +561,7 @@ export default function ProProfile() {
           background:rgba(255,255,255,0.94);
           color:${C.blue};
           font-size:11px;
-          font-weight:800;
+          font-weight: 600;
           text-decoration:none;
           box-shadow:0 3px 12px rgba(13,55,129,0.14);
         }
@@ -563,11 +571,11 @@ export default function ProProfile() {
           bottom:10px;
           z-index:9;
           padding:6px 10px;
-          border-radius:999px;
+          border-radius: ${R.full};
           background:rgba(255,255,255,0.92);
           color:${C.muted};
           font-size:10px;
-          font-weight:700;
+          font-weight: 600;
           box-shadow:0 3px 12px rgba(13,55,129,0.12);
           pointer-events:none;
         }
@@ -577,7 +585,7 @@ export default function ProProfile() {
           gap:8px;
         }
         .coverage-legend-item{
-          border-radius:10px;
+          border-radius: ${R.sm};
           padding:8px 9px;
           font-size:10px;
           color:${C.text};
@@ -601,7 +609,7 @@ export default function ProProfile() {
           }
           .pro-profile-card{
             padding:16px !important;
-            border-radius:14px !important;
+            border-radius: ${R.md} !important;
           }
           .pro-profile-chip{
             flex:1 1 calc(50% - 8px);
@@ -625,7 +633,7 @@ export default function ProProfile() {
           style={{
             marginBottom: 16,
             padding: '10px 14px',
-            borderRadius: 10,
+            borderRadius: 8,
             fontSize: 13,
             background: message.startsWith('Error') ? '#FEE2E2' : '#D1FAE5',
             color: message.startsWith('Error') ? '#991B1B' : C.greenDk,
@@ -656,7 +664,7 @@ export default function ProProfile() {
             <div
               style={{
                 fontSize: 14,
-                fontWeight: 700,
+                fontWeight: 600,
                 color: C.text,
                 marginBottom: 16,
               }}
@@ -703,7 +711,7 @@ export default function ProProfile() {
             <div
               style={{
                 fontSize: 14,
-                fontWeight: 700,
+                fontWeight: 600,
                 color: C.text,
                 marginBottom: 16,
               }}
@@ -751,7 +759,7 @@ export default function ProProfile() {
                       style={{
                         width: 38,
                         height: 38,
-                        borderRadius: 10,
+                        borderRadius: 8,
                         background: coverageBand.bg,
                         color: coverageBand.color,
                         display: 'flex',
@@ -764,7 +772,7 @@ export default function ProProfile() {
                       Base
                     </div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
                         {t('pro.profileExtra.baseAddress')}
                       </div>
                       <div style={{ fontSize: 12, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -816,7 +824,7 @@ export default function ProProfile() {
                           serviceRadiusMiles: Math.min(50, Math.max(0, Number(e.target.value) || 0)),
                         })
                       }
-                      style={{ ...inputStyle, padding: '9px 8px', textAlign: 'center', fontWeight: 700, color: coverageBand.color }}
+                      style={{ ...inputStyle, padding: '9px 8px', textAlign: 'center', fontWeight: 600, color: coverageBand.color }}
                     />
                   </div>
 
@@ -827,16 +835,16 @@ export default function ProProfile() {
                       alignItems: 'center',
                       gap: 12,
                       padding: '10px 12px',
-                      borderRadius: 12,
+                      borderRadius: 8,
                       background: coverageBand.bg,
                       color: coverageBand.color,
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 800 }}>{coverageBand.label}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{coverageBand.label}</div>
                       <div style={{ fontSize: 11, opacity: 0.8 }}>{coverageBand.tone}</div>
                     </div>
-                    <div style={{ fontSize: 22, fontWeight: 900 }}>{clampedRadius} mi</div>
+                    <div style={{ fontSize: 22, fontWeight: 600 }}>{clampedRadius} mi</div>
                   </div>
 
                   <div className="coverage-map">
@@ -869,7 +877,7 @@ export default function ProProfile() {
                       { label: '41+ mi', text: t('pro.profileExtra.slowest'), color: '#DC2626', bg: '#FEE2E2' },
                     ].map((zone) => (
                       <div key={zone.label} className="coverage-legend-item" style={{ background: zone.bg, borderColor: `${zone.color}33` }}>
-                        <div style={{ fontWeight: 800, color: zone.color }}>{zone.label}</div>
+                        <div style={{ fontWeight: 600, color: zone.color }}>{zone.label}</div>
                         <div style={{ color: C.muted, marginTop: 2 }}>{zone.text}</div>
                       </div>
                     ))}
@@ -883,7 +891,7 @@ export default function ProProfile() {
             <div
               style={{
                 fontSize: 14,
-                fontWeight: 700,
+                fontWeight: 600,
                 color: C.text,
                 marginBottom: 14,
               }}
@@ -908,7 +916,7 @@ export default function ProProfile() {
                       display: 'inline-flex',
                       alignItems: 'center',
                       padding: '6px 14px',
-                      borderRadius: 999,
+                      borderRadius: 9999,
                       fontSize: 12,
                       fontWeight: 600,
                       cursor: 'pointer',
@@ -929,7 +937,7 @@ export default function ProProfile() {
             <div
               style={{
                 fontSize: 14,
-                fontWeight: 700,
+                fontWeight: 600,
                 color: C.text,
                 marginBottom: 14,
               }}
@@ -954,7 +962,7 @@ export default function ProProfile() {
                       display: 'inline-flex',
                       alignItems: 'center',
                       padding: '6px 14px',
-                      borderRadius: 999,
+                      borderRadius: 9999,
                       fontSize: 12,
                       fontWeight: 600,
                       cursor: 'pointer',
@@ -977,16 +985,16 @@ export default function ProProfile() {
             style={{
               width: '100%',
               padding: '13px 0',
-              borderRadius: 12,
+              borderRadius: 8,
               border: 'none',
               cursor: 'pointer',
-              background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`,
+              background: C.navy,
               color: '#fff',
               fontSize: 14,
-              fontWeight: 700,
-              boxShadow: '0 4px 16px rgba(13,55,129,0.3)',
+              fontWeight: 600,
+              boxShadow: C.shadow,
               opacity: saving ? 0.7 : 1,
-              fontFamily: 'Poppins, sans-serif',
+              fontFamily: font,
             }}
           >
             {saving ? t('client.profileExtra.saving') : t('client.profileExtra.saveProfile')}
@@ -1014,7 +1022,7 @@ export default function ProProfile() {
                     borderRadius: '50%',
                     objectFit: 'cover',
                     border: `3px solid ${C.green}`,
-                    boxShadow: '0 4px 16px rgba(76,175,80,0.3)',
+                    boxShadow: C.shadow,
                   }}
                 />
               ) : (
@@ -1028,10 +1036,10 @@ export default function ProProfile() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: 28,
-                    fontWeight: 800,
+                    fontWeight: 600,
                     color: '#fff',
                     margin: '0 auto',
-                    boxShadow: '0 4px 16px rgba(13,55,129,0.2)',
+                    boxShadow: C.shadow,
                   }}
                 >
                   {initials}
@@ -1067,7 +1075,7 @@ export default function ProProfile() {
             </div>
 
             <div style={{ fontSize: 11, color: C.muted, marginBottom: 10 }}>{t('pro.profileExtra.clickPhoto')}</div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>
+            <div style={{ fontWeight: 600, fontSize: 15, color: C.text }}>
               {form.fullName || t('pro.profileExtra.professional')}
             </div>
             <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>
@@ -1101,7 +1109,7 @@ export default function ProProfile() {
                 marginBottom: 12,
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{t('pro.profileExtra.hourlyRate')}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{t('pro.profileExtra.hourlyRate')}</div>
               <button
                 onClick={() => setEditingRate(!editingRate)}
                 style={{
@@ -1153,13 +1161,13 @@ export default function ProProfile() {
                   style={{
                     width: '100%',
                     padding: '9px 0',
-                    borderRadius: 10,
+                    borderRadius: 8,
                     border: 'none',
                     cursor: 'pointer',
-                    background: `linear-gradient(135deg, ${C.green}, ${C.greenDk})`,
+                    background: C.green,
                     color: '#fff',
                     fontSize: 12,
-                    fontWeight: 700,
+                    fontWeight: 600,
                   }}
                 >
                   Save rate
@@ -1169,9 +1177,9 @@ export default function ProProfile() {
               <div
                 style={{
                   fontSize: 30,
-                  fontWeight: 800,
+                  fontWeight: 600,
                   color: C.text,
-                  fontFamily: 'Poppins, sans-serif',
+                  fontFamily: font,
                 }}
               >
                 ${form.hourlyRate}
@@ -1181,7 +1189,7 @@ export default function ProProfile() {
           </div>
 
           <div style={cardStyle}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 12 }}>
               Performance
             </div>
             {[
@@ -1202,13 +1210,13 @@ export default function ProProfile() {
                 }}
               >
                 <span style={{ fontSize: 12, color: C.muted }}>{s.label}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{s.val}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{s.val}</span>
               </div>
             ))}
           </div>
 
           <div style={cardStyle}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 12 }}>
               Verifications
             </div>
             {[

@@ -2,10 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { LANGUAGE_OPTIONS } from './useTranslation';
 
-const SELECTED_LABELS: Record<string, string> = {
-  en: 'Selected', es: 'Seleccionado', zh: '已选择', tl: 'Napili', vi: 'Đã chọn',
-  ar: 'محدد', fr: 'Sélectionné', ko: '선택됨', ru: 'Выбрано', pt: 'Selecionado',
-};
+const SELECTED_LABELS: Record<string, string> = { en: 'Selected', es: 'Seleccionado' };
 
 export default function LanguageSelector({ lang, setLang }: { lang: string; setLang: (code: string) => void }) {
   const [open, setOpen] = useState(false);
@@ -28,12 +25,12 @@ export default function LanguageSelector({ lang, setLang }: { lang: string; setL
         onClick={() => setOpen(!open)}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-          padding: '9px 10px', borderRadius: 11, border: '1px solid rgba(255,255,255,0.12)',
+          padding: '10px 12px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.14)',
           background: 'rgba(255,255,255,0.08)', color: '#fff', cursor: 'pointer',
-          fontFamily: 'Poppins, sans-serif', fontSize: 12, fontWeight: 600,
+          fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12, fontWeight: 500,
         }}
       >
-        <span style={{ width: 28, height: 24, borderRadius: 8, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, letterSpacing: 0.5 }}>
+        <span style={{ width: 28, height: 24, borderRadius: 9999, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, letterSpacing: 0.5 }}>
           {current.short}
         </span>
         <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{current.label}</span>
@@ -43,8 +40,8 @@ export default function LanguageSelector({ lang, setLang }: { lang: string; setL
       {open && (
         <div style={{
           position: 'absolute', left: 0, right: 0, bottom: 'calc(100% + 6px)', zIndex: 200,
-          background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12,
-          boxShadow: '0 12px 30px rgba(13,55,129,0.18)', overflow: 'hidden', maxHeight: 250,
+          background: '#fff', border: '1px solid #E2E8F0', borderRadius: 14,
+          boxShadow: '0 2px 8px rgba(13,55,129,0.12)', overflow: 'hidden', maxHeight: 250,
           overflowY: 'auto',
         }}>
           {LANGUAGE_OPTIONS.map((opt) => (
@@ -54,9 +51,9 @@ export default function LanguageSelector({ lang, setLang }: { lang: string; setL
               onClick={() => { setLang(opt.code); setOpen(false); }}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-                padding: '9px 10px', border: 'none', background: lang === opt.code ? '#ECFDF5' : '#fff',
+                padding: '10px 12px', border: 'none', background: lang === opt.code ? '#ECFDF5' : '#fff',
                 color: lang === opt.code ? '#065F46' : '#0D1B2A', cursor: 'pointer',
-                fontFamily: 'Poppins, sans-serif', fontSize: 12, fontWeight: lang === opt.code ? 700 : 500,
+                fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12, fontWeight: 500,
                 textAlign: 'left',
               }}
             >
