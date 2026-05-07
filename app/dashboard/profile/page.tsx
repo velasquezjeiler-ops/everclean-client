@@ -134,6 +134,17 @@ function readStoredProfile(key: string) {
   }
 }
 
+function isRecoverableProfileBackendError(error: string) {
+  const normalized = error.toLowerCase();
+  return (
+    normalized.includes('cannot patch') ||
+    normalized.includes('backend returned html') ||
+    normalized.includes('column "tax_id" does not exist') ||
+    normalized.includes("column 'tax_id' does not exist") ||
+    (normalized.includes('tax_id') && normalized.includes('does not exist'))
+  );
+}
+
 export default function ClientProfile() {
   const { t } = useTranslation();
   const [form, setForm] = useState({ fullName:'', phone:'', email:'', address:'', city:'', state:'NJ', zipCode:'' });
@@ -240,7 +251,7 @@ export default function ClientProfile() {
       if (savedOnBackend) {
         setMessage(t('client.profileExtra.profileSaved'));
         load();
-      } else if (backendError.includes('Cannot PATCH') || backendError.includes('Backend returned HTML')) {
+      } else if (isRecoverableProfileBackendError(backendError)) {
         setMessage(t('client.profileExtra.profileSavedLocal'));
       } else {
         setMessage('Error: '+(backendError || t('client.profileExtra.errorSaving')));
