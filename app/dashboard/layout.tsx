@@ -71,10 +71,10 @@ const SERVICE_ICONS: Record<string, string> = {
 };
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'My Services', icon: 'MS' },
-  { href: '/dashboard/new-booking', label: 'Book Now', icon: '+' },
-  { href: '/dashboard/history', label: 'History', icon: 'H' },
-  { href: '/dashboard/profile', label: 'Profile', icon: 'P' },
+  { href: '/dashboard', label: 'My Services', icon: '🧹' },
+  { href: '/dashboard/new-booking', label: 'Book Now', icon: '➕' },
+  { href: '/dashboard/history', label: 'History', icon: '📋' },
+  { href: '/dashboard/profile', label: 'Profile', icon: '👤' },
 ];
 
 const CLIENT_LAYOUT_TEXT: Record<string, Record<string, string>> = {
@@ -155,7 +155,7 @@ function clientNavLabel(href: string, t: (key: string) => string, lang: string) 
 }
 
 function serviceLabel(value: string, t: (key: string) => string) {
-  const key = String(value || 'HOUSE_CLEANING').toLowerCase();
+  const key = String(value || 'HOUSE_CLEANING').toUpperCase();
   return t('services.' + key) || serviceName(value);
 }
 
@@ -240,10 +240,10 @@ function RightPanel({
       <div className="client-panel-card">
         <div className="client-panel-title">{clt(lang, 'quickAccess')}</div>
         {[
-          { href: '/dashboard/new-booking', label: clt(lang, 'bookService'), icon: '+' },
-          { href: '/dashboard', label: clt(lang, 'myServices'), icon: 'MS' },
-          { href: '/dashboard/history', label: clt(lang, 'viewHistory'), icon: 'H' },
-          { href: '/dashboard/profile', label: clt(lang, 'billingProfile'), icon: 'P' },
+          { href: '/dashboard/new-booking', label: clt(lang, 'bookService'), icon: '➕' },
+          { href: '/dashboard', label: clt(lang, 'myServices'), icon: '🧹' },
+          { href: '/dashboard/history', label: clt(lang, 'viewHistory'), icon: '📋' },
+          { href: '/dashboard/profile', label: clt(lang, 'billingProfile'), icon: '👤' },
         ].map((item) => (
           <Link key={item.href} href={item.href} className="client-quick-link">
             <span>{item.icon}</span>
