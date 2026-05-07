@@ -182,7 +182,7 @@ function CalendarStrip({ bookings, t, lang }: { bookings: any[]; t: (key: string
           const active = key === selected;
           const hasBooking = bookings.some((b) => b.scheduled_at && new Date(b.scheduled_at).toDateString() === d.toDateString());
           return (
-            <button key={key} type="button" onClick={() => setSelected(key)} className={active ? 'active' : ''}>
+            <button key={key} type="button" onClick={() => setSelected(key)} className={"client-day-btn" + (active ? ' active' : '')}>
               <span>{d.toLocaleDateString(localeForLang(lang), { weekday: 'short' })}</span>
               <strong>{d.getDate()}</strong>
               <i style={{ opacity: hasBooking ? 1 : 0 }} />
