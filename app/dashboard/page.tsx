@@ -381,7 +381,13 @@ export default function ClientDashboard() {
                   </div>
                   <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
                     <span style={{background:'#F5F7FA',color:'#64748B',padding:'4px 10px',borderRadius:8,fontSize:11,border:'1px solid #E2E8F0'}}>{bookingDate(booking, lang)}</span>
-                    {amount > 0 && <span style={{background:'#D1FAE5',color:'#388E3C',padding:'4px 10px',borderRadius:8,fontSize:11,fontWeight:700}}>{'
+                    {amount > 0 && <span style={{background:'#D1FAE5',color:'#388E3C',padding:'4px 10px',borderRadius:8,fontSize:11,fontWeight:700}}>${amount.toFixed(2)}</span>}
+                    {(pro?.fullName || pro?.full_name) && <span style={{background:'#EFF6FF',color:'#1565C0',padding:'4px 10px',borderRadius:8,fontSize:11}}>{pro.fullName || pro.full_name}</span>}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>
