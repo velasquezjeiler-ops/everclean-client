@@ -44,7 +44,7 @@ export default function ClientProfile() {
     const token = localStorage.getItem('token') || '';
     try {
       const [ur, br] = await Promise.all([
-        fetch(API+'/clients/me', { headers:{ Authorization:'Bearer '+token } }).then(r=>r.json()),
+        fetch(API+'/companies/me', { headers:{ Authorization:'Bearer '+token } }).then(r=>r.json()),
         fetch(API+'/bookings', { headers:{ Authorization:'Bearer '+token } }).then(r=>r.json()),
       ]);
       setForm({
@@ -84,7 +84,7 @@ export default function ClientProfile() {
     setSaving(true); setMessage('');
     const token = localStorage.getItem('token') || '';
     try {
-      const res = await fetch(API+'/clients/me', {
+      const res = await fetch(API+'/companies/me', {
         method: 'PATCH',
         headers: { 'Content-Type':'application/json', Authorization:'Bearer '+token },
         body: JSON.stringify({
