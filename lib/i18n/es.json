@@ -337,10 +337,11 @@
     },
     "profileExtra": {
       "profileSaved": "Perfil guardado",
+      "profileSavedLocal": "Perfil guardado en este dispositivo. Falta publicar la actualizacion del perfil en el backend.",
       "errorSaving": "Error al guardar el perfil",
       "personalInfo": "Informacion personal",
       "billingAddress": "Direccion de facturacion",
-      "streetAddress": "Direcci?n",
+      "streetAddress": "Direccion",
       "zipCode": "Codigo postal",
       "paymentMethod": "Metodo de pago",
       "stripeText": "Los pagos con tarjeta se procesan de forma segura con Stripe Checkout.",

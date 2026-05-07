@@ -22,6 +22,117 @@ const C = {
 };
 const R = { sm: '8px', md: '14px', lg: '20px', full: '9999px' };
 const font = "'Inter', system-ui, sans-serif";
+const CLIENT_PROFILE_ENDPOINTS = ['/companies/me', '/clients/me', '/clients/profile'];
+
+type ClientProfileFields = {
+  fullName?: string;
+  full_name?: string;
+  name?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  zip_code?: string;
+  zip?: string;
+  billing_address?: string;
+  billingAddress?: string;
+  billing_city?: string;
+  billingCity?: string;
+  billing_state?: string;
+  billingState?: string;
+  billing_zip?: string;
+  billingZip?: string;
+  id?: string;
+  userId?: string;
+  user_id?: string;
+  profile?: ClientProfileFields;
+  user?: ClientProfileFields;
+  client?: ClientProfileFields;
+  data?: ClientProfileFields;
+};
+
+function decodeToken(token: string): any {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
+async function readJsonResponse(res: Response) {
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      error: text.includes('<!DOCTYPE')
+        ? 'Backend returned HTML instead of JSON'
+        : text.trim() || res.statusText,
+    };
+  }
+}
+
+function unwrapProfile(raw: any): ClientProfileFields {
+  return (
+    raw?.client ||
+    raw?.profile ||
+    raw?.user?.profile ||
+    raw?.user ||
+    raw?.data?.client ||
+    raw?.data?.profile ||
+    raw?.data?.user ||
+    raw?.data ||
+    raw ||
+    {}
+  );
+}
+
+function normalizeProfile(raw: any) {
+  const p = unwrapProfile(raw);
+  return {
+    fullName: p.fullName || p.full_name || p.name || '',
+    phone: p.phone || '',
+    email: p.email || '',
+    address: p.address || p.billing_address || p.billingAddress || '',
+    city: p.city || p.billing_city || p.billingCity || '',
+    state: p.state || p.billing_state || p.billingState || 'NJ',
+    zipCode: p.zipCode || p.zip_code || p.zip || p.billing_zip || p.billingZip || '',
+  };
+}
+
+function profileIdentity(raw: any, tokenPayload: any, fallbackEmail = '') {
+  const p = unwrapProfile(raw);
+  return (
+    p.id ||
+    p.userId ||
+    p.user_id ||
+    raw?.id ||
+    raw?.userId ||
+    raw?.user_id ||
+    tokenPayload?.sub ||
+    fallbackEmail ||
+    'current'
+  );
+}
+
+function profileStorageKey(identity: string) {
+  return `everclean_client_profile_${identity}`;
+}
+
+function readStoredProfile(key: string) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || '{}');
+  } catch {
+    return {};
+  }
+}
 
 export default function ClientProfile() {
   const { t } = useTranslation();
@@ -33,6 +144,7 @@ export default function ClientProfile() {
   const [stats, setStats] = useState({ total:0, spent:0 });
   const [bookings, setBookings] = useState<any[]>([]);
   const [payingBooking, setPayingBooking] = useState<string|null>(null);
+  const [storageKey, setStorageKey] = useState(profileStorageKey('current'));
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -42,19 +154,24 @@ export default function ClientProfile() {
 
   const load = useCallback(async () => {
     const token = localStorage.getItem('token') || '';
+    const tokenPayload = decodeToken(token);
     try {
-      const [ur, br] = await Promise.all([
-        fetch(API+'/auth/me', { headers:{ Authorization:'Bearer '+token } }).then(r=>r.json()),
-        fetch(API+'/bookings', { headers:{ Authorization:'Bearer '+token } }).then(r=>r.json()),
+      const [profileRes, bookingsRes] = await Promise.all([
+        fetch(API+'/auth/me', { headers:{ Authorization:'Bearer '+token } }),
+        fetch(API+'/bookings', { headers:{ Authorization:'Bearer '+token } }),
       ]);
+      const [ur, br] = await Promise.all([
+        readJsonResponse(profileRes),
+        readJsonResponse(bookingsRes),
+      ]);
+      const remoteProfile = normalizeProfile(ur);
+      const nextKey = profileStorageKey(profileIdentity(ur, tokenPayload, remoteProfile.email));
+      const storedProfile = readStoredProfile(nextKey);
+      setStorageKey(nextKey);
       setForm({
-        fullName: ur.full_name||ur.fullName||ur.name||'',
-        phone: ur.phone||'',
-        email: ur.email||'',
-        address: ur.address||ur.billing_address||'',
-        city: ur.city||ur.billing_city||'',
-        state: ur.state||ur.billing_state||'NJ',
-        zipCode: ur.zip_code||ur.zipCode||ur.zip||'',
+        ...remoteProfile,
+        ...storedProfile,
+        state: storedProfile.state || remoteProfile.state || 'NJ',
       });
       const bookingRows = Array.isArray(br.data) ? br.data : [];
       setBookings(bookingRows);
@@ -84,19 +201,50 @@ export default function ClientProfile() {
     setSaving(true); setMessage('');
     const token = localStorage.getItem('token') || '';
     try {
-      const res = await fetch(API+'/companies/me', {
-        method: 'PATCH',
-        headers: { 'Content-Type':'application/json', Authorization:'Bearer '+token },
-        body: JSON.stringify({
-          name: form.fullName,
-          billingAddress: form.address,
-          billingCity: form.city,
-          billingState: form.state,
-          billingZip: form.zipCode,
-        }),
-      });
-      if (res.ok) { setMessage(t('client.profileExtra.profileSaved')); load(); }
-      else { const e = await res.json(); setMessage('Error: '+e.error); }
+      const payload = {
+        fullName: form.fullName,
+        full_name: form.fullName,
+        name: form.fullName,
+        phone: form.phone,
+        address: form.address,
+        city: form.city,
+        state: form.state,
+        zipCode: form.zipCode,
+        zip_code: form.zipCode,
+        billingAddress: form.address,
+        billingCity: form.city,
+        billingState: form.state,
+        billingZip: form.zipCode,
+      };
+
+      let savedOnBackend = false;
+      let backendError = '';
+
+      for (const endpoint of CLIENT_PROFILE_ENDPOINTS) {
+        const res = await fetch(API+endpoint, {
+          method: 'PATCH',
+          headers: { 'Content-Type':'application/json', Authorization:'Bearer '+token },
+          body: JSON.stringify(payload),
+        });
+        const data = await readJsonResponse(res);
+        if (res.ok) {
+          savedOnBackend = true;
+          break;
+        }
+        backendError = data.error || res.statusText;
+        if (![404, 405].includes(res.status)) break;
+      }
+
+      localStorage.setItem(storageKey, JSON.stringify(form));
+
+      if (savedOnBackend) {
+        setMessage(t('client.profileExtra.profileSaved'));
+        load();
+      } else if (backendError.includes('Cannot PATCH') || backendError.includes('Backend returned HTML')) {
+        setMessage(t('client.profileExtra.profileSavedLocal'));
+      } else {
+        setMessage('Error: '+(backendError || t('client.profileExtra.errorSaving')));
+      }
     } catch(e) { setMessage(t('client.profileExtra.errorSaving')); }
     setSaving(false);
   }
@@ -236,4 +384,3 @@ export default function ClientProfile() {
     </div>
   );
 }
-

@@ -337,6 +337,7 @@
     },
     "profileExtra": {
       "profileSaved": "Profile saved!",
+      "profileSavedLocal": "Profile saved on this device. Backend profile updates are pending deployment.",
       "errorSaving": "Error saving profile",
       "personalInfo": "Personal Information",
       "billingAddress": "Billing Address",
