@@ -253,7 +253,7 @@ function RightPanel({
           { href: '/dashboard/profile', label: clt(lang, 'billingProfile'), icon: '👤' },
         ].map((item) => (
           <Link key={item.href} href={item.href} className="client-quick-link">
-            <item.Icon c={isActive ? "#fff" : "rgba(255,255,255,0.5)"} s={18} />
+            <span style={{fontSize:18}}>{item.icon}</span>
             <p>{item.label}</p>
             <b>›</b>
           </Link>
