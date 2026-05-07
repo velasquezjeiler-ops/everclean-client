@@ -284,7 +284,6 @@ function RightPanel({
                   <div className="client-active-head">
                     <div>
                       <strong>
-                        {SERVICE_ICONS[booking.service_type] || '🧹'}{' '}
                         {serviceLabel(booking.service_type, t)}
                       </strong>
                       {booking.scheduled_at && (
