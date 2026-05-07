@@ -441,7 +441,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
 
           return (
             <Link key={item.href} href={item.href} className={isActive ? 'active' : ''}>
-              <item.Icon c={"rgba(255,255,255,0.7)"} s={16} />
+              <span style={{fontSize:16}}>{item.icon}</span>
               <p>{item.label}</p>
             </Link>
           );
