@@ -53,6 +53,10 @@ function rt(lang: string, key: string) {
   return REGISTER_TEXT[lang]?.[key] || REGISTER_TEXT.en[key] || key;
 }
 
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
 const C = {
   navy: '#0D3781',
   navyDark: '#081f4a',
@@ -95,11 +99,13 @@ export default function RegisterPage() {
     setError('');
 
     try {
+      const normalizedEmail = normalizeEmail(form.email);
       const res = await fetch(API + '/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          email: normalizedEmail,
           name: form.fullName,
           role,
         }),

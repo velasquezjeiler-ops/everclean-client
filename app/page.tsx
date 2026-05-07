@@ -31,6 +31,10 @@ function ltxt(lang: string, key: string) {
   return LOGIN_TEXT[lang]?.[key] || LOGIN_TEXT.en[key] || key;
 }
 
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
 const C = {
   navy: '#0D3781',
   navyDark: '#081f4a',
@@ -72,10 +76,11 @@ export default function LoginPage() {
     setResetMessage('');
     setError('');
     try {
+      const normalizedEmail = normalizeEmail(email);
       const res = await fetch(API + '/auth/password-reset/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, method: resetMethod }),
+        body: JSON.stringify({ email: normalizedEmail, method: resetMethod }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || ltxt(lang, 'unableCode'));
@@ -94,10 +99,11 @@ export default function LoginPage() {
     setResetMessage('');
     setError('');
     try {
+      const normalizedEmail = normalizeEmail(email);
       const res = await fetch(API + '/auth/password-reset/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code: resetCode, password: resetPassword }),
+        body: JSON.stringify({ email: normalizedEmail, code: resetCode, password: resetPassword }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || ltxt(lang, 'unableReset'));
@@ -120,10 +126,11 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      const normalizedEmail = normalizeEmail(email);
       const res = await fetch(API + '/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: normalizedEmail, password }),
       });
 
       const data = await res.json();
@@ -135,6 +142,7 @@ export default function LoginPage() {
       localStorage.setItem('token', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
       localStorage.setItem('role', data.role);
+      setEmail(normalizedEmail);
 
       if (data.role === 'ADMIN') {
         window.location.href = 'https://everclean-admin.vercel.app';
