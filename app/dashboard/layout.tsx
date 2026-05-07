@@ -163,7 +163,8 @@ function clientNavLabel(href: string, t: (key: string) => string, lang: string) 
 
 function serviceLabel(value: string, t: (key: string) => string) {
   const key = String(value || 'HOUSE_CLEANING').toUpperCase();
-  return t('services.' + key) || serviceName(value);
+  const translated = t('services.' + key);
+  return (translated && translated !== 'services.' + key) ? translated : String(value||'').replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
 }
 
 function statusLabel(value: string, fallback: string, t: (key: string) => string) {
