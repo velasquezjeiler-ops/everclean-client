@@ -44,17 +44,17 @@ export default function ClientProfile() {
     const token = localStorage.getItem('token') || '';
     try {
       const [ur, br] = await Promise.all([
-        fetch(API+'/companies/me', { headers:{ Authorization:'Bearer '+token } }).then(r=>r.json()),
+        fetch(API+'/auth/me', { headers:{ Authorization:'Bearer '+token } }).then(r=>r.json()),
         fetch(API+'/bookings', { headers:{ Authorization:'Bearer '+token } }).then(r=>r.json()),
       ]);
       setForm({
-        fullName: ur.full_name||ur.fullName||'',
+        fullName: ur.full_name||ur.fullName||ur.name||'',
         phone: ur.phone||'',
         email: ur.email||'',
-        address: ur.address||'',
-        city: ur.city||'',
-        state: ur.state||'NJ',
-        zipCode: ur.zip_code||ur.zipCode||'',
+        address: ur.address||ur.billing_address||'',
+        city: ur.city||ur.billing_city||'',
+        state: ur.state||ur.billing_state||'NJ',
+        zipCode: ur.zip_code||ur.zipCode||ur.zip||'',
       });
       const bookingRows = Array.isArray(br.data) ? br.data : [];
       setBookings(bookingRows);
@@ -88,12 +88,11 @@ export default function ClientProfile() {
         method: 'PATCH',
         headers: { 'Content-Type':'application/json', Authorization:'Bearer '+token },
         body: JSON.stringify({
-          fullName: form.fullName,
-          phone: form.phone,
-          address: form.address,
-          city: form.city,
-          state: form.state,
-          zipCode: form.zipCode,
+          name: form.fullName,
+          billingAddress: form.address,
+          billingCity: form.city,
+          billingState: form.state,
+          billingZip: form.zipCode,
         }),
       });
       if (res.ok) { setMessage(t('client.profileExtra.profileSaved')); load(); }
