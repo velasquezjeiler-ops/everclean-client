@@ -162,14 +162,15 @@ function calcCleaningPrice(
   kitchens: number,
   tier: string,
   frequency: string,
-  addons: { drawers: number; carpetSqft: number; rugSize: string; rugCount: number; windowsInside: number; windowsOutside: number }
+  addons: { drawers: number; carpetSqft: number; rugSize: string; rugCount: number; windowsInside: number; windowsOutside: number },
+  useRoomEstimate = true
 ) {
   const cfg = CLEANING_SERVICES[serviceType];
   if (!cfg) return null;
 
   const multi = STATE_MULTIPLIERS[tier] ?? 1;
   const disc = FREQ_OPTIONS.find((f) => f.key === frequency)?.disc ?? 0;
-  const roomSqft = beds != null && baths != null ? estimatedSqftFromRooms(beds, baths, kitchens) : 0;
+  const roomSqft = useRoomEstimate && beds != null && baths != null ? estimatedSqftFromRooms(beds, baths, kitchens) : 0;
   let sqftUsed = sqft || roomSqft;
   let corrected = false;
 
@@ -183,10 +184,12 @@ function calcCleaningPrice(
   const addonTotal = cleaningAddonPrice(addons);
   const effectiveRate = stateRate(cfg.rate, tier);
   const minPrice = money(cfg.min * multi);
-  const base = Math.max(sqftUsed * effectiveRate, minPrice);
+  const sqftBase = money(sqftUsed * effectiveRate);
+  const minimumApplied = sqftBase < minPrice;
+  const base = Math.max(sqftBase, minPrice);
   const price = money(base * (1 - disc) + addonTotal);
 
-  return { price, hours: estimatedHours(sqftUsed, addonTotal), sqftUsed, corrected, addonTotal, roomSqft, effectiveRate };
+  return { price, hours: estimatedHours(sqftUsed, addonTotal), sqftUsed, corrected, addonTotal, roomSqft, effectiveRate, minPrice, minimumApplied, sqftBase };
 }
 
 function laundryPrice(weight: string) {
@@ -238,8 +241,26 @@ export default function NewBookingPage() {
   const [notes, setNotes] = useState('');
 
   const isCleaning = serviceType in CLEANING_SERVICES;
+  const isCommercialCleaning = Boolean(CLEANING_SERVICES[serviceType]?.commercial);
+  const isResidentialCleaning = isCleaning && !isCommercialCleaning;
   const isCarWash = serviceType === 'CAR_WASH';
   const isLaundry = serviceType === 'LAUNDRY_PICKUP';
+
+  function chooseService(nextService: string) {
+    setServiceType(nextService);
+    setStep(1);
+    const nextCfg = CLEANING_SERVICES[nextService];
+    if (!nextCfg?.commercial) return;
+    setBeds('');
+    setBaths('');
+    setKitchens('1');
+    setDrawerCount('0');
+    setCarpetSqft('0');
+    setRugSize('');
+    setRugCount('0');
+    setWindowInside('0');
+    setWindowOutside('0');
+  }
 
   const cleaningAddons = {
     drawers: Math.max(parseInt(drawerCount) || 0, 0),
@@ -254,28 +275,30 @@ export default function NewBookingPage() {
     if (!serviceType) return null;
     if (isCleaning) {
       const s = parseInt(sqft) || 0;
-      if (s === 0 && !beds) return null;
+      if (isCommercialCleaning && s <= 0) return null;
+      if (isResidentialCleaning && s === 0 && !beds) return null;
       return calcCleaningPrice(
         serviceType,
         s,
-        beds ? parseInt(beds) : null,
-        baths ? parseInt(baths) : null,
+        isResidentialCleaning && beds ? parseInt(beds) : null,
+        isResidentialCleaning && baths ? parseInt(baths) : null,
         Math.max(parseInt(kitchens) || 1, 1),
         stateTier,
         frequency,
-        cleaningAddons
+        isResidentialCleaning ? cleaningAddons : { drawers: 0, carpetSqft: 0, rugSize: '', rugCount: 0, windowsInside: 0, windowsOutside: 0 },
+        isResidentialCleaning
       );
     }
 
     if (isCarWash && vehicleCode && carPkg) {
       const base = CAR_WASH_RATES[vehicleCode]?.[carPkg] ?? 0;
       const addonsTotal = selectedCarAddons.reduce((sum, addon) => sum + (CAR_ADDONS.find((x) => x.code === addon)?.price ?? 0), 0);
-      return { price: base + addonsTotal, hours: null, sqftUsed: null, corrected: false, addonTotal: addonsTotal, effectiveRate: null };
+      return { price: base + addonsTotal, hours: null, sqftUsed: null, corrected: false, addonTotal: addonsTotal, effectiveRate: null, minPrice: 0, minimumApplied: false, sqftBase: 0 };
     }
 
     if (isLaundry) {
       const calc = laundryPrice(weightLbs);
-      return { price: calc.price, hours: null, sqftUsed: null, corrected: false, addonTotal: 0, effectiveRate: null };
+      return { price: calc.price, hours: null, sqftUsed: null, corrected: false, addonTotal: 0, effectiveRate: null, minPrice: 0, minimumApplied: false, sqftBase: 0 };
     }
 
     return null;
@@ -306,16 +329,18 @@ export default function NewBookingPage() {
       };
 
       if (isCleaning) {
-        body.sqft = parseInt(sqft) || 0;
-        body.bedrooms = beds ? parseInt(beds) : null;
-        body.bathrooms = baths ? parseInt(baths) : null;
-        body.kitchens = Math.max(parseInt(kitchens) || 1, 1);
-        body.drawer_count = cleaningAddons.drawers;
-        body.carpet_sqft = cleaningAddons.carpetSqft;
-        body.rug_size = cleaningAddons.rugSize;
-        body.rug_count = cleaningAddons.rugCount;
-        body.window_inside_count = cleaningAddons.windowsInside;
-        body.window_outside_count = cleaningAddons.windowsOutside;
+        body.sqft = priceCalc?.sqftUsed || parseInt(sqft) || 0;
+        if (isResidentialCleaning) {
+          body.bedrooms = beds ? parseInt(beds) : null;
+          body.bathrooms = baths ? parseInt(baths) : null;
+          body.kitchens = Math.max(parseInt(kitchens) || 1, 1);
+          body.drawer_count = cleaningAddons.drawers;
+          body.carpet_sqft = cleaningAddons.carpetSqft;
+          body.rug_size = cleaningAddons.rugSize;
+          body.rug_count = cleaningAddons.rugCount;
+          body.window_inside_count = cleaningAddons.windowsInside;
+          body.window_outside_count = cleaningAddons.windowsOutside;
+        }
       }
 
       if (!isCleaning) {
@@ -433,7 +458,7 @@ export default function NewBookingPage() {
                 <p className="booking-kicker">Base cleaning services</p>
                 <div className="booking-grid three">
                   {Object.entries(CLEANING_SERVICES).map(([key, cfg]) => (
-                    <button key={key} onClick={() => setServiceType(key)} className={`booking-option ${serviceType === key ? 'selected' : ''}`} type="button">
+                    <button key={key} onClick={() => chooseService(key)} className={`booking-option ${serviceType === key ? 'selected' : ''}`} type="button">
                       <div className="booking-option-icon">{cfg.icon}</div>
                       <strong>{cfg.label}</strong>
                       <span>${stateRate(cfg.rate, stateTier).toFixed(2)}/sqft</span>
@@ -448,7 +473,7 @@ export default function NewBookingPage() {
                 <p className="booking-kicker">Standalone services</p>
                 <div className="booking-grid two">
                   {[{ key: 'CAR_WASH', label: 'Car Wash', icon: 'Auto' }, { key: 'LAUNDRY_PICKUP', label: 'Laundry', icon: 'Laundry' }].map((s) => (
-                    <button key={s.key} onClick={() => setServiceType(s.key)} className={`booking-option ${serviceType === s.key ? 'selected' : ''}`} type="button">
+                    <button key={s.key} onClick={() => chooseService(s.key)} className={`booking-option ${serviceType === s.key ? 'selected' : ''}`} type="button">
                       <div className="booking-option-icon">{s.icon}</div>
                       <strong>{s.label}</strong>
                     </button>
@@ -456,7 +481,30 @@ export default function NewBookingPage() {
                 </div>
               </div>
 
-              {isCleaning && (
+              {isCommercialCleaning && (
+                <div className="booking-section">
+                  <p className="booking-kicker">Commercial space</p>
+                  <label>
+                    <span className="booking-label">Billable sqft *</span>
+                    <input type="number" min="100" value={sqft} onChange={(e) => setSqft(e.target.value)} placeholder="example: 1000" className="booking-input" />
+                  </label>
+                  <p className="booking-help">Commercial services are priced by billable sqft and state tier. Residential room fields and home add-ons do not apply.</p>
+                  {priceCalc?.minimumApplied && <p className="booking-help">Minimum price applied: ${priceCalc.minPrice.toFixed(2)}.</p>}
+                  <div style={{ marginTop: 18 }}>
+                    <label className="booking-label">Frequency</label>
+                    <div className="booking-grid two">
+                      {FREQ_OPTIONS.map((f) => (
+                        <button key={f.key} onClick={() => setFrequency(f.key)} className={`booking-option green ${frequency === f.key ? 'selected' : ''}`} type="button" style={{ minHeight: 58 }}>
+                          <strong>{f.label}</strong>
+                          {f.disc > 0 && <span>-{f.disc * 100}%</span>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {isResidentialCleaning && (
                 <div className="booking-section">
                   <p className="booking-kicker">Home size</p>
                   <div className="booking-grid three">
@@ -532,6 +580,7 @@ export default function NewBookingPage() {
                     {priceCalc.hours && <span>{priceCalc.hours} estimated hours</span>}
                     {priceCalc.sqftUsed && <span>{priceCalc.sqftUsed} sqft</span>}
                     {priceCalc.sqftUsed && priceCalc.effectiveRate && <span>{priceCalc.sqftUsed} sqft x ${priceCalc.effectiveRate.toFixed(2)}/sqft</span>}
+                    {priceCalc.minimumApplied && <span>Minimum ${priceCalc.minPrice.toFixed(2)} applied</span>}
                     {priceCalc.addonTotal ? <span>${priceCalc.addonTotal.toFixed(2)} add-ons</span> : null}
                     {(FREQ_OPTIONS.find((f) => f.key === frequency)?.disc ?? 0) > 0 && <span>-{(FREQ_OPTIONS.find((f) => f.key === frequency)?.disc ?? 0) * 100}% frequency</span>}
                     {priceCalc.corrected && <span>Sqft validated</span>}
