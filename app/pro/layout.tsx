@@ -33,6 +33,7 @@ const IC = {
   Check: (p: any) => <svg width={p.s||16} height={p.s||16} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke={p.c||'#fff'} strokeWidth="1.7"/><path d="M9 12l2 2 4-4" stroke={p.c||'#fff'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   Card: (p: any) => <svg width={p.s||16} height={p.s||16} viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="3" stroke={p.c||C.blue} strokeWidth="1.7"/><path d="M2 10h20" stroke={p.c||C.blue} strokeWidth="1.7"/><path d="M6 15h4" stroke={p.c||C.blue} strokeWidth="1.7" strokeLinecap="round"/></svg>,
   Arrow: (p: any) => <svg width={p.s||14} height={p.s||14} viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke={p.c||C.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  Trophy: (p: any) => <svg width={p.s||20} height={p.s||20} viewBox="0 0 24 24" fill="none"><path d="M8 21h8M12 17v4M12 17a7 7 0 0 0 7-7V5H5v5a7 7 0 0 0 7 7z" stroke={p.c||'#fff'} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/><path d="M5 8H2a2 2 0 0 0 2 2M19 8h3a2 2 0 0 1-2 2" stroke={p.c||'#fff'} strokeWidth="1.7" strokeLinecap="round"/></svg>,
 };
 
 const STATUS: Record<string, { label: string; bg: string; color: string; dot: string }> = {
@@ -267,6 +268,8 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
     { href: '/pro/earnings', label: lt(lang, 'earnings'), Icon: IC.Dollar },
     { href: '/pro/payments', label: lt(lang, 'payments'), Icon: IC.Card },
     { href: '/pro/profile', label: lt(lang, 'profile'), Icon: IC.Profile },
+    { href: '/pro/levels', label: '🏆 My Level', Icon: IC.Trophy },
+    { href: '/pro/quality', label: '✅ Quality Center', Icon: IC.Star },
   ];
 
   const MOBILE_NAV = [
