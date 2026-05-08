@@ -786,12 +786,10 @@ export default function NewBookingPage() {
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error ?? 'Error creating booking');
-      }
-
-      const data = await res.json();
+      const text = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(text); } catch { throw new Error('Server error: ' + text.slice(0, 100)); }
+      if (!res.ok) throw new Error(data.error ?? 'Error creating booking');
       const bookingId = data.id || data.booking?.id;
       if (bookingId) localStorage.setItem('last_booking_id', String(bookingId));
 
