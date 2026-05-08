@@ -75,6 +75,11 @@ const CLIENT_DASH_TEXT: Record<string, Record<string, string>> = {
     serviceInProgress: 'Service in progress',
     serviceCompleted: 'Service completed',
     cancelled: 'Cancelled',
+    etaTitle: 'Professional ETA',
+    etaPending: 'ETA will appear when your professional sends it.',
+    messagePro: 'Message professional',
+    callPro: 'Platform call',
+    protectedComms: 'Your contact details stay protected inside EverClean.',
   },
   es: {
     morning: 'Buenos dias',
@@ -99,6 +104,11 @@ const CLIENT_DASH_TEXT: Record<string, Record<string, string>> = {
     serviceInProgress: 'Servicio en progreso',
     serviceCompleted: 'Servicio completado',
     cancelled: 'Cancelado',
+    etaTitle: 'ETA del profesional',
+    etaPending: 'El ETA aparecera cuando tu profesional lo envie.',
+    messagePro: 'Mensaje al profesional',
+    callPro: 'Llamada plataforma',
+    protectedComms: 'Tus datos de contacto se mantienen protegidos dentro de EverClean.',
   },
 };
 
@@ -215,6 +225,7 @@ export default function ClientDashboard() {
   const [loading, setLoading] = useState(true);
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
   const [lastBookingId, setLastBookingId] = useState('');
+  const [etaData, setEtaData] = useState<Record<string, any>>({});
 
   const load = useCallback(async () => {
     const token = localStorage.getItem('token') || '';
@@ -226,8 +237,20 @@ export default function ClientDashboard() {
 
       const bookingsData = await bookingsRes.json();
       const meData = meRes ? await meRes.json().catch(() => null) : null;
-      setBookings(Array.isArray(bookingsData.data) ? bookingsData.data : []);
+      const nextBookings = Array.isArray(bookingsData.data) ? bookingsData.data : [];
+      setBookings(nextBookings);
       setProfile(meData);
+
+      const etaEntries = await Promise.all(
+        nextBookings
+          .filter((booking: any) => ['CONFIRMED', 'IN_PROGRESS'].includes(booking.status))
+          .map(async (booking: any) => {
+            const etaRes = await fetch(API + '/bookings/' + booking.id + '/eta', { headers: { Authorization: 'Bearer ' + token } }).catch(() => null);
+            if (!etaRes?.ok) return [booking.id, null];
+            return [booking.id, await etaRes.json().catch(() => null)];
+          })
+      );
+      setEtaData(Object.fromEntries(etaEntries.filter(([, eta]) => eta)));
     } catch {
       setBookings([]);
     } finally {
@@ -237,6 +260,11 @@ export default function ClientDashboard() {
 
   useEffect(() => {
     load();
+  }, [load]);
+
+  useEffect(() => {
+    const timer = window.setInterval(load, 30000);
+    return () => window.clearInterval(timer);
   }, [load]);
 
   useEffect(() => {
@@ -360,6 +388,7 @@ export default function ClientDashboard() {
               const amount = bookingAmount(booking);
               const status = STATUS[booking.status] || STATUS.PENDING_ASSIGNMENT;
               const pro = booking.professionals?.[0]?.professional || booking.professional;
+              const eta = etaData[booking.id];
               return (
                                 <article key={booking.id} style={{background:"#fff",borderRadius:14,border:"1px solid #E2E8F0",padding:"14px 16px",boxShadow:"0 2px 8px rgba(13,55,129,0.05)"}}>
                   <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:10,marginBottom:8}}>
@@ -377,6 +406,28 @@ export default function ClientDashboard() {
                     {amount > 0 && <span style={{background:"#D1FAE5",color:"#388E3C",padding:"4px 10px",borderRadius:8,fontSize:11,fontWeight:700}}>{"$"}{amount.toFixed(2)}</span>}
                     {(pro?.fullName || pro?.full_name) && <span style={{background:"#EFF6FF",color:"#1565C0",padding:"4px 10px",borderRadius:8,fontSize:11}}>{pro.fullName || pro.full_name}</span>}
                   </div>
+                  {['CONFIRMED', 'IN_PROGRESS'].includes(booking.status) && (
+                    <div style={{marginTop:10,border:"1px solid #E2E8F0",borderRadius:10,background:"#F8FAFC",padding:10}}>
+                      <div style={{fontSize:11,fontWeight:800,color:"#0D3781",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>{cdt(lang, 'etaTitle')}</div>
+                      {eta ? (
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+                          <span style={{fontSize:13,fontWeight:700,color:"#0D1B2A"}}>{eta.distanceMiles ? `${eta.distanceMiles} mi - ` : ''}ETA {eta.etaText || eta.eta || eta.duration || ''}</span>
+                          {eta.mapsUrl && <a href={eta.mapsUrl} target="_blank" rel="noreferrer" style={{fontSize:12,fontWeight:700,color:"#1565C0",textDecoration:"none"}}>{t('map.openGoogleMaps')}</a>}
+                        </div>
+                      ) : (
+                        <div style={{fontSize:12,color:"#64748B"}}>{cdt(lang, 'etaPending')}</div>
+                      )}
+                      {pro && (
+                        <>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:10}}>
+                            <button type="button" style={{border:"1px solid #E2E8F0",background:"#fff",borderRadius:8,padding:"8px 10px",fontSize:12,fontWeight:700,color:"#0D3781"}}>{cdt(lang, 'messagePro')}</button>
+                            <button type="button" style={{border:"1px solid #E2E8F0",background:"#fff",borderRadius:8,padding:"8px 10px",fontSize:12,fontWeight:700,color:"#0D3781"}}>{cdt(lang, 'callPro')}</button>
+                          </div>
+                          <div style={{fontSize:10,color:"#64748B",textAlign:"center",marginTop:6}}>{cdt(lang, 'protectedComms')}</div>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </article>
               );
             })}

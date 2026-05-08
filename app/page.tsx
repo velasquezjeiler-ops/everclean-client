@@ -142,6 +142,7 @@ export default function LoginPage() {
       localStorage.setItem('token', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
       localStorage.setItem('role', data.role);
+      localStorage.setItem('userEmail', normalizedEmail);
       setEmail(normalizedEmail);
 
       if (data.role === 'ADMIN') {

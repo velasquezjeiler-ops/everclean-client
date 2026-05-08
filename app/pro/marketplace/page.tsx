@@ -1,6 +1,7 @@
 ﻿'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
+import { notifyBookingEvent } from '../../../lib/notifications';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup.replit.app/api';
 const C = {
@@ -86,6 +87,12 @@ export default function ProMarketplace() {
         const d = await res.json();
         throw new Error(d.error || t('pro.marketplace.loadError'));
       }
+      const claimedJob = jobs.find((job) => job.id === jobId);
+      notifyBookingEvent({
+        event: 'BOOKING_CLAIMED',
+        booking: claimedJob || { id: jobId },
+        professional: { email: localStorage.getItem('userEmail') || undefined },
+      });
       setClaimed((previous) => [...previous, jobId]);
       await load();
     } catch (e: any) {

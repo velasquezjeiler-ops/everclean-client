@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
+import { notifyBookingEvent } from '../../../lib/notifications';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup.replit.app/api';
 
@@ -68,6 +69,11 @@ const TXT: Record<string, Record<string, string>> = {
     sqft: 'sqft',
     yourPay: 'Your pay',
     openNavigation: 'Open Navigation',
+    sendEta: 'Send ETA to client',
+    etaSent: 'ETA sent to client',
+    messageClient: 'Message client',
+    callClient: 'Platform call',
+    protectedComms: 'Contact stays protected inside EverClean',
     completeJob: 'Complete Job',
     morning: 'Good morning',
     afternoon: 'Good afternoon',
@@ -92,6 +98,11 @@ const TXT: Record<string, Record<string, string>> = {
     sqft: 'pies2',
     yourPay: 'Tu pago',
     openNavigation: 'Abrir navegación',
+    sendEta: 'Enviar ETA al cliente',
+    etaSent: 'ETA enviada al cliente',
+    messageClient: 'Mensaje al cliente',
+    callClient: 'Llamada plataforma',
+    protectedComms: 'El contacto se mantiene protegido dentro de EverClean',
     completeJob: 'Completar trabajo',
     morning: 'Buenos días',
     afternoon: 'Buenas tardes',
@@ -237,16 +248,32 @@ export default function ProDashboard() {
 
   useEffect(() => { load(); }, [load]);
 
-  async function fetchETA(id: string) {
+  async function sendETA(job: any) {
     const token = localStorage.getItem('token') || '';
-    const res = await fetch(API + '/bookings/' + id + '/eta', { headers: { Authorization: 'Bearer ' + token } });
-    if (res.ok) { const d = await res.json(); setEtaData(p => ({ ...p, [id]: d })); }
+    let res = await fetch(API + '/bookings/' + job.id + '/eta', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notifyClient: true }),
+    });
+    if (!res.ok) {
+      res = await fetch(API + '/bookings/' + job.id + '/eta', { headers: { Authorization: 'Bearer ' + token } });
+    }
+    if (res.ok) {
+      const d = await res.json();
+      setEtaData(p => ({ ...p, [job.id]: d }));
+      notifyBookingEvent({ event: 'ETA_SENT', booking: job, professional: profile, eta: d });
+    }
   }
 
-  async function doAction(id: string, action: string) {
-    setActing(id);
+  async function doAction(job: any, action: string) {
+    setActing(job.id);
     const token = localStorage.getItem('token') || '';
-    await fetch(API + '/bookings/' + id + '/' + action, { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
+    await fetch(API + '/bookings/' + job.id + '/' + action, { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
+    notifyBookingEvent({
+      event: action === 'checkin' ? 'CHECKIN_DONE' : 'BOOKING_COMPLETED',
+      booking: job,
+      professional: profile,
+    });
     await load();
     setActing(null);
   }
@@ -400,21 +427,27 @@ export default function ProDashboard() {
                           <a href={eta.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '9px 0', borderRadius: 8, background: C.navy, color: '#fff', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
                             {copy(lang, 'openNavigation')}
                           </a>
-                          <div style={{ textAlign: 'center', marginTop: 6, fontSize: 11, color: C.green, fontWeight: 600 }}>{t('pro.dashboard.etaSent')}</div>
+                          <div style={{ textAlign: 'center', marginTop: 6, fontSize: 11, color: C.green, fontWeight: 600 }}>{copy(lang, 'etaSent')}</div>
                         </div>
                       ) : (
-                        <button onClick={() => fetchETA(job.id)} style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: 'none', cursor: 'pointer', background: C.navy, color: '#fff', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                          <IC.ETA c="#fff" s={14}/> {t('pro.dashboard.sendEta')}
+                        <button onClick={() => sendETA(job)} style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: 'none', cursor: 'pointer', background: C.navy, color: '#fff', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                          <IC.ETA c="#fff" s={14}/> {copy(lang, 'sendEta')}
                         </button>
                       )}
 
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                        <button type="button" style={{ padding: '9px 0', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', color: C.navy, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{copy(lang, 'messageClient')}</button>
+                        <button type="button" style={{ padding: '9px 0', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', color: C.navy, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{copy(lang, 'callClient')}</button>
+                      </div>
+                      <div style={{ textAlign: 'center', color: C.muted, fontSize: 10 }}>{copy(lang, 'protectedComms')}</div>
+
                       {job.status === 'CONFIRMED' && (
-                        <button onClick={() => doAction(job.id, 'checkin')} disabled={acting === job.id} style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: 'none', cursor: 'pointer', background: C.blue, color: '#fff', fontSize: 12, fontWeight: 600, opacity: acting === job.id ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <button onClick={() => doAction(job, 'checkin')} disabled={acting === job.id} style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: 'none', cursor: 'pointer', background: C.blue, color: '#fff', fontSize: 12, fontWeight: 600, opacity: acting === job.id ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                           <IC.Check c="#fff" s={14}/> {t('pro.dashboard.checkIn')}
                         </button>
                       )}
                       {job.status === 'IN_PROGRESS' && (
-                        <button onClick={() => doAction(job.id, 'checkout')} disabled={acting === job.id} style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: 'none', cursor: 'pointer', background: C.green, color: '#fff', fontSize: 12, fontWeight: 600, opacity: acting === job.id ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <button onClick={() => doAction(job, 'checkout')} disabled={acting === job.id} style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: 'none', cursor: 'pointer', background: C.green, color: '#fff', fontSize: 12, fontWeight: 600, opacity: acting === job.id ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                           <IC.Check c="#fff" s={14}/> {copy(lang, 'completeJob')}
                         </button>
                       )}

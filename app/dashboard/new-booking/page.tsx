@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { notifyBookingEvent } from '../../../lib/notifications';
 
 const API =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -343,6 +344,11 @@ export default function NewBookingPage() {
       const data = await res.json();
       const bookingId = data.id || data.booking?.id;
       if (bookingId) localStorage.setItem('last_booking_id', String(bookingId));
+      notifyBookingEvent({
+        event: 'BOOKING_CREATED',
+        booking: data.booking || { ...body, id: bookingId },
+        client: { email: localStorage.getItem('userEmail') || undefined },
+      });
       router.push('/dashboard?booked=1');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Unknown error');

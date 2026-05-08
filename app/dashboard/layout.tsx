@@ -312,11 +312,12 @@ function RightPanel({
                     <div className="client-pro-row">
                       <span>{(pro.fullName || 'P')[0]}</span>
                       <p>{pro.fullName || clt(lang, 'assignedProfessional')}</p>
-                      {pro.phone && (
-                        <a href={`tel:${pro.phone}`} onClick={(e) => e.stopPropagation()}>
-                          {clt(lang, 'call')}
-                        </a>
-                      )}
+                      <button type="button" onClick={(e) => e.stopPropagation()}>
+                        Msg
+                      </button>
+                      <button type="button" onClick={(e) => e.stopPropagation()}>
+                        {clt(lang, 'call')}
+                      </button>
                     </div>
                   ) : (
                     <div className="client-finding">{clt(lang, 'findingCleaner')}</div>
@@ -978,14 +979,15 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
           white-space: nowrap;
         }
 
-        .client-pro-row a {
+        .client-pro-row button {
           background: ${C.green};
           color: #fff;
           border-radius: 7px;
           padding: 4px 8px;
           font-size: 9px;
           font-weight: 900;
-          text-decoration: none;
+          border: 0;
+          cursor: pointer;
         }
 
         .client-finding {
