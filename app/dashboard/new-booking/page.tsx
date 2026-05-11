@@ -31,9 +31,12 @@ const R = { sm: '8px', md: '14px', lg: '20px', full: '9999px' };
 type ServicePricing = {
   sqftRate: number;
   minimum: number;
+  minimumPrice?: number;
+  extraHourlyRate?: number;
   restroomFee?: number;
   breakroomFee?: number;
   suppliesFee?: number;
+  commercialMinimum?: number;
   marketLabel: string;
   pricingNote: string;
 };
@@ -216,51 +219,61 @@ function buildStatePricing(input: StatePricingInput): Record<string, ServicePric
     HOUSE_CLEANING: {
       sqftRate: input.house,
       minimum: input.houseMin,
+      extraHourlyRate: input.extraHourly || 50,
       marketLabel: input.marketLabel,
       pricingNote: input.pricingNote,
     },
     DEEP_CLEANING: {
       sqftRate: input.deep,
       minimum: input.deepMin,
+      extraHourlyRate: input.extraHourly || 55,
       marketLabel: input.marketLabel,
       pricingNote: input.pricingNote,
     },
     MOVE_IN_OUT: {
       sqftRate: input.move,
       minimum: input.moveMin,
+      extraHourlyRate: input.extraHourly || 55,
       marketLabel: input.marketLabel,
       pricingNote: input.pricingNote,
     },
     SAME_DAY_CLEANING: {
       sqftRate: input.same,
       minimum: input.sameMin,
+      extraHourlyRate: input.extraHourly || 55,
       marketLabel: input.marketLabel,
       pricingNote: input.pricingNote,
     },
     OFFICE_CLEANING: {
       sqftRate: input.office,
       minimum: input.officeMin,
+      commercialMinimum: input.officeMin,
       restroomFee: input.restroom,
       breakroomFee: input.breakroom,
       suppliesFee: input.supplies,
+      extraHourlyRate: input.extraHourly || 55,
       marketLabel: input.marketLabel,
       pricingNote: input.pricingNote,
     },
     POST_CONSTRUCTION: {
       sqftRate: input.post,
       minimum: input.postMin,
+      commercialMinimum: input.postMin,
       restroomFee: input.postRestroom,
       breakroomFee: input.breakroom,
       suppliesFee: input.postSupplies,
+      extraHourlyRate: input.extraHourly || 65,
       marketLabel: input.marketLabel,
       pricingNote: input.pricingNote,
     },
     MEDICAL_CLEANING: {
       sqftRate: input.medical,
       minimum: input.medicalMin,
+      commercialMinimum: input.medicalMin,
       restroomFee: input.medicalRestroom,
       breakroomFee: input.breakroom,
       suppliesFee: input.medicalSupplies,
+      extraHourlyRate: input.extraHourly || 65,
       marketLabel: input.marketLabel,
       pricingNote: input.pricingNote,
     },
@@ -365,12 +378,77 @@ function frequencyText(frequency: string, commercial: boolean) {
   return `-${Math.round((1 - factor) * 100)}% frequency adjustment`;
 }
 
-function estimatedSqftFromRooms(beds: number, baths: number, kitchens: number) {
-  const baseLiving = beds === 0 ? 360 : 420;
-  const bedroomSqft = beds * 240;
-  const bathSqft = baths * 90;
-  const kitchenSqft = Math.max(kitchens, 1) * 180;
-  return Math.ceil((baseLiving + bedroomSqft + bathSqft + kitchenSqft) / 50) * 50;
+// ─── SQFT ESTIMATOR (spec-compliant baselines + adders) ─────────────────────
+function estimatedSqftFromRooms(
+  beds: number,
+  baths: number,
+  kitchens: number,
+  adders?: {
+    extraLivingRooms?: number;
+    extraDiningRooms?: number;
+    officeRooms?: number;
+    laundryRooms?: number;
+    floors?: number;
+    kitchenSize?: string; // STANDARD | LARGE | CHEF
+    finishedBasement?: boolean;
+  }
+): number {
+  // Baseline by bed/bath combo
+  let base = 500; // studio
+  if (beds === 1 && baths === 1) base = 650;
+  else if (beds === 2 && baths === 1) base = 750;
+  else if (beds === 2 && baths === 2) base = 900;
+  else if (beds === 3 && baths === 2) base = 1150;
+  else if (beds === 4 && baths === 3) base = 1850;
+  else if (beds === 5 && baths === 4) base = 2800;
+  else if (beds > 5) base = 2800 + (beds - 5) * 350;
+  else if (beds > 0) base = 420 + beds * 240 + baths * 90;
+
+  // Kitchen adder
+  const kSize = adders?.kitchenSize || 'STANDARD';
+  if (kSize === 'LARGE') base += 120;
+  else if (kSize === 'CHEF') base += 220;
+
+  // Room adders
+  base += (adders?.extraLivingRooms || 0) * 250;
+  base += (adders?.extraDiningRooms || 0) * 180;
+  base += (adders?.officeRooms || 0) * 160;
+  base += (adders?.laundryRooms || 0) * 120;
+  base += Math.max(0, (adders?.floors || 1) - 1) * 150;
+  if (adders?.finishedBasement) base += 500;
+
+  return Math.ceil(base / 50) * 50;
+}
+
+// ─── MINIMUM VISIT HOURS (spec-compliant) ────────────────────────────────────
+function getMinimumVisitHours(sqft: number, serviceType: string): number {
+  const isDeepOrMove = serviceType === 'DEEP_CLEANING' || serviceType === 'MOVE_IN_OUT';
+  let base = 2;
+  if (sqft <= 750) base = 2;
+  else if (sqft <= 1200) base = 3;
+  else if (sqft <= 1800) base = 4;
+  else if (sqft <= 2500) base = 6;
+  else if (sqft <= 3500) base = 7;
+  else if (sqft <= 5000) base = 8;
+  else base = 9; // manual quote territory
+  if (isDeepOrMove) base = Math.min(base + 1, 9);
+  if (sqft > 1800) base = Math.max(base, 6);
+  return base;
+}
+
+// ─── PRICING SQFT GUARDRAIL ───────────────────────────────────────────────────
+function resolvePricingSqft(
+  declaredSqft: number,
+  profileSqft: number
+): { pricingSqft: number; sqftSource: string; verificationRequired: boolean } {
+  if (declaredSqft > 0) {
+    const tooLow = declaredSqft < profileSqft * 0.80 && (profileSqft - declaredSqft) >= 200;
+    if (tooLow) {
+      return { pricingSqft: profileSqft, sqftSource: 'profile_estimate_due_to_low_declared_sqft', verificationRequired: true };
+    }
+    return { pricingSqft: declaredSqft, sqftSource: 'customer_declared', verificationRequired: false };
+  }
+  return { pricingSqft: profileSqft, sqftSource: 'profile_estimate', verificationRequired: false };
 }
 
 function estimatedHours(sqft: number, addonTotal: number) {
@@ -408,38 +486,67 @@ function calcResidentialCleaningPrice(
   kitchens: number,
   frequency: string,
   addons: { drawers: number; carpetSqft: number; rugSize: string; rugCount: number; windowsInside: number; windowsOutside: number },
-  useRoomEstimate = true
+  useRoomEstimate = true,
+  cleanerCount: 1 | 2 = 1,
+  additionalServiceHours = 0,
+  roomAdders?: { extraLivingRooms?: number; extraDiningRooms?: number; officeRooms?: number; laundryRooms?: number; floors?: number; kitchenSize?: string; finishedBasement?: boolean }
 ): PriceCalc | null {
   const cfg = getStatePricing(stateCode, serviceType);
   if (!cfg) return null;
 
-  const roomSqft = useRoomEstimate && beds != null && baths != null ? estimatedSqftFromRooms(beds, baths, kitchens) : 0;
-  let sqftUsed = sqft || roomSqft;
-  let corrected = false;
+  // Profile estimate with adders
+  const profileSqft = useRoomEstimate && beds != null && baths != null
+    ? estimatedSqftFromRooms(beds, baths, kitchens, roomAdders)
+    : 0;
 
-  if (roomSqft && sqftUsed < roomSqft) {
-    sqftUsed = roomSqft;
-    corrected = true;
-  }
+  // Sqft guardrail
+  const { pricingSqft, sqftSource, verificationRequired } = resolvePricingSqft(sqft, profileSqft || sqft || 500);
+  const sqftUsed = pricingSqft;
+  const corrected = sqftSource !== 'customer_declared';
 
   if (sqftUsed <= 0) return null;
 
+  // Minimum visit hours
+  const minimumVisitHours = getMinimumVisitHours(sqftUsed, serviceType);
+
+  // Team upgrade factors
+  const TEAM_UPGRADE: Record<string, number> = {
+    HOUSE_CLEANING: 1.35, DEEP_CLEANING: 1.45, MOVE_IN_OUT: 1.45, SAME_DAY_CLEANING: 1.40
+  };
+  const teamUpgradeFactor = TEAM_UPGRADE[serviceType] || 1.35;
+
   const addonTotal = cleaningAddonPrice(addons);
   const effectiveRate = cfg.sqftRate;
-  const minPrice = cfg.minimum;
+  const extraHourlyRate = cfg.extraHourlyRate || 50;
+  const minPrice = cfg.minimum || cfg.minimumPrice || 120;
+
   const sqftBase = money(sqftUsed * effectiveRate);
   const minimumApplied = sqftBase < minPrice;
   const base = Math.max(sqftBase, minPrice);
   const factor = frequencyFactor(frequency, false);
-  const price = money(base * factor + addonTotal);
+  const baseServicePrice = money(base * factor);
+
+  const singleCleanerPrice = money(baseServicePrice + addonTotal);
+  const twoCleanerPrice = money(baseServicePrice * teamUpgradeFactor + addonTotal);
+  const selectedCleanerPrice = cleanerCount === 2 ? twoCleanerPrice : singleCleanerPrice;
+
+  // Service window
+  const singleWindow = minimumVisitHours;
+  const twoWindow = Math.max(2.5, Math.ceil(minimumVisitHours / 2 * 2) / 2);
+  const selectedWindow = cleanerCount === 2 ? twoWindow : singleWindow;
+
+  // Extra hours
+  const extraHoursCharge = money(additionalServiceHours * extraHourlyRate * cleanerCount);
+  const finalServiceWindow = selectedWindow + additionalServiceHours;
+  const finalPrice = money(selectedCleanerPrice + extraHoursCharge);
 
   return {
-    price,
-    hours: estimatedHours(sqftUsed, addonTotal),
+    price: finalPrice,
+    hours: finalServiceWindow,
     sqftUsed,
     corrected,
     addonTotal,
-    roomSqft,
+    roomSqft: profileSqft,
     effectiveRate,
     minPrice,
     minimumApplied,
@@ -455,18 +562,34 @@ function calcResidentialCleaningPrice(
     pricingBreakdown: {
       mode: 'residential',
       stateCode,
-      stateName: stateName(stateCode),
       marketLabel: cfg.marketLabel,
       serviceType,
-      sqftUsed,
+      declaredSqft: sqft,
+      profileEstimatedSqft: profileSqft,
+      pricingSqft: sqftUsed,
+      sqftSource,
+      sqftVerificationRequired: verificationRequired,
       sqftRate: effectiveRate,
       sqftCharge: sqftBase,
       minimum: minPrice,
       minimumApplied,
       frequency,
       frequencyFactor: factor,
+      baseServicePrice,
+      cleanerCount,
+      minimumVisitHours,
+      singleCleanerPrice,
+      twoCleanerPrice,
+      selectedCleanerPrice,
+      singleCleanerWindow: singleWindow,
+      twoCleanerWindow: twoWindow,
+      selectedServiceWindow: selectedWindow,
+      additionalServiceHours,
+      extraHourlyRate,
+      extraHoursCharge,
+      finalServiceWindowHours: finalServiceWindow,
       addonTotal,
-      finalEstimatedPrice: price,
+      finalEstimatedPrice: finalPrice,
     },
   };
 }
@@ -596,6 +719,16 @@ export default function NewBookingPage() {
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [notes, setNotes] = useState('');
+  const [cleanerCount, setCleanerCount] = useState<1|2>(1);
+  const [extraHours, setExtraHours] = useState(0);
+  const [propertyType, setPropertyType] = useState('APARTMENT');
+  const [extraLivingRooms, setExtraLivingRooms] = useState(0);
+  const [extraDiningRooms, setExtraDiningRooms] = useState(0);
+  const [officeRooms, setOfficeRooms] = useState(0);
+  const [laundryRooms, setLaundryRooms] = useState(0);
+  const [floors, setFloors] = useState(1);
+  const [kitchenSize, setKitchenSize] = useState('STANDARD');
+  const [finishedBasement, setFinishedBasement] = useState(false);
 
   const isCleaning = serviceType in CLEANING_SERVICES;
   const isCommercialCleaning = Boolean(CLEANING_SERVICES[serviceType]?.commercial);
@@ -669,7 +802,10 @@ export default function NewBookingPage() {
           Math.max(parseInt(kitchens) || 1, 1),
           frequency,
           cleaningAddons,
-          true
+          true,
+          cleanerCount,
+          extraHours,
+          { extraLivingRooms, extraDiningRooms, officeRooms, laundryRooms, floors, kitchenSize, finishedBasement }
         );
       }
     }
@@ -741,6 +877,14 @@ export default function NewBookingPage() {
         body.pricing_note = priceCalc?.pricingNote;
         body.sqft_rate = priceCalc?.effectiveRate;
         body.pricing_breakdown = priceCalc?.pricingBreakdown ?? null;
+        body.cleaner_count = cleanerCount;
+        body.second_cleaner_selected = cleanerCount === 2;
+        body.additional_service_hours = extraHours;
+        body.property_type = propertyType;
+        body.sqft_verification_required = (priceCalc?.pricingBreakdown as any)?.sqftVerificationRequired ?? false;
+        body.minimum_visit_hours = (priceCalc?.pricingBreakdown as any)?.minimumVisitHours ?? null;
+        body.selected_service_window_hours = (priceCalc?.pricingBreakdown as any)?.selectedServiceWindow ?? null;
+        body.final_service_window_hours = (priceCalc?.pricingBreakdown as any)?.finalServiceWindowHours ?? null;
 
         if (isResidentialCleaning) {
           body.bedrooms = beds ? parseInt(beds) : null;
@@ -944,6 +1088,42 @@ export default function NewBookingPage() {
                     Commercial pricing uses the selected state matrix, billable sqft, restrooms, breakrooms, supplies and minimum visit protection.
                   </p>
                   {priceCalc?.minimumApplied && <p className="booking-help">Minimum price applied: ${priceCalc.minPrice.toFixed(2)}.</p>}
+                  {(priceCalc?.pricingBreakdown as any)?.sqftVerificationRequired && (
+                    <div style={{ marginTop:10, padding:'10px 14px', borderRadius:8, background:'#FEF3C7', border:'1px solid #FCD34D', fontSize:12, color:'#92400E' }}>
+                      ⚠️ Property size may require verification before final assignment.
+                    </div>
+                  )}
+
+                  {isResidentialCleaning && (
+                    <div style={{ marginTop:18 }}>
+                      <label className="booking-label">Service Speed</label>
+                      <div className="booking-grid two">
+                        <button onClick={() => setCleanerCount(1)} className={} type="button" style={{ minHeight:64 }}>
+                          <strong>Standard — 1 Cleaner</strong>
+                          <span>Full service window · Best value</span>
+                        </button>
+                        <button onClick={() => setCleanerCount(2)} className={} type="button" style={{ minHeight:64 }}>
+                          <strong>Faster — 2 Cleaners</strong>
+                          <span>Shorter window · Team upgrade pricing</span>
+                        </button>
+                      </div>
+                      {cleanerCount === 2 && <p className="booking-help" style={{ color:'#1565C0' }}>Team of 2 reduces service window by ~50%. Optional — adds a team upgrade fee.</p>}
+                    </div>
+                  )}
+
+                  {isResidentialCleaning && (
+                    <div style={{ marginTop:18 }}>
+                      <label className="booking-label">Need more time? (Extra hours)</label>
+                      <div className="booking-grid" style={{ gridTemplateColumns:'repeat(7,1fr)', gap:8 }}>
+                        {[0, 0.5, 1, 1.5, 2, 3, 4].map(h => (
+                          <button key={h} onClick={() => setExtraHours(h)} className={'booking-option green ' + (extraHours === h ? 'selected' : '')} type="button" style={{ minHeight:48, padding:'6px 4px' }}>
+                            <strong>{h === 0 ? 'None' : '+' + h + 'h'}</strong>
+                          </button>
+                        ))}
+                      </div>
+                      {extraHours > 0 && <p className="booking-help">Extra hours for detail work, organization or heavy conditions. ${((priceCalc?.pricingBreakdown as any)?.extraHourlyRate || 50) * cleanerCount}/h × ${extraHours}h{cleanerCount === 2 ? ' × 2 cleaners' : ''} = +${((priceCalc?.pricingBreakdown as any)?.extraHoursCharge || extraHours * 50 * cleanerCount).toFixed(0)}</p>}
+                    </div>
+                  )}
 
                   <div style={{ marginTop: 18 }}>
                     <label className="booking-label">Frequency</label>
@@ -1114,15 +1294,27 @@ export default function NewBookingPage() {
                     </div>
                   )}
 
-                  {isResidentialCleaning && (
-                    <div className="booking-breakdown">
-                      <div className="booking-breakdown-row"><span>State market</span><b>{stateName(state)}</b></div>
-                      <div className="booking-breakdown-row"><span>Area charge</span><b>{priceCalc.sqftUsed} sqft x ${priceCalc.effectiveRate?.toFixed(2)} = ${priceCalc.sqftCharge?.toFixed(2)}</b></div>
-                      <div className="booking-breakdown-row"><span>Minimum</span><b>${priceCalc.minPrice.toFixed(2)} {priceCalc.minimumApplied ? 'applied' : 'not applied'}</b></div>
-                      <div className="booking-breakdown-row"><span>Add-ons</span><b>${priceCalc.addonTotal.toFixed(2)}</b></div>
-                      <div className="booking-breakdown-row"><span>Frequency</span><b>{frequencyLabel(frequency)} / factor {priceCalc.frequencyFactor?.toFixed(2)}</b></div>
-                    </div>
-                  )}
+                  {isResidentialCleaning && (() => {
+                    const bd = priceCalc.pricingBreakdown as any;
+                    return (
+                      <div className="booking-breakdown">
+                        <div className="booking-breakdown-row"><span>Market</span><b>{bd?.marketLabel || stateName(state)}</b></div>
+                        <div className="booking-breakdown-row"><span>Pricing sqft</span><b>{bd?.pricingSqft || priceCalc.sqftUsed} sqft ({bd?.sqftSource === 'customer_declared' ? 'declared' : 'estimated'})</b></div>
+                        {bd?.declaredSqft > 0 && bd?.sqftSource !== 'customer_declared' && (
+                          <div className="booking-breakdown-row" style={{color:'#F59E0B'}}><span>⚠️ Declared sqft</span><b>{bd.declaredSqft} sqft (adjusted to estimate)</b></div>
+                        )}
+                        <div className="booking-breakdown-row"><span>Area charge</span><b>{bd?.pricingSqft || priceCalc.sqftUsed} sqft × ${priceCalc.effectiveRate?.toFixed(2)} = ${priceCalc.sqftCharge?.toFixed(2)}</b></div>
+                        <div className="booking-breakdown-row"><span>Minimum</span><b>${priceCalc.minPrice.toFixed(2)} {priceCalc.minimumApplied ? 'applied' : 'not applied'}</b></div>
+                        <div className="booking-breakdown-row"><span>Frequency</span><b>{frequencyLabel(frequency)} / ×{priceCalc.frequencyFactor?.toFixed(2)}</b></div>
+                        <div className="booking-breakdown-row"><span>Cleaners</span><b>{bd?.cleanerCount === 2 ? '2 cleaners (team upgrade)' : '1 cleaner'}</b></div>
+                        <div className="booking-breakdown-row"><span>Service window</span><b>{bd?.selectedServiceWindow || priceCalc.hours}h{bd?.selectedServiceWindow && bd?.minimumVisitHours ? ' (min ' + bd.minimumVisitHours + 'h)' : ''}</b></div>
+                        {bd?.extraHoursCharge > 0 && <div className="booking-breakdown-row"><span>Extra hours</span><b>+${bd.extraHoursCharge.toFixed(2)} ({bd.additionalServiceHours}h × ${bd.extraHourlyRate}/h{bd.cleanerCount === 2 ? ' × 2' : ''})</b></div>}
+                        {priceCalc.addonTotal > 0 && <div className="booking-breakdown-row"><span>Add-ons</span><b>+${priceCalc.addonTotal.toFixed(2)}</b></div>}
+                        <div className="booking-breakdown-row booking-breakdown-total"><span>Total estimated</span><b>${priceCalc.price.toFixed(2)}</b></div>
+                        {bd?.finalServiceWindowHours && <div className="booking-breakdown-row"><span>Final service window</span><b>{bd.finalServiceWindowHours}h</b></div>}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
