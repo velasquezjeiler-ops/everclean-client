@@ -870,18 +870,18 @@ export default function NewBookingPage() {
   const canStep1 = Boolean(serviceType && priceCalc && priceCalc.price > 0);
 
   const fetchPredictions = useCallback(async (input: string) => {
-    if (input.length < 3) { setAddressPredictions([]); setShowDropdown(false); return; }
+    if (input.length < 4) { setAddressPredictions([]); setShowDropdown(false); return; }
     setAddressLoading(true);
     try {
-      const res = await fetch(`${API}/address-autocomplete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input, state }),
-      });
+      const query = encodeURIComponent(input + (state ? ' ' + state : ''));
+      const res = await fetch(`${API}/address-suggestions?input=${query}`);
       const d = await res.json();
-      if (d.predictions) {
-        setAddressPredictions(d.predictions);
+      if (Array.isArray(d) && d.length > 0) {
+        setAddressPredictions(d);
         setShowDropdown(true);
+      } else {
+        setAddressPredictions([]);
+        setShowDropdown(false);
       }
     } catch { setAddressPredictions([]); }
     setAddressLoading(false);
