@@ -516,5 +516,53 @@
     "verifyAddress": "Usando coordenadas guardadas. Verifica tu direccion base.",
     "unableLocate": "No se pudo ubicar esta direccion en Google Maps.",
     "minimumCoverage": "Cobertura minima"
+  },
+  "membership": {
+    "title": "Membresía VIP",
+    "subtitle": "Tus horas nunca expiran. Tu limpiador siempre es tuyo.",
+    "freePlan": "Plan Gratuito",
+    "vipMember": "Miembro VIP",
+    "upgradeBtn": "Upgrade a VIP — $49/mes ⭐",
+    "hoursNeverExpire": "Las horas se acumulan cada mes — nunca expiran",
+    "upgradePrompt": "Upgrade para asegurar $36/hr y nunca perder horas",
+    "timeWallet": "BILLETERA DE TIEMPO",
+    "addedMonth": "AGREGADO/MES",
+    "yourRate": "TU TARIFA",
+    "marketRate": "TARIFA MERCADO",
+    "calculator": "Calculadora de Reserva",
+    "hoursNeeded": "Horas necesarias",
+    "youPay": "Pagas",
+    "total": "Total",
+    "benefits": "Beneficios VIP",
+    "walletHistory": "Historial de Billetera de Tiempo",
+    "noTransactions": "Sin transacciones aún — las horas aparecerán aquí cada mes",
+    "upgradeToStart": "Upgrade a VIP para empezar a acumular horas"
+  },
+  "wallet": {
+    "title": "Mi Billetera",
+    "subtitle": "5% cashback en cada servicio. Créditos nunca expiran. Gana 2% de referidos para siempre.",
+    "maintenanceWallet": "Billetera de Mantenimiento",
+    "totalCashback": "Cashback Total",
+    "referralEarnings": "Ganancias por Referidos",
+    "cashbackHistory": "Historial de Cashback",
+    "referEarn": "Referir y Ganar",
+    "yourCode": "TU CÓDIGO DE REFERIDO",
+    "copyCode": "Copiar Código",
+    "copied": "Copiado!",
+    "coverage": "Cobertura de $1,000,000 — Cada Servicio"
+  },
+  "airbnb": {
+    "title": "Gestor de Alquiler a Corto Plazo",
+    "subtitle": "Programa limpiezas automáticas tras cada checkout. Evidencia fotográfica e informes AirCover incluidos.",
+    "connectCalendar": "Conectar Calendario de Propiedad",
+    "propertyName": "Nombre de la Propiedad",
+    "icalUrl": "URL iCal (Airbnb / VRBO / Booking.com)",
+    "connect": "+ Conectar",
+    "connecting": "Conectando...",
+    "noProperties": "Sin propiedades conectadas aún",
+    "howItWorks": "Cómo Funciona la Programación Automática",
+    "hostReferral": "Programa de Referidos para Anfitriones",
+    "yourHostCode": "TU CÓDIGO DE ANFITRIÓN",
+    "copyHostCode": "Copiar Código de Anfitrión"
   }
 }

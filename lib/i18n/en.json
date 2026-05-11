@@ -521,5 +521,53 @@
     "verifyAddress": "Using saved coordinates. Verify your base address.",
     "unableLocate": "Unable to locate this address on Google Maps.",
     "minimumCoverage": "Minimum coverage"
+  },
+  "membership": {
+    "title": "VIP Membership",
+    "subtitle": "Your hours never expire. Your cleaner is always yours.",
+    "freePlan": "Free Plan",
+    "vipMember": "VIP Member",
+    "upgradeBtn": "Upgrade to VIP — $49/mo ⭐",
+    "hoursNeverExpire": "Hours accumulate every month — they never expire",
+    "upgradePrompt": "Upgrade to lock in $36/hr and never lose hours",
+    "timeWallet": "TIME WALLET",
+    "addedMonth": "ADDED/MONTH",
+    "yourRate": "YOUR RATE",
+    "marketRate": "MARKET RATE",
+    "calculator": "Booking Calculator",
+    "hoursNeeded": "Hours needed",
+    "youPay": "You pay",
+    "total": "Total",
+    "benefits": "VIP Benefits",
+    "walletHistory": "Time Wallet History",
+    "noTransactions": "No transactions yet — hours will appear here each month",
+    "upgradeToStart": "Upgrade to VIP to start accumulating hours"
+  },
+  "wallet": {
+    "title": "My Wallet",
+    "subtitle": "5% cashback on every service. Credits never expire. Earn 2% from referrals forever.",
+    "maintenanceWallet": "Maintenance Wallet",
+    "totalCashback": "Total Cashback",
+    "referralEarnings": "Referral Earnings",
+    "cashbackHistory": "Cashback History",
+    "referEarn": "Refer & Earn",
+    "yourCode": "YOUR REFERRAL CODE",
+    "copyCode": "Copy Code",
+    "copied": "Copied!",
+    "coverage": "$1,000,000 Service Coverage — Every Booking"
+  },
+  "airbnb": {
+    "title": "Short-Term Rental Manager",
+    "subtitle": "Auto-schedule cleanings after every checkout. Photo evidence & AirCover reports included.",
+    "connectCalendar": "Connect Property Calendar",
+    "propertyName": "Property Name",
+    "icalUrl": "iCal URL (Airbnb / VRBO / Booking.com)",
+    "connect": "+ Connect",
+    "connecting": "Connecting...",
+    "noProperties": "No properties connected yet",
+    "howItWorks": "How Auto-Scheduling Works",
+    "hostReferral": "Host Referral Program",
+    "yourHostCode": "YOUR HOST REFERRAL CODE",
+    "copyHostCode": "Copy Host Code"
   }
 }

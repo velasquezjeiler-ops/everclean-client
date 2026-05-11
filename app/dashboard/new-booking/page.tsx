@@ -8,6 +8,21 @@ const API =
   process.env.NEXT_PUBLIC_API_URL ||
   'https://commercial-clean-setup.replit.app/api';
 
+// ─── ZIP NORMALIZATION ───────────────────────────────────────────────────────
+function normalizeZip(input: string): { zip_code: string; zip_plus4: string; postal_code_full: string; valid: boolean } {
+  const clean = (input || '').trim().replace(/\s/g, '');
+  // ZIP+4 with dash: 07305-1055
+  const withDash = clean.match(/^(\d{5})-(\d{4})$/);
+  if (withDash) return { zip_code: withDash[1], zip_plus4: withDash[2], postal_code_full: clean, valid: true };
+  // ZIP+4 without dash: 073051055
+  const noDash = clean.match(/^(\d{5})(\d{4})$/);
+  if (noDash) return { zip_code: noDash[1], zip_plus4: noDash[2], postal_code_full: noDash[1]+'-'+noDash[2], valid: true };
+  // ZIP5 only
+  const zip5 = clean.match(/^(\d{5})$/);
+  if (zip5) return { zip_code: zip5[1], zip_plus4: '', postal_code_full: zip5[1], valid: true };
+  return { zip_code: clean, zip_plus4: '', postal_code_full: clean, valid: false };
+}
+
 const C = {
   navy: '#0D3781',
   navyDark: '#081f4a',
@@ -859,12 +874,15 @@ export default function NewBookingPage() {
 
     try {
       const token = localStorage.getItem('token');
+      const zipNorm = normalizeZip(zipCode);
       const body: Record<string, unknown> = {
         service_type: serviceType,
         address,
         city,
         state,
-        zip_code: zipCode,
+        zip_code: zipNorm.zip_code,
+        zip_plus4: zipNorm.zip_plus4 || null,
+        postal_code_full: zipNorm.postal_code_full || null,
         scheduledAt: `${scheduledDate}T${scheduledTime}:00`,
         notes,
         frequency,
@@ -1337,7 +1355,7 @@ export default function NewBookingPage() {
               <div className="booking-grid two">
                 <label style={{ gridColumn: '1 / -1' }}><span className="booking-label">Address *</span><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="123 Main St, Apt 4B" className="booking-input" /></label>
                 <label><span className="booking-label">City</span><input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Newark" className="booking-input" /></label>
-                <label><span className="booking-label">ZIP</span><input value={zipCode} onChange={(e) => setZipCode(e.target.value)} placeholder="08901" className="booking-input" /></label>
+                <label><span className="booking-label">ZIP / ZIP+4</span><input value={zipCode} onChange={(e) => setZipCode(e.target.value)} placeholder="07305 or 07305-1055" className="booking-input" /></label>
                 <label><span className="booking-label">Date *</span><input type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} min={new Date().toISOString().split('T')[0]} className="booking-input" /></label>
                 <label>
                   <span className="booking-label">Time *</span>
