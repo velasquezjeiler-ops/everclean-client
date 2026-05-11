@@ -736,6 +736,8 @@ export default function NewBookingPage() {
   const [scheduledTime, setScheduledTime] = useState('');
   const [notes, setNotes] = useState('');
   const [cleanerCount, setCleanerCount] = useState<1|2>(1);
+  const [addressSuggestion, setAddressSuggestion] = useState<any>(null);
+  const [addressWarning, setAddressWarning] = useState('');
   const [extraHours, setExtraHours] = useState(0);
   const [propertyType, setPropertyType] = useState('APARTMENT');
   const [extraLivingRooms, setExtraLivingRooms] = useState(0);
@@ -868,24 +870,69 @@ export default function NewBookingPage() {
       setError('Complete the required address, date and time fields.');
       return;
     }
-
     setLoading(true);
     setError('');
+    setAddressWarning('');
+    try {
+      const zipNorm = normalizeZip(zipCode);
+      const res = await fetch(`${API}/address-intelligence`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address, city, state, zip_code: zipNorm.postal_code_full || zipNorm.zip_code }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && d.address_line1) {
+        setAddressSuggestion(d);
+      } else {
+        // Fallback: use customer-entered address
+        const fallback = {
+          address_line1: address, city, state,
+          zip_code: zipNorm.zip_code, zip_plus4: zipNorm.zip_plus4,
+          postal_code_full: zipNorm.postal_code_full,
+          address_validated: false, formatted_address: `${address}, ${city}, ${state} ${zipNorm.postal_code_full}`,
+          address_confidence: 'UNVERIFIED',
+        };
+        setAddressSuggestion(fallback);
+        setAddressWarning('Address could not be fully validated. You may continue with the address as entered.');
+      }
+    } catch {
+      const zipNorm = normalizeZip(zipCode);
+      setAddressSuggestion({
+        address_line1: address, city, state,
+        zip_code: zipNorm.zip_code, zip_plus4: zipNorm.zip_plus4,
+        postal_code_full: zipNorm.postal_code_full,
+        address_validated: false, formatted_address: `${address}, ${city}, ${state} ${zipNorm.postal_code_full}`,
+        address_confidence: 'UNVERIFIED',
+      });
+      setAddressWarning('Address could not be fully validated. You may continue with the address as entered.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
+  async function confirmAddressAndBook() {
+    if (!addressSuggestion) return;
+    setLoading(true);
+    setError('');
     try {
       const token = localStorage.getItem('token');
-      const zipNorm = normalizeZip(zipCode);
       const body: Record<string, unknown> = {
         service_type: serviceType,
-        address,
-        city,
-        state,
-        zip_code: zipNorm.zip_code,
-        zip_plus4: zipNorm.zip_plus4 || null,
-        postal_code_full: zipNorm.postal_code_full || null,
+        address: addressSuggestion.address_line1 || address,
+        city: addressSuggestion.city || city,
+        state: addressSuggestion.state || state,
+        zip_code: addressSuggestion.zip_code,
+        zip_plus4: addressSuggestion.zip_plus4 || null,
+        postal_code_full: addressSuggestion.postal_code_full || null,
+        address_validated: addressSuggestion.address_validated || false,
+        formatted_address: addressSuggestion.formatted_address || null,
+        latitude: addressSuggestion.latitude || null,
+        longitude: addressSuggestion.longitude || null,
+        google_place_id: addressSuggestion.google_place_id || null,
+        dpv_confirmation: addressSuggestion.dpv_confirmation || null,
+        address_confidence: addressSuggestion.address_confidence || null,
         scheduledAt: `${scheduledDate}T${scheduledTime}:00`,
-        notes,
-        frequency,
+        notes, frequency,
         final_estimated_price: priceCalc?.price ?? null,
       };
 
@@ -916,7 +963,6 @@ export default function NewBookingPage() {
           body.window_inside_count = cleaningAddons.windowsInside;
           body.window_outside_count = cleaningAddons.windowsOutside;
         }
-
         if (isCommercialCleaning) {
           body.commercial_restrooms = commercialRestroomCount;
           body.commercial_breakrooms = commercialBreakroomCount;
@@ -930,17 +976,8 @@ export default function NewBookingPage() {
           body.commercial_minimum_applied = priceCalc?.minimumApplied ?? false;
         }
       }
-
-      if (!isCleaning) {
-        body.sqft = 0;
-      }
-
-      if (isCarWash) {
-        body.vehicle_code = vehicleCode;
-        body.package = carPkg;
-        body.car_wash_addons = selectedCarAddons;
-      }
-
+      if (!isCleaning) body.sqft = 0;
+      if (isCarWash) { body.vehicle_code = vehicleCode; body.package = carPkg; body.car_wash_addons = selectedCarAddons; }
       if (isLaundry) body.weight_lbs = laundryPrice(weightLbs).lbs;
 
       const res = await fetch(`${API}/bookings`, {
@@ -948,20 +985,17 @@ export default function NewBookingPage() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(body),
       });
-
       const text = await res.text();
       let data: any = {};
       try { data = JSON.parse(text); } catch { throw new Error('Server error: ' + text.slice(0, 100)); }
       if (!res.ok) throw new Error(data.error ?? 'Error creating booking');
       const bookingId = data.id || data.booking?.id;
       if (bookingId) localStorage.setItem('last_booking_id', String(bookingId));
-
       notifyBookingEvent({
         event: 'BOOKING_CREATED',
         booking: data.booking || { ...body, id: bookingId },
         client: { email: localStorage.getItem('userEmail') || undefined },
       });
-
       router.push('/dashboard?booked=1');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Unknown error');
@@ -1014,6 +1048,7 @@ export default function NewBookingPage() {
         .booking-breakdown-row b { color:${C.text}; font-size:13px; white-space:nowrap; }
         .booking-breakdown-total { border-top:1px solid ${C.border}; padding-top:8px; margin-top:4px; }
         .booking-actions { display:flex; gap:10px; }
+        .booking-button-secondary { width:100%; min-height:52px; border:1px solid #E2E8F0; border-radius:10px; background:#fff; color:#0D1B2A; font-size:15px; font-weight:600; cursor:pointer; transition:background 0.15s; }
         .booking-button { width:100%; min-height:52px; border:0; border-radius:${R.full}; color:#fff; background:${C.green}; font-size:15px; font-weight:600; cursor:pointer; }
         .booking-button:disabled { opacity:.45; cursor:not-allowed; }
         .booking-button.secondary { background:#fff; color:${C.text}; border:1px solid ${C.border}; border-radius:${R.sm}; }
@@ -1371,7 +1406,43 @@ export default function NewBookingPage() {
 
               <div className="booking-actions" style={{ marginTop: 16 }}>
                 <button onClick={() => setStep(1)} className="booking-button secondary" type="button">Back</button>
-                <button onClick={handleSubmit} disabled={loading} className="booking-button" type="button">{loading ? 'Creating...' : 'Confirm Booking'}</button>
+                {!addressSuggestion ? (
+                  <button onClick={handleSubmit} disabled={loading} className="booking-button" type="button">
+                    {loading ? 'Validating...' : 'Validate Address →'}
+                  </button>
+                ) : (
+                  <div style={{width:'100%'}}>
+                    {/* Address confirmation card */}
+                    <div style={{background:'#F0FDF4',border:'1px solid #86EFAC',borderRadius:12,padding:'16px 18px',marginBottom:14}}>
+                      <div style={{fontSize:11,fontWeight:700,color:'#166534',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>
+                        ✅ Address validation layer active
+                      </div>
+                      <div style={{fontSize:13,color:'#15803D',marginBottom:4,fontWeight:600}}>
+                        We found this standardized address. Please confirm.
+                      </div>
+                      <div style={{fontSize:15,fontWeight:700,color:'#0D1B2A',marginBottom:4}}>
+                        {addressSuggestion.formatted_address}
+                      </div>
+                      {addressSuggestion.postal_code_full && addressSuggestion.postal_code_full !== addressSuggestion.zip_code && (
+                        <div style={{fontSize:12,color:'#64748B'}}>ZIP+4: {addressSuggestion.postal_code_full}</div>
+                      )}
+                      <div style={{display:'inline-flex',marginTop:6,padding:'2px 10px',borderRadius:9999,fontSize:11,fontWeight:700,
+                        background: addressSuggestion.address_confidence === 'HIGH' ? '#D1FAE5' : '#FEF3C7',
+                        color: addressSuggestion.address_confidence === 'HIGH' ? '#065F46' : '#92400E'}}>
+                        {addressSuggestion.address_confidence || 'UNVERIFIED'}
+                      </div>
+                      {addressWarning && <div style={{marginTop:8,fontSize:12,color:'#92400E'}}>{addressWarning}</div>}
+                    </div>
+                    <div style={{display:'flex',gap:10}}>
+                      <button onClick={() => { setAddressSuggestion(null); setAddressWarning(''); }} className="booking-button-secondary" type="button" style={{flex:1}}>
+                        ← Edit address
+                      </button>
+                      <button onClick={confirmAddressAndBook} disabled={loading} className="booking-button" type="button" style={{flex:2}}>
+                        {loading ? 'Creating booking...' : 'Use this address & Confirm ✓'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}
