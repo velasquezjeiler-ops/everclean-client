@@ -44,6 +44,7 @@ type ServicePricing = {
 type StatePricingInput = {
   marketLabel: string;
   pricingNote: string;
+  extraHourly?: number;
   house: number;
   houseMin: number;
   deep: number;
