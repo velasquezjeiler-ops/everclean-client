@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { notifyBookingEvent } from '../../../lib/notifications';
 
@@ -738,6 +738,10 @@ export default function NewBookingPage() {
   const [cleanerCount, setCleanerCount] = useState<1|2>(1);
   const [addressSuggestion, setAddressSuggestion] = useState<any>(null);
   const [addressWarning, setAddressWarning] = useState('');
+  const [addressPredictions, setAddressPredictions] = useState<any[]>([]);
+  const [addressLoading, setAddressLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const addressDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [extraHours, setExtraHours] = useState(0);
   const [propertyType, setPropertyType] = useState('APARTMENT');
   const [extraLivingRooms, setExtraLivingRooms] = useState(0);
@@ -864,6 +868,55 @@ export default function NewBookingPage() {
 
   const visibleFrequencyOptions = FREQ_OPTIONS.filter((f) => isCommercialCleaning || !f.commercialOnly);
   const canStep1 = Boolean(serviceType && priceCalc && priceCalc.price > 0);
+
+  const fetchPredictions = useCallback(async (input: string) => {
+    if (input.length < 3) { setAddressPredictions([]); setShowDropdown(false); return; }
+    setAddressLoading(true);
+    try {
+      const res = await fetch(`${API}/address-autocomplete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input, state }),
+      });
+      const d = await res.json();
+      if (d.predictions) {
+        setAddressPredictions(d.predictions);
+        setShowDropdown(true);
+      }
+    } catch { setAddressPredictions([]); }
+    setAddressLoading(false);
+  }, [state]);
+
+  async function handleAddressChange(val: string) {
+    setAddress(val);
+    setAddressSuggestion(null);
+    if (addressDebounceRef.current) clearTimeout(addressDebounceRef.current);
+    addressDebounceRef.current = setTimeout(() => fetchPredictions(val), 400);
+  }
+
+  async function selectPrediction(pred: any) {
+    setShowDropdown(false);
+    setAddressLoading(true);
+    try {
+      const res = await fetch(`${API}/address-intelligence`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ place_id: pred.place_id }),
+      });
+      const d = await res.json();
+      if (d.address_line1) {
+        setAddress(d.address_line1);
+        setCity(d.city || city);
+        setState(d.state || state);
+        setZipCode(d.postal_code_full || d.zip_code || zipCode);
+        setAddressSuggestion(d);
+        setAddressWarning('');
+      }
+    } catch {
+      setAddress(pred.description || pred.main_text || '');
+    }
+    setAddressLoading(false);
+  }
 
   async function handleSubmit() {
     if (!address || !scheduledDate || !scheduledTime) {
@@ -1388,7 +1441,42 @@ export default function NewBookingPage() {
               </div>
 
               <div className="booking-grid two">
-                <label style={{ gridColumn: '1 / -1' }}><span className="booking-label">Address *</span><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="123 Main St, Apt 4B" className="booking-input" /></label>
+                <div style={{ gridColumn: '1 / -1', position: 'relative' }}>
+                  <span className="booking-label">Address *</span>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      value={address}
+                      onChange={(e) => handleAddressChange(e.target.value)}
+                      onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                      onFocus={() => address.length >= 3 && setShowDropdown(addressPredictions.length > 0)}
+                      placeholder="Start typing your address..."
+                      className="booking-input"
+                      autoComplete="off"
+                    />
+                    {addressLoading && (
+                      <div style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', color:'#64748B', fontSize:12 }}>
+                        Searching...
+                      </div>
+                    )}
+                    {showDropdown && addressPredictions.length > 0 && (
+                      <div style={{ position:'absolute', top:'100%', left:0, right:0, zIndex:100, background:'#fff', border:'1px solid #E2E8F0', borderRadius:10, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', overflow:'hidden', marginTop:4 }}>
+                        {addressPredictions.map((pred: any) => (
+                          <button
+                            key={pred.place_id}
+                            type="button"
+                            onClick={() => selectPrediction(pred)}
+                            style={{ width:'100%', padding:'12px 16px', textAlign:'left', background:'transparent', border:0, borderBottom:'1px solid #F1F5F9', cursor:'pointer', display:'flex', flexDirection:'column', gap:2 }}
+                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#F8FAFC'}
+                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+                          >
+                            <span style={{ fontSize:13, fontWeight:600, color:'#0D1B2A' }}>{pred.main_text || pred.description?.split(',')[0]}</span>
+                            <span style={{ fontSize:11, color:'#64748B' }}>{pred.secondary_text || pred.description}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <label><span className="booking-label">City</span><input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Newark" className="booking-input" /></label>
                 <label><span className="booking-label">ZIP / ZIP+4</span><input value={zipCode} onChange={(e) => setZipCode(e.target.value)} placeholder="07305 or 07305-1055" className="booking-input" /></label>
                 <label><span className="booking-label">Date *</span><input type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} min={new Date().toISOString().split('T')[0]} className="booking-input" /></label>
