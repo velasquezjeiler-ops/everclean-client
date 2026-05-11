@@ -1098,11 +1098,11 @@ export default function NewBookingPage() {
                     <div style={{ marginTop:18 }}>
                       <label className="booking-label">Service Speed</label>
                       <div className="booking-grid two">
-                        <button onClick={() => setCleanerCount(1)} className={} type="button" style={{ minHeight:64 }}>
+                        <button onClick={() => setCleanerCount(1)} className={'booking-option green ' + (cleanerCount === 1 ? 'selected' : '')} type="button" style={{ minHeight:64 }}>
                           <strong>Standard — 1 Cleaner</strong>
                           <span>Full service window · Best value</span>
                         </button>
-                        <button onClick={() => setCleanerCount(2)} className={} type="button" style={{ minHeight:64 }}>
+                        <button onClick={() => setCleanerCount(2)} className={'booking-option green ' + (cleanerCount === 2 ? 'selected' : '')} type="button" style={{ minHeight:64 }}>
                           <strong>Faster — 2 Cleaners</strong>
                           <span>Shorter window · Team upgrade pricing</span>
                         </button>
