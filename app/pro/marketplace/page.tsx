@@ -59,14 +59,20 @@ export default function ProMarketplace() {
     const token = localStorage.getItem('token') || '';
     try {
       const res = await fetch(API + '/bookings/available', { headers: { Authorization: 'Bearer ' + token } });
-      if (!res.ok) throw new Error('Failed');
-      const d = await res.json();
-      setJobs(d.data || []);
+      const text = await res.text();
+      let d: any = {};
+      try { d = JSON.parse(text); } catch { d = {}; }
+      if (!res.ok) {
+        console.error('Available bookings API failed:', res.status, text.slice(0,300));
+        throw new Error(d.error || 'API ' + res.status + ': ' + text.slice(0,100));
+      }
+      setJobs(d.data || d.bookings || []);
       setProRate(d.pro_rate || 18);
       setProRadius(d.pro_radius || null);
       setError('');
-    } catch (e) {
-      setError(t('pro.marketplace.loadError'));
+    } catch (e: any) {
+      console.error('Marketplace load error:', e.message);
+      setError(e.message || t('pro.marketplace.loadError'));
     }
     setLoading(false);
   }, [t]);
