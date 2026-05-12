@@ -1,6 +1,7 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import BookingChat from '../../components/BookingChat';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
 import { notifyBookingEvent } from '../../../lib/notifications';
 
@@ -228,6 +229,7 @@ export default function ProDashboard() {
   const [messaging, setMessaging] = useState<string|null>(null);
   const [msgSent, setMsgSent] = useState<string[]>([]);
   const [showMsgPanel, setShowMsgPanel] = useState<string|null>(null);
+  const [showChat, setShowChat] = useState<string|null>(null);
   const [etaData, setEtaData] = useState<Record<string, any>>({});
   const [isAvailable, setIsAvailable] = useState(false);
   const { t, lang } = useTranslation();
@@ -293,12 +295,18 @@ export default function ProDashboard() {
   async function doAction(job: any, action: string) {
     setActing(job.id);
     const token = localStorage.getItem('token') || '';
-    await fetch(API + '/bookings/' + job.id + '/' + action, { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
-    notifyBookingEvent({
-      event: action === 'checkin' ? 'CHECKIN_DONE' : 'BOOKING_COMPLETED',
-      booking: job,
-      professional: profile,
-    });
+    try {
+      const r = await fetch(API + '/bookings/' + job.id + '/' + action, { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { console.error('Action error:', action, d.error); }
+      else {
+        notifyBookingEvent({
+          event: action === 'checkin' ? 'CHECKIN_DONE' : 'BOOKING_COMPLETED',
+          booking: job,
+          professional: profile,
+        });
+      }
+    } catch(e) { console.error('doAction error:', e); }
     await load();
     setActing(null);
   }
@@ -476,28 +484,18 @@ export default function ProDashboard() {
                         </div>
                       )}
 
-                      {showMsgPanel === job.id && (
-                        <div style={{ background: '#F8FAFC', border: `1px solid ${C.border}`, borderRadius: 10, padding: 14, marginBottom: 4 }}>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: C.ink, marginBottom: 8 }}>📨 Platform Message Preview</div>
-                          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5, marginBottom: 12, padding: '10px 12px', background: '#fff', borderRadius: 8, border: `1px solid ${C.border}` }}>
-                            {lang === 'es'
-                              ? 'Hola! Soy tu profesional de EverClean. Estoy confirmado para tu servicio. Cualquier consulta, estoy aquí en la plataforma.'
-                              : 'Hi! I am your EverClean professional. I am confirmed for your service. For any questions, I am here on the platform.'}
-                          </div>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <button onClick={() => setShowMsgPanel(null)} style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', color: C.muted, fontSize: 12, cursor: 'pointer' }}>Cancel</button>
-                            <button onClick={() => sendPlatformMessage(job, 'message')} disabled={messaging === job.id} style={{ flex: 2, padding: '8px 0', borderRadius: 8, border: 0, background: C.green, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: messaging === job.id ? 0.6 : 1 }}>
-                              {messaging === job.id ? 'Sending...' : '✓ Send Message'}
-                            </button>
-                          </div>
+                      {/* Chat Panel */}
+                      {showChat === job.id && (
+                        <div style={{ border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 8 }}>
+                          <BookingChat bookingId={job.id} myRole="PROFESSIONAL" onClose={() => setShowChat(null)} />
                         </div>
                       )}
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                         <button
                           type="button"
-                          onClick={() => msgSent.includes(job.id + '_message') ? null : setShowMsgPanel(showMsgPanel === job.id ? null : job.id)}
-                          style={{ padding: '9px 0', borderRadius: 8, border: `1px solid ${msgSent.includes(job.id + '_message') ? C.green : C.border}`, background: msgSent.includes(job.id + '_message') ? '#F0FDF4' : '#fff', color: msgSent.includes(job.id + '_message') ? C.green : C.navy, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                          {msgSent.includes(job.id + '_message') ? '✓ Message sent' : copy(lang, 'messageClient')}
+                          onClick={() => setShowChat(showChat === job.id ? null : job.id)}
+                          style={{ padding: '9px 0', borderRadius: 8, border: `1px solid ${showChat === job.id ? C.green : C.border}`, background: showChat === job.id ? '#F0FDF4' : '#fff', color: showChat === job.id ? C.green : C.navy, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                          💬 {showChat === job.id ? 'Close Chat' : 'Message Client'}
                         </button>
                         <button
                           type="button"
@@ -505,19 +503,17 @@ export default function ProDashboard() {
                             setMessaging(job.id);
                             const token = localStorage.getItem('token') || '';
                             try {
-                              const r = await fetch(API + '/bookings/' + job.id + '/call', { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
-                              const d = await r.json();
-                              if (d.success) setMsgSent(prev => [...prev, job.id + '_call']);
-                              else setMsgSent(prev => [...prev, job.id + '_call']); // Mark as attempted even if error
+                              await fetch(API + '/bookings/' + job.id + '/call', { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+                              setMsgSent(prev => [...prev, job.id + '_call']);
                             } catch(e) { console.error(e); }
                             setMessaging(null);
                           }}
                           disabled={messaging === job.id || msgSent.includes(job.id + '_call')}
                           style={{ padding: '9px 0', borderRadius: 8, border: `1px solid ${msgSent.includes(job.id + '_call') ? C.green : C.border}`, background: msgSent.includes(job.id + '_call') ? '#F0FDF4' : '#fff', color: msgSent.includes(job.id + '_call') ? C.green : C.navy, fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: messaging === job.id ? 0.6 : 1 }}>
-                          {msgSent.includes(job.id + '_call') ? '✓ Connecting...' : '📞 ' + copy(lang, 'callClient')}
+                          {msgSent.includes(job.id + '_call') ? '✓ Calling...' : '📞 Platform Call'}
                         </button>
                       </div>
-                      <div style={{ textAlign: 'center', color: C.muted, fontSize: 10 }}>{copy(lang, 'protectedComms')}</div>
+                      <div style={{ textAlign: 'center', color: C.muted, fontSize: 10 }}>Contact stays protected inside EverClean</div>
 
                       {job.status === 'CONFIRMED' && (
                         <button onClick={() => doAction(job, 'checkin')} disabled={acting === job.id} style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: 'none', cursor: 'pointer', background: C.blue, color: '#fff', fontSize: 12, fontWeight: 600, opacity: acting === job.id ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>

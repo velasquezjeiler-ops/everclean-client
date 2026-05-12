@@ -1,4 +1,5 @@
 'use client';
+import BookingChat from '../components/BookingChat';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -420,10 +421,17 @@ export default function ClientDashboard() {
                       {pro && (
                         <>
                           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:10}}>
-                            <button type="button" style={{border:"1px solid #E2E8F0",background:"#fff",borderRadius:8,padding:"8px 10px",fontSize:12,fontWeight:700,color:"#0D3781"}}>{cdt(lang, 'messagePro')}</button>
+                            <button type="button" onClick={() => setShowChat(showChat === svc.id ? null : svc.id)} style={{border:"1px solid #E2E8F0",background:showChat===svc.id?"#F0FDF4":"#fff",borderRadius:8,padding:"8px 10px",fontSize:12,fontWeight:700,color:"#0D3781"}}>
+                              💬 {showChat === svc.id ? 'Close Chat' : cdt(lang, 'messagePro')}
+                            </button>
                             <button type="button" style={{border:"1px solid #E2E8F0",background:"#fff",borderRadius:8,padding:"8px 10px",fontSize:12,fontWeight:700,color:"#0D3781"}}>{cdt(lang, 'callPro')}</button>
                           </div>
                           <div style={{fontSize:10,color:"#64748B",textAlign:"center",marginTop:6}}>{cdt(lang, 'protectedComms')}</div>
+                          {showChat === svc.id && (
+                            <div style={{border:"1px solid #E2E8F0",borderRadius:12,overflow:"hidden",marginTop:10}}>
+                              <BookingChat bookingId={svc.id} myRole="CLIENT" onClose={() => setShowChat(null)} />
+                            </div>
+                          )}
                         </>
                       )}
                     </div>
