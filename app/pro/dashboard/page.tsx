@@ -321,6 +321,7 @@ export default function ProDashboard() {
     return cap > 0 ? Math.min(byRate, cap) : byRate;
   };
   const myJobs = jobs.filter(j => ['CONFIRMED', 'IN_PROGRESS'].includes(j.status));
+  const hasPhone = !!(profile?.phone);
   const active = myJobs;
   const completed = jobs.filter(j => j.status === 'COMPLETED');
   const earnings = completed.reduce((s, j) => s + calcPayout(j), 0);
@@ -337,6 +338,16 @@ export default function ProDashboard() {
     <div style={{ width: '100%', fontFamily: font }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
+      {!hasPhone && (
+        <div style={{ marginBottom: 16, padding: '12px 16px', borderRadius: 10, background: '#FEF3C7', border: '1px solid #FCD34D', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 20 }}>📞</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#92400E' }}>Add your phone to enable platform calls</div>
+            <div style={{ fontSize: 12, color: '#B45309' }}>Clients can connect with you via EverClean — no number exposed.</div>
+          </div>
+          <a href="/pro/profile" style={{ padding: '6px 14px', borderRadius: 9999, background: '#F59E0B', color: '#fff', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Add Phone</a>
+        </div>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <h1 style={{ fontFamily: font, fontSize: 22, fontWeight: 600, color: C.text, margin: 0 }}>
