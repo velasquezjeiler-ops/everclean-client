@@ -277,7 +277,7 @@ export default function ProDashboard() {
       ? 'Hola! Soy tu profesional de EverClean. Estoy confirmado para tu servicio. Cualquier consulta, estoy aquí en la plataforma. ¡Hasta pronto!'
       : 'Hi! I am your EverClean professional. I am confirmed for your service. For any questions, I am here on the platform. See you soon!';
     try {
-      await fetch(API + '/bookings/' + job.id + '/message', {
+      await fetch(API + '/bookings/' + job.id + '/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
         body: JSON.stringify({

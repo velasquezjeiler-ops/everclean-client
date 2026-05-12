@@ -146,6 +146,10 @@ export const api = {
     checkin: (id: string, lat: number, lng: number) => api.post(`/bookings/${id}/checkin`, { lat, lng }),
     checkout: (id: string, photos?: string[]) => api.post(`/bookings/${id}/checkout-complete`, { photos }),
     eta: (id: string) => api.get(`/bookings/${id}/eta`),
+    sendEta: (id: string, data: any = {}) => api.post(`/bookings/${id}/eta`, data),
+    messages: (id: string) => api.get(`/bookings/${id}/messages`),
+    sendMessage: (id: string, content: string) => api.post(`/bookings/${id}/messages`, { content }),
+    call: (id: string) => api.post(`/bookings/${id}/call`, {}),
     invoice: (id: string) => api.get(`/bookings/${id}/invoice`),
   },
 
@@ -156,6 +160,10 @@ export const api = {
     myBookings: () => api.get('/professionals/me/bookings'),
     updateLocation: (lat: number, lng: number) => api.post('/professionals/me/location', { lat, lng }),
     toggleAvailability: () => api.patch('/professionals/me/availability', {}),
+  },
+
+  messages: {
+    unread: () => api.get('/messages/unread'),
   },
 
   admin: {
