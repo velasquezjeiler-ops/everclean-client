@@ -225,6 +225,9 @@ export default function ProDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState<string | null>(null);
+  const [messaging, setMessaging] = useState<string|null>(null);
+  const [msgSent, setMsgSent] = useState<string[]>([]);
+  const [showMsgPanel, setShowMsgPanel] = useState<string|null>(null);
   const [etaData, setEtaData] = useState<Record<string, any>>({});
   const [isAvailable, setIsAvailable] = useState(false);
   const { t, lang } = useTranslation();
@@ -263,6 +266,28 @@ export default function ProDashboard() {
       setEtaData(p => ({ ...p, [job.id]: d }));
       notifyBookingEvent({ event: 'ETA_SENT', booking: job, professional: profile, eta: d });
     }
+  }
+
+  async function sendPlatformMessage(job: any, type: 'message' | 'call') {
+    setMessaging(job.id);
+    const token = localStorage.getItem('token') || '';
+    const greetingMsg = lang === 'es'
+      ? 'Hola! Soy tu profesional de EverClean. Estoy confirmado para tu servicio. Cualquier consulta, estoy aquí en la plataforma. ¡Hasta pronto!'
+      : 'Hi! I am your EverClean professional. I am confirmed for your service. For any questions, I am here on the platform. See you soon!';
+    try {
+      await fetch(API + '/bookings/' + job.id + '/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({
+          type,
+          message: greetingMsg,
+          from: 'PROFESSIONAL',
+        }),
+      });
+      setMsgSent(prev => [...prev, job.id + '_' + type]);
+      if (type === 'message') setShowMsgPanel(null);
+    } catch(e) { console.error('Message error:', e); }
+    setMessaging(null);
   }
 
   async function doAction(job: any, action: string) {
@@ -435,9 +460,36 @@ export default function ProDashboard() {
                         </button>
                       )}
 
+                      {showMsgPanel === job.id && (
+                        <div style={{ background: '#F8FAFC', border: `1px solid ${C.border}`, borderRadius: 10, padding: 14, marginBottom: 4 }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: C.ink, marginBottom: 8 }}>📨 Platform Message Preview</div>
+                          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5, marginBottom: 12, padding: '10px 12px', background: '#fff', borderRadius: 8, border: `1px solid ${C.border}` }}>
+                            {lang === 'es'
+                              ? 'Hola! Soy tu profesional de EverClean. Estoy confirmado para tu servicio. Cualquier consulta, estoy aquí en la plataforma.'
+                              : 'Hi! I am your EverClean professional. I am confirmed for your service. For any questions, I am here on the platform.'}
+                          </div>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button onClick={() => setShowMsgPanel(null)} style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', color: C.muted, fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+                            <button onClick={() => sendPlatformMessage(job, 'message')} disabled={messaging === job.id} style={{ flex: 2, padding: '8px 0', borderRadius: 8, border: 0, background: C.green, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: messaging === job.id ? 0.6 : 1 }}>
+                              {messaging === job.id ? 'Sending...' : '✓ Send Message'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                        <button type="button" style={{ padding: '9px 0', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', color: C.navy, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{copy(lang, 'messageClient')}</button>
-                        <button type="button" style={{ padding: '9px 0', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', color: C.navy, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{copy(lang, 'callClient')}</button>
+                        <button
+                          type="button"
+                          onClick={() => msgSent.includes(job.id + '_message') ? null : setShowMsgPanel(showMsgPanel === job.id ? null : job.id)}
+                          style={{ padding: '9px 0', borderRadius: 8, border: `1px solid ${msgSent.includes(job.id + '_message') ? C.green : C.border}`, background: msgSent.includes(job.id + '_message') ? '#F0FDF4' : '#fff', color: msgSent.includes(job.id + '_message') ? C.green : C.navy, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                          {msgSent.includes(job.id + '_message') ? '✓ Message sent' : copy(lang, 'messageClient')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => sendPlatformMessage(job, 'call')}
+                          disabled={messaging === job.id || msgSent.includes(job.id + '_call')}
+                          style={{ padding: '9px 0', borderRadius: 8, border: `1px solid ${msgSent.includes(job.id + '_call') ? C.green : C.border}`, background: msgSent.includes(job.id + '_call') ? '#F0FDF4' : '#fff', color: msgSent.includes(job.id + '_call') ? C.green : C.navy, fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: messaging === job.id ? 0.6 : 1 }}>
+                          {msgSent.includes(job.id + '_call') ? '✓ Call requested' : copy(lang, 'callClient')}
+                        </button>
                       </div>
                       <div style={{ textAlign: 'center', color: C.muted, fontSize: 10 }}>{copy(lang, 'protectedComms')}</div>
 
