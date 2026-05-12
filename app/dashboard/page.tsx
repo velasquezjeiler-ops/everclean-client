@@ -227,6 +227,9 @@ export default function ClientDashboard() {
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
   const [lastBookingId, setLastBookingId] = useState('');
   const [etaData, setEtaData] = useState<Record<string, any>>({});
+  const [showChat, setShowChat] = useState<string | null>(null);
+  const [messaging, setMessaging] = useState<string | null>(null);
+  const [msgSent, setMsgSent] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     const token = localStorage.getItem('token') || '';
