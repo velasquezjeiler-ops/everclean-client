@@ -869,22 +869,44 @@ export default function NewBookingPage() {
   const visibleFrequencyOptions = FREQ_OPTIONS.filter((f) => isCommercialCleaning || !f.commercialOnly);
   const canStep1 = Boolean(serviceType && priceCalc && priceCalc.price > 0);
 
-  const fetchPredictions = useCallback(async (input: string) => {
+  const fetchPredictions = useCallback((input: string) => {
     if (input.length < 4) { setAddressPredictions([]); setShowDropdown(false); return; }
     setAddressLoading(true);
     try {
-      const query = encodeURIComponent(input + (state ? ' ' + state : ''));
-      const res = await fetch(`${API}/address-suggestions?input=${query}`);
-      const d = await res.json();
-      if (Array.isArray(d) && d.length > 0) {
-        setAddressPredictions(d);
-        setShowDropdown(true);
-      } else {
-        setAddressPredictions([]);
-        setShowDropdown(false);
+      const w = window as any;
+      if (!w.google?.maps?.places) {
+        // Fallback to backend if Google not loaded
+        const query = encodeURIComponent(input + (state ? ' ' + state : ''));
+        fetch(`${API}/address-suggestions?input=${query}`)
+          .then(r => r.json())
+          .then(d => {
+            if (Array.isArray(d) && d.length > 0) { setAddressPredictions(d); setShowDropdown(true); }
+            else { setAddressPredictions([]); setShowDropdown(false); }
+          })
+          .catch(() => { setAddressPredictions([]); setShowDropdown(false); })
+          .finally(() => setAddressLoading(false));
+        return;
       }
-    } catch { setAddressPredictions([]); }
-    setAddressLoading(false);
+      const svc = new w.google.maps.places.AutocompleteService();
+      svc.getPlacePredictions(
+        { input: input + (state ? ' ' + state : '') + ' USA', types: ['address'], componentRestrictions: { country: 'us' } },
+        (predictions: any[], status: string) => {
+          setAddressLoading(false);
+          if (status === 'OK' && predictions?.length) {
+            setAddressPredictions(predictions.map((p: any) => ({
+              place_id: p.place_id,
+              description: p.description,
+              main_text: p.structured_formatting?.main_text || p.description.split(',')[0],
+              secondary_text: p.structured_formatting?.secondary_text || '',
+            })));
+            setShowDropdown(true);
+          } else {
+            setAddressPredictions([]);
+            setShowDropdown(false);
+          }
+        }
+      );
+    } catch { setAddressPredictions([]); setAddressLoading(false); }
   }, [state]);
 
   async function handleAddressChange(val: string) {
@@ -898,24 +920,69 @@ export default function NewBookingPage() {
     setShowDropdown(false);
     setAddressLoading(true);
     try {
-      const res = await fetch(`${API}/address-intelligence`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ place_id: pred.place_id }),
-      });
-      const d = await res.json();
-      if (d.address_line1) {
-        setAddress(d.address_line1);
-        setCity(d.city || city);
-        setState(d.state || state);
-        setZipCode(d.postal_code_full || d.zip_code || zipCode);
-        setAddressSuggestion(d);
-        setAddressWarning('');
+      const w = window as any;
+      if (w.google?.maps?.places && pred.place_id) {
+        // Use Google Places Details JS API directly
+        const svc = new w.google.maps.places.PlacesService(document.createElement('div'));
+        svc.getDetails(
+          { placeId: pred.place_id, fields: ['address_components', 'formatted_address', 'geometry'] },
+          (place: any, status: string) => {
+            if (status === 'OK' && place) {
+              const comps = place.address_components || [];
+              const get = (type: string) => comps.find((c: any) => c.types.includes(type));
+              const streetNum = get('street_number')?.long_name || '';
+              const route = get('route')?.long_name || '';
+              const city = get('locality')?.long_name || get('sublocality_level_1')?.long_name || get('sublocality')?.long_name || '';
+              const st = get('administrative_area_level_1')?.short_name || '';
+              const zip = get('postal_code')?.long_name || '';
+              const zip4 = get('postal_code_suffix')?.long_name || '';
+              const postal = zip4 ? zip + '-' + zip4 : zip;
+              const addr1 = (streetNum + ' ' + route).trim();
+              setAddress(addr1 || pred.main_text || '');
+              setCity(city);
+              setState(st);
+              setZipCode(postal || zip);
+              setAddressSuggestion({
+                address_line1: addr1,
+                city, state: st,
+                zip_code: zip, zip_plus4: zip4 || null,
+                postal_code_full: postal,
+                formatted_address: place.formatted_address,
+                latitude: place.geometry?.location?.lat() || null,
+                longitude: place.geometry?.location?.lng() || null,
+                google_place_id: pred.place_id,
+                address_validated: true,
+                address_confidence: 'HIGH',
+              });
+              setAddressWarning('');
+            }
+            setAddressLoading(false);
+          }
+        );
+      } else {
+        // Fallback to backend
+        const res = await fetch(`${API}/address-intelligence`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ place_id: pred.place_id }),
+        });
+        const d = await res.json();
+        if (d.address_line1) {
+          setAddress(d.address_line1);
+          setCity(d.city || city);
+          setState(d.state || state);
+          setZipCode(d.postal_code_full || d.zip_code || zipCode);
+          setAddressSuggestion(d);
+          setAddressWarning('');
+        } else {
+          setAddress(pred.main_text || pred.description || '');
+        }
+        setAddressLoading(false);
       }
     } catch {
-      setAddress(pred.description || pred.main_text || '');
+      setAddress(pred.main_text || pred.description || '');
+      setAddressLoading(false);
     }
-    setAddressLoading(false);
   }
 
   async function handleSubmit() {
