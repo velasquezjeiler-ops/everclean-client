@@ -466,9 +466,14 @@ export default function ProDashboard() {
                           <div style={{ textAlign: 'center', marginTop: 6, fontSize: 11, color: C.green, fontWeight: 600 }}>{copy(lang, 'etaSent')}</div>
                         </div>
                       ) : (
-                        <button onClick={() => sendETA(job)} style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: 'none', cursor: 'pointer', background: C.navy, color: '#fff', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                          <IC.ETA c="#fff" s={14}/> {copy(lang, 'sendEta')}
-                        </button>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <a href={jobMapsUrl(job)} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '9px 0', borderRadius: 8, background: C.navy, color: '#fff', fontSize: 12, fontWeight: 600, textDecoration: 'none', width: '100%' }}>
+                            🗺️ {copy(lang, 'openNavigation')}
+                          </a>
+                          <button onClick={() => sendETA(job)} style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: 'none', cursor: 'pointer', background: C.blue, color: '#fff', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                            <IC.ETA c="#fff" s={14}/> {copy(lang, 'sendEta')}
+                          </button>
+                        </div>
                       )}
 
                       {showMsgPanel === job.id && (
@@ -503,7 +508,7 @@ export default function ProDashboard() {
                               const r = await fetch(API + '/bookings/' + job.id + '/call', { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
                               const d = await r.json();
                               if (d.success) setMsgSent(prev => [...prev, job.id + '_call']);
-                              else alert(d.error || 'Call failed');
+                              else setMsgSent(prev => [...prev, job.id + '_call']); // Mark as attempted even if error
                             } catch(e) { console.error(e); }
                             setMessaging(null);
                           }}
