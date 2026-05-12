@@ -227,12 +227,7 @@ export default function ProMarketplace() {
                     )}
                   </div>
 
-                  {job.client_price && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: C.bg, borderRadius: 8, marginBottom: 12 }}>
-                      <span style={{ fontSize: 12, color: C.muted }}>{t('pro.marketplace.clientPays')}</span>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: C.navy }}>${Number(job.client_price).toFixed(2)}</span>
-                    </div>
-                  )}
+                  {/* Client price hidden from professionals — internal EverClean data only */}
 
                   {isClaimed ? (
                     <div style={{ textAlign: 'center', padding: '11px', background: '#D1FAE5', borderRadius: 8, color: C.greenDk, fontSize: 13, fontWeight: 600 }}>{t('pro.marketplace.jobClaimed')}</div>
