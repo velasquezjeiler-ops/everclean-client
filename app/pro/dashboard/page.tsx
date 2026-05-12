@@ -485,10 +485,20 @@ export default function ProDashboard() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => sendPlatformMessage(job, 'call')}
+                          onClick={async () => {
+                            setMessaging(job.id);
+                            const token = localStorage.getItem('token') || '';
+                            try {
+                              const r = await fetch(API + '/bookings/' + job.id + '/call', { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+                              const d = await r.json();
+                              if (d.success) setMsgSent(prev => [...prev, job.id + '_call']);
+                              else alert(d.error || 'Call failed');
+                            } catch(e) { console.error(e); }
+                            setMessaging(null);
+                          }}
                           disabled={messaging === job.id || msgSent.includes(job.id + '_call')}
                           style={{ padding: '9px 0', borderRadius: 8, border: `1px solid ${msgSent.includes(job.id + '_call') ? C.green : C.border}`, background: msgSent.includes(job.id + '_call') ? '#F0FDF4' : '#fff', color: msgSent.includes(job.id + '_call') ? C.green : C.navy, fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: messaging === job.id ? 0.6 : 1 }}>
-                          {msgSent.includes(job.id + '_call') ? '✓ Call requested' : copy(lang, 'callClient')}
+                          {msgSent.includes(job.id + '_call') ? '✓ Connecting...' : '📞 ' + copy(lang, 'callClient')}
                         </button>
                       </div>
                       <div style={{ textAlign: 'center', color: C.muted, fontSize: 10 }}>{copy(lang, 'protectedComms')}</div>
