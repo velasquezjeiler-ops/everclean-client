@@ -1,8 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useTranslation } from '../../../lib/i18n/useTranslation';
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup.replit.app/api';
 const C = { navy:'#0D3781',blue:'#1565C0',green:'#4CAF50',greenDk:'#388E3C',ink:'#0D1B2A',muted:'#64748B',border:'#E2E8F0',shadow:'0 2px 8px rgba(13,55,129,0.06)' };
+const COPY: Record<string, Record<string, string>> = { en:{kicker:'{tx.kicker}',title:'My Wallet',sub:'{tx.sub}',maintenance:tx.maintenance,cashback:tx.cashback,referral:tx.referral,history:'Cashback History',refer:'Refer and Earn',code:'{tx.code}',copy:'Copy Code',copied:'Copied!',coverage:'$1,000,000 Service Coverage - Every Booking'}, es:{kicker:'BILLETERA',title:'Mi billetera',sub:'5% cashback en cada servicio. Los creditos nunca expiran. Gana 2% por referidos para siempre.',maintenance:'Billetera de mantenimiento',cashback:'Cashback total',referral:'Ganancias por referidos',history:'Historial de cashback',refer:'Refiere y gana',code:'TU CODIGO DE REFERIDO',copy:'Copiar codigo',copied:'Copiado!',coverage:'Cobertura de servicio de $1,000,000 - Cada booking'} };
+function Badge({label,color='#0D3781'}:{label:string;color?:string}){return <span style={{width:34,height:34,borderRadius:10,background:color+'14',border:'1px solid '+color+'30',color,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:900,flexShrink:0}}>{label}</span>}
 export default function WalletPage() {
+  const { lang } = useTranslation();
+  const tx = COPY[lang] || COPY.en;
   const [user,setUser]=useState<any>(null);
   const [bookings,setBookings]=useState<any[]>([]);
   const [referrals,setReferrals]=useState<any[]>([]);
@@ -24,7 +29,7 @@ export default function WalletPage() {
     <div style={{maxWidth:900,margin:'0 auto',fontFamily:"'Inter',system-ui,sans-serif"}}>
       <div style={{marginBottom:28}}>
         <p style={{margin:'0 0 4px',color:C.greenDk,fontSize:11,fontWeight:700,letterSpacing:'0.12em',textTransform:'uppercase'}}>WALLET</p>
-        <h1 style={{margin:0,fontSize:'clamp(22px,3vw,32px)',fontWeight:600,color:C.ink}}>My Wallet</h1>
+        <h1 style={{margin:0,fontSize:'clamp(22px,3vw,32px)',fontWeight:600,color:C.ink}}>{tx.title}</h1>
         <p style={{margin:'6px 0 0',color:C.muted,fontSize:14}}>5% cashback on every service. Credits never expire. Earn 2% from referrals forever.</p>
       </div>
       {/* Stats */}
@@ -33,7 +38,7 @@ export default function WalletPage() {
           {icon:'📈',l:'Total Cashback',v:`$${cashback.toFixed(2)}`,sub:`From ${bookings.length} completed services`,c:C.blue},
           {icon:'🤝',l:'Referral Earnings',v:`$${refEarned.toFixed(2)}`,sub:`${referrals.length} people referred`,c:C.navy}].map(s=>(
           <div key={s.l} style={card({padding:20})}>
-            <div style={{fontSize:24,marginBottom:8}}>{s.icon}</div>
+            <div style={{marginBottom:8}}><Badge label={s.l.slice(0,2).toUpperCase()} color={s.c}/></div>
             <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:4}}>{s.l}</div>
             <div style={{fontSize:28,fontWeight:700,color:s.c}}>{s.v}</div>
             <div style={{fontSize:11,color:C.muted,marginTop:4}}>{s.sub}</div>
@@ -43,7 +48,7 @@ export default function WalletPage() {
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:16}}>
         {/* Cashback history */}
         <div style={card({padding:24})}>
-          <h3 style={{margin:'0 0 4px',fontSize:15,fontWeight:600,color:C.ink}}>💳 Cashback History</h3>
+          <h3 style={{margin:'0 0 4px',fontSize:15,fontWeight:600,color:C.ink}}>{tx.history}</h3>
           <p style={{margin:'0 0 16px',fontSize:12,color:C.muted}}>5% of each completed service → your wallet</p>
           {bookings.length===0
             ?<div style={{padding:'40px 0',textAlign:'center',color:C.muted,fontSize:14}}>No completed services yet</div>
@@ -64,13 +69,13 @@ export default function WalletPage() {
         </div>
         {/* Referrals */}
         <div style={card({padding:24})}>
-          <h3 style={{margin:'0 0 4px',fontSize:15,fontWeight:600,color:C.ink}}>🤝 Refer & Earn</h3>
+          <h3 style={{margin:'0 0 4px',fontSize:15,fontWeight:600,color:C.ink}}>{tx.refer}</h3>
           <p style={{margin:'0 0 16px',fontSize:12,color:C.muted}}>Earn 2% of every service your referrals book — forever</p>
           <div style={{background:'linear-gradient(135deg,#0D3781,#1565C0)',borderRadius:12,padding:20,marginBottom:16}}>
             <div style={{fontSize:10,color:'rgba(255,255,255,0.6)',marginBottom:6,letterSpacing:'0.1em'}}>YOUR REFERRAL CODE</div>
             <div style={{fontSize:22,fontWeight:700,color:'#fff',letterSpacing:'0.08em',marginBottom:12}}>{refCode}</div>
             <button onClick={copy} style={{padding:'8px 20px',borderRadius:9999,border:0,background:C.green,color:'#fff',fontSize:12,fontWeight:600,cursor:'pointer'}}>
-              {copied?'✓ Copied!':'Copy Code'}
+              {copied?tx.copied:tx.copy}
             </button>
           </div>
           <div style={{background:'#F0FDF4',borderRadius:10,padding:16,marginBottom:16}}>
@@ -94,9 +99,9 @@ export default function WalletPage() {
       </div>
       {/* Insurance badge */}
       <div style={{...card({padding:20}),display:'flex',alignItems:'center',gap:16,background:'linear-gradient(135deg,#F0FDF4,#EFF6FF)'}}>
-        <span style={{fontSize:36,flexShrink:0}}>🛡️</span>
+        <Badge label="CV" color={C.greenDk}/>
         <div>
-          <div style={{fontSize:15,fontWeight:700,color:C.ink}}>$1,000,000 Service Coverage — Every Booking</div>
+          <div style={{fontSize:15,fontWeight:700,color:C.ink}}>{tx.coverage}</div>
           <div style={{fontSize:13,color:C.muted}}>Every EverClean service is automatically covered by our liability insurance. Coverage is voided if payment is made outside the platform — this protects you and ensures quality.</div>
         </div>
       </div>
