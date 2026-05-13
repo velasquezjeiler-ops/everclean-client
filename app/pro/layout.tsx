@@ -57,14 +57,14 @@ const PRO_LAYOUT_TEXT: Record<string, Record<string, string>> = {
     earningsSummary: 'Earnings Summary', active: 'Active', done: 'Done', rating: 'Rating', pending: 'Pending',
     status: 'Status', backgroundVerified: 'Background Verified', idConfirmed: 'ID Confirmed', payoutActive: 'Payout Active',
     quickAccess: 'Quick Access', findJobs: 'Find Jobs', myEarnings: 'My Earnings', editProfile: 'Edit Profile', paymentSetup: 'Payment Setup',
-    payments: 'Payments', profile: 'Profile', earnings: 'Earnings', openGoogleMaps: 'Open in Google Maps',
+    payments: 'Payments', profile: 'Profile', earnings: 'Earnings', levels: 'My Level', quality: 'Quality Center', openGoogleMaps: 'Open in Google Maps',
   },
   es: {
     proPortal: 'Portal Pro', verified: 'Verificado', navigation: 'Navegacion', signOut: 'Cerrar sesion',
     earningsSummary: 'Resumen de ganancias', active: 'Activos', done: 'Completados', rating: 'Calificacion', pending: 'Pendientes',
     status: 'Estado', backgroundVerified: 'Antecedentes verificados', idConfirmed: 'Identidad confirmada', payoutActive: 'Pagos activos',
     quickAccess: 'Accesos rapidos', findJobs: 'Buscar trabajos', myEarnings: 'Mis ganancias', editProfile: 'Editar perfil', paymentSetup: 'Configurar pagos',
-    payments: 'Pagos', profile: 'Perfil', earnings: 'Ganancias', openGoogleMaps: 'Abrir en Google Maps',
+    payments: 'Pagos', profile: 'Perfil', earnings: 'Ganancias', levels: 'Mi nivel', quality: 'Centro de calidad', openGoogleMaps: 'Abrir en Google Maps',
   },
 };
 
@@ -268,8 +268,8 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
     { href: '/pro/earnings', label: lt(lang, 'earnings'), Icon: IC.Dollar },
     { href: '/pro/payments', label: lt(lang, 'payments'), Icon: IC.Card },
     { href: '/pro/profile', label: lt(lang, 'profile'), Icon: IC.Profile },
-    { href: '/pro/levels', label: '🏆 My Level', Icon: IC.Trophy },
-    { href: '/pro/quality', label: '✅ Quality Center', Icon: IC.Star },
+    { href: '/pro/levels', label: lt(lang, 'levels'), Icon: IC.Trophy },
+    { href: '/pro/quality', label: lt(lang, 'quality'), Icon: IC.Star },
   ];
 
   const MOBILE_NAV = [

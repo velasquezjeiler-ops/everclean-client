@@ -105,6 +105,9 @@ const CLIENT_LAYOUT_TEXT: Record<string, Record<string, string>> = {
     myServices: 'My Services',
     viewHistory: 'View History',
     billingProfile: 'Billing Profile',
+    membership: 'VIP Membership',
+    wallet: 'My Wallet',
+    airbnb: 'Airbnb Manager',
     activeServices: 'Active Services',
     noActiveServices: 'No active services',
     assignedProfessional: 'Assigned Professional',
@@ -136,6 +139,9 @@ const CLIENT_LAYOUT_TEXT: Record<string, Record<string, string>> = {
     myServices: 'Mis servicios',
     viewHistory: 'Ver historial',
     billingProfile: 'Perfil de facturacion',
+    membership: 'Membresia VIP',
+    wallet: 'Mi billetera',
+    airbnb: 'Administrador Airbnb',
     activeServices: 'Servicios activos',
     noActiveServices: 'No hay servicios activos',
     assignedProfessional: 'Profesional asignado',
@@ -164,9 +170,9 @@ function clientNavLabel(href: string, t: (key: string) => string, lang: string) 
   if (href === '/dashboard/new-booking') return t('sidebar.bookNow') || clt(lang, 'bookService');
   if (href === '/dashboard/history') return t('sidebar.history') || clt(lang, 'viewHistory');
   if (href === '/dashboard/profile') return t('sidebar.profile') || 'Profile';
-  if (href === '/dashboard/membership') return '⭐ VIP Membership';
-  if (href === '/dashboard/wallet') return '💰 My Wallet';
-  if (href === '/dashboard/airbnb') return '🏠 Airbnb Manager';
+  if (href === '/dashboard/membership') return clt(lang, 'membership');
+  if (href === '/dashboard/wallet') return clt(lang, 'wallet');
+  if (href === '/dashboard/airbnb') return clt(lang, 'airbnb');
   return href;
 }
 
