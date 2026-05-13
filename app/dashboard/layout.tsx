@@ -16,6 +16,7 @@ const IC = {
   Star: (p) => (<svg width={p.s||20} height={p.s||20} viewBox='0 0 24 24' fill='none'><path d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z' stroke={p.c||'currentColor'} strokeWidth='1.7' strokeLinejoin='round'/></svg>),
   Wallet: (p) => (<svg width={p.s||20} height={p.s||20} viewBox='0 0 24 24' fill='none'><rect x='2' y='5' width='20' height='14' rx='2' stroke={p.c||'currentColor'} strokeWidth='1.7'/><path d='M16 12a1 1 0 1 0 2 0 1 1 0 0 0-2 0z' fill={p.c||'currentColor'}/><path d='M2 10h20' stroke={p.c||'currentColor'} strokeWidth='1.7'/></svg>),
   Home: (p) => (<svg width={p.s||20} height={p.s||20} viewBox='0 0 24 24' fill='none'><path d='M3 12L12 3l9 9' stroke={p.c||'currentColor'} strokeWidth='1.7' strokeLinecap='round'/><path d='M5 10v9a1 1 0 0 0 1 1h4v-4h4v4h4a1 1 0 0 0 1-1v-9' stroke={p.c||'currentColor'} strokeWidth='1.7' strokeLinecap='round'/></svg>),
+  Flask: (p) => (<svg width={p.s||20} height={p.s||20} viewBox='0 0 24 24' fill='none'><path d='M9 3h6M10 3v5.2L5.4 17.4A2.5 2.5 0 0 0 7.6 21h8.8a2.5 2.5 0 0 0 2.2-3.6L14 8.2V3' stroke={p.c||'currentColor'} strokeWidth='1.7' strokeLinecap='round' strokeLinejoin='round'/><path d='M8 15h8' stroke={p.c||'currentColor'} strokeWidth='1.7' strokeLinecap='round'/></svg>),
 };
 
 const API =
@@ -88,6 +89,7 @@ const NAV_ITEMS = [
   { href: '/dashboard/membership', labelKey: 'membership', Icon: IC.Star },
   { href: '/dashboard/wallet', labelKey: 'wallet', Icon: IC.Wallet },
   { href: '/dashboard/airbnb', labelKey: 'airbnb', Icon: IC.Home },
+  { href: '/dashboard/test', labelKey: 'testSuite', Icon: IC.Flask },
 ];
 
 const CLIENT_LAYOUT_TEXT: Record<string, Record<string, string>> = {
@@ -167,6 +169,7 @@ function clientNavLabel(href: string, t: (key: string) => string, lang: string) 
   if (href === '/dashboard/membership') return '⭐ VIP Membership';
   if (href === '/dashboard/wallet') return '💰 My Wallet';
   if (href === '/dashboard/airbnb') return '🏠 Airbnb Manager';
+  if (href === '/dashboard/test') return '🧪 Test Suite';
   return href;
 }
 
