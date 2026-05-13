@@ -3,7 +3,50 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup.replit.app/api';
 const C = { navy:'#0D3781',blue:'#1565C0',green:'#4CAF50',greenDk:'#388E3C',ink:'#0D1B2A',muted:'#64748B',border:'#E2E8F0',shadow:'0 2px 8px rgba(13,55,129,0.06)' };
-const COPY: Record<string, Record<string, string>> = { en:{kicker:'{tx.kicker}',title:'My Wallet',sub:'{tx.sub}',maintenance:tx.maintenance,cashback:tx.cashback,referral:tx.referral,history:'Cashback History',refer:'Refer and Earn',code:'{tx.code}',copy:'Copy Code',copied:'Copied!',coverage:'$1,000,000 Service Coverage - Every Booking'}, es:{kicker:'BILLETERA',title:'Mi billetera',sub:'5% cashback en cada servicio. Los creditos nunca expiran. Gana 2% por referidos para siempre.',maintenance:'Billetera de mantenimiento',cashback:'Cashback total',referral:'Ganancias por referidos',history:'Historial de cashback',refer:'Refiere y gana',code:'TU CODIGO DE REFERIDO',copy:'Copiar codigo',copied:'Copiado!',coverage:'Cobertura de servicio de $1,000,000 - Cada booking'} };
+const COPY: Record<string, Record<string, string>> = {
+  en: {
+    kicker: 'WALLET',
+    title: 'My Wallet',
+    sub: '5% cashback on every service. Credits never expire. Earn 2% from referrals forever.',
+    maintenance: 'Maintenance Wallet',
+    cashback: 'Total Cashback',
+    referral: 'Referral Earnings',
+    history: 'Cashback History',
+    historyText: '5% of each completed service goes to your wallet',
+    empty: 'No completed services yet',
+    refer: 'Refer and Earn',
+    referText: 'Earn 2% of every service your referrals book forever',
+    code: 'YOUR REFERRAL CODE',
+    copy: 'Copy Code',
+    copied: 'Copied!',
+    coverage: '$1,000,000 Service Coverage - Every Booking',
+    coverageText: 'Every EverClean service is automatically covered by our liability insurance. Coverage is voided if payment is made outside the platform. This protects you and ensures quality.',
+    completedServices: 'completed services',
+    peopleReferred: 'people referred',
+    deepWindows: 'For Deep Cleaning and Windows',
+  },
+  es: {
+    kicker: 'BILLETERA',
+    title: 'Mi billetera',
+    sub: '5% cashback en cada servicio. Los creditos nunca expiran. Gana 2% por referidos para siempre.',
+    maintenance: 'Billetera de mantenimiento',
+    cashback: 'Cashback total',
+    referral: 'Ganancias por referidos',
+    history: 'Historial de cashback',
+    historyText: '5% de cada servicio completado va a tu billetera',
+    empty: 'Aun no hay servicios completados',
+    refer: 'Refiere y gana',
+    referText: 'Gana 2% de cada servicio reservado por tus referidos para siempre',
+    code: 'TU CODIGO DE REFERIDO',
+    copy: 'Copiar codigo',
+    copied: 'Copiado!',
+    coverage: 'Cobertura de servicio de $1,000,000 - Cada booking',
+    coverageText: 'Cada servicio de EverClean esta cubierto automaticamente por nuestro seguro de responsabilidad. La cobertura se anula si el pago se realiza fuera de la plataforma. Esto te protege y asegura calidad.',
+    completedServices: 'servicios completados',
+    peopleReferred: 'personas referidas',
+    deepWindows: 'Para Deep Cleaning y ventanas',
+  },
+};
 function Badge({label,color='#0D3781'}:{label:string;color?:string}){return <span style={{width:34,height:34,borderRadius:10,background:color+'14',border:'1px solid '+color+'30',color,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:900,flexShrink:0}}>{label}</span>}
 export default function WalletPage() {
   const { lang } = useTranslation();
@@ -28,15 +71,15 @@ export default function WalletPage() {
   return (
     <div style={{maxWidth:900,margin:'0 auto',fontFamily:"'Inter',system-ui,sans-serif"}}>
       <div style={{marginBottom:28}}>
-        <p style={{margin:'0 0 4px',color:C.greenDk,fontSize:11,fontWeight:700,letterSpacing:'0.12em',textTransform:'uppercase'}}>WALLET</p>
+        <p style={{margin:'0 0 4px',color:C.greenDk,fontSize:11,fontWeight:700,letterSpacing:'0.12em',textTransform:'uppercase'}}>{tx.kicker}</p>
         <h1 style={{margin:0,fontSize:'clamp(22px,3vw,32px)',fontWeight:600,color:C.ink}}>{tx.title}</h1>
-        <p style={{margin:'6px 0 0',color:C.muted,fontSize:14}}>5% cashback on every service. Credits never expire. Earn 2% from referrals forever.</p>
+        <p style={{margin:'6px 0 0',color:C.muted,fontSize:14}}>{tx.sub}</p>
       </div>
       {/* Stats */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:16}}>
-        {[{icon:'💰',l:'Maintenance Wallet',v:`$${walletBalance.toFixed(2)}`,sub:'For Deep Cleaning & Windows',c:C.green},
-          {icon:'📈',l:'Total Cashback',v:`$${cashback.toFixed(2)}`,sub:`From ${bookings.length} completed services`,c:C.blue},
-          {icon:'🤝',l:'Referral Earnings',v:`$${refEarned.toFixed(2)}`,sub:`${referrals.length} people referred`,c:C.navy}].map(s=>(
+        {[{l:tx.maintenance,v:`${walletBalance.toFixed(2)}`,sub:tx.deepWindows,c:C.green},
+          {l:tx.cashback,v:`${cashback.toFixed(2)}`,sub:`${bookings.length} ${tx.completedServices}`,c:C.blue},
+          {l:tx.referral,v:`${refEarned.toFixed(2)}`,sub:`${referrals.length} ${tx.peopleReferred}`,c:C.navy}].map(s=>(
           <div key={s.l} style={card({padding:20})}>
             <div style={{marginBottom:8}}><Badge label={s.l.slice(0,2).toUpperCase()} color={s.c}/></div>
             <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:4}}>{s.l}</div>
@@ -49,9 +92,9 @@ export default function WalletPage() {
         {/* Cashback history */}
         <div style={card({padding:24})}>
           <h3 style={{margin:'0 0 4px',fontSize:15,fontWeight:600,color:C.ink}}>{tx.history}</h3>
-          <p style={{margin:'0 0 16px',fontSize:12,color:C.muted}}>5% of each completed service → your wallet</p>
+          <p style={{margin:'0 0 16px',fontSize:12,color:C.muted}}>{tx.historyText}</p>
           {bookings.length===0
-            ?<div style={{padding:'40px 0',textAlign:'center',color:C.muted,fontSize:14}}>No completed services yet</div>
+            ?<div style={{padding:'40px 0',textAlign:'center',color:C.muted,fontSize:14}}>{tx.empty}</div>
             :<div style={{display:'flex',flexDirection:'column',gap:8}}>
               {bookings.slice(0,6).map((b:any)=>(
                 <div key={b.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 14px',background:'#F8FAFC',borderRadius:10}}>
@@ -70,9 +113,9 @@ export default function WalletPage() {
         {/* Referrals */}
         <div style={card({padding:24})}>
           <h3 style={{margin:'0 0 4px',fontSize:15,fontWeight:600,color:C.ink}}>{tx.refer}</h3>
-          <p style={{margin:'0 0 16px',fontSize:12,color:C.muted}}>Earn 2% of every service your referrals book — forever</p>
+          <p style={{margin:'0 0 16px',fontSize:12,color:C.muted}}>{tx.referText}</p>
           <div style={{background:'linear-gradient(135deg,#0D3781,#1565C0)',borderRadius:12,padding:20,marginBottom:16}}>
-            <div style={{fontSize:10,color:'rgba(255,255,255,0.6)',marginBottom:6,letterSpacing:'0.1em'}}>YOUR REFERRAL CODE</div>
+            <div style={{fontSize:10,color:'rgba(255,255,255,0.6)',marginBottom:6,letterSpacing:'0.1em'}}>{tx.code}</div>
             <div style={{fontSize:22,fontWeight:700,color:'#fff',letterSpacing:'0.08em',marginBottom:12}}>{refCode}</div>
             <button onClick={copy} style={{padding:'8px 20px',borderRadius:9999,border:0,background:C.green,color:'#fff',fontSize:12,fontWeight:600,cursor:'pointer'}}>
               {copied?tx.copied:tx.copy}
@@ -102,7 +145,7 @@ export default function WalletPage() {
         <Badge label="CV" color={C.greenDk}/>
         <div>
           <div style={{fontSize:15,fontWeight:700,color:C.ink}}>{tx.coverage}</div>
-          <div style={{fontSize:13,color:C.muted}}>Every EverClean service is automatically covered by our liability insurance. Coverage is voided if payment is made outside the platform — this protects you and ensures quality.</div>
+          <div style={{fontSize:13,color:C.muted}}>{tx.coverageText}</div>
         </div>
       </div>
     </div>
