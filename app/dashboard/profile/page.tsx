@@ -295,8 +295,8 @@ export default function ClientProfile() {
   );
 
   return (
-    <div style={{ maxWidth:860, fontFamily:font }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} input:focus,textarea:focus{border-color:${C.blue}!important;box-shadow:0 0 0 3px ${C.blue}15;}`}</style>
+    <div className="client-profile-page" style={{ maxWidth:860, fontFamily:font }}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} input:focus,textarea:focus{border-color:${C.blue}!important;box-shadow:0 0 0 3px ${C.blue}15;} @media (max-width:760px){.client-profile-page{max-width:100%!important;width:100%!important;overflow-x:hidden!important}.client-profile-layout{grid-template-columns:1fr!important;gap:14px!important}.client-profile-form-grid{grid-template-columns:1fr!important}.client-profile-card{padding:16px!important}.client-profile-side{order:-1}.client-profile-payment-row{align-items:flex-start!important;flex-direction:column!important}}`}</style>
       <input ref={inputRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handlePhoto}/>
 
       {message && (
@@ -306,33 +306,33 @@ export default function ClientProfile() {
         </div>
       )}
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 280px', gap:20 }}>
+      <div className="client-profile-layout" style={{ display:'grid', gridTemplateColumns:'1fr 280px', gap:20 }}>
         <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
 
-          <div style={cardStyle}>
+          <div className="client-profile-card" style={cardStyle}>
             <div style={{ fontSize:14, fontWeight: 600, color:C.text, marginBottom:16 }}>{t('client.profileExtra.personalInfo')}</div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+            <div className="client-profile-form-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
               <div><label style={labelStyle}>{t('profile.fullName')}</label><input value={form.fullName} onChange={e=>setForm({...form,fullName:e.target.value})} style={inputStyle}/></div>
               <div><label style={labelStyle}>{t('profile.phone')}</label><input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} style={inputStyle}/></div>
               <div style={{ gridColumn:'1/-1' }}><label style={labelStyle}>{t('profile.email')}</label><input value={form.email} readOnly style={{ ...inputStyle, background:C.bg, cursor:'not-allowed' }}/></div>
             </div>
           </div>
 
-          <div style={cardStyle}>
+          <div className="client-profile-card" style={cardStyle}>
             <div style={{ fontSize:14, fontWeight: 600, color:C.text, marginBottom:16 }}>{t('client.profileExtra.billingAddress')}</div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+            <div className="client-profile-form-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
               <div style={{ gridColumn:'1/-1' }}><label style={labelStyle}>{t('client.profileExtra.streetAddress')}</label><input value={form.address} onChange={e=>setForm({...form,address:e.target.value})} style={inputStyle}/></div>
               <div><label style={labelStyle}>{t('profile.city')}</label><input value={form.city} onChange={e=>setForm({...form,city:e.target.value})} style={inputStyle}/></div>
               <div><label style={labelStyle}>{t('profile.state')}</label><input value={form.state} onChange={e=>setForm({...form,state:e.target.value})} style={inputStyle}/></div>
               <div><label style={labelStyle}>{t('client.profileExtra.zipCode')}</label><input value={form.zipCode} onChange={e=>setForm({...form,zipCode:e.target.value})} style={inputStyle}/></div>
             </div>
           </div>
-          <div style={cardStyle}>
+          <div className="client-profile-card" style={cardStyle}>
             <div style={{ fontSize:14, fontWeight: 600, color:C.text, marginBottom:12 }}>{t('client.profileExtra.paymentMethod')}</div>
             <div style={{ fontSize:12, color:C.muted, marginBottom:12 }}>{t('client.profileExtra.stripeText')}</div>
             {latestPayable ? (
               <div>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 14px', border:`1px solid ${C.border}`, borderRadius: 8, background:C.bg, marginBottom:12 }}>
+                <div className="client-profile-payment-row" style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 14px', border:`1px solid ${C.border}`, borderRadius: 8, background:C.bg, marginBottom:12 }}>
                   <div>
                     <div style={{ fontSize:12, fontWeight: 600, color:C.text }}>{String(latestPayable.service_type || 'Service').replaceAll('_',' ')}</div>
                     <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>{latestPayable.scheduled_at ? new Date(latestPayable.scheduled_at).toLocaleDateString() : t('client.profileExtra.pendingSchedule')}</div>
@@ -359,8 +359,8 @@ export default function ClientProfile() {
           </button>
         </div>
 
-        <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
-          <div style={{ ...cardStyle, textAlign:'center' }}>
+        <div className="client-profile-side" style={{ display:'flex', flexDirection:'column', gap:16 }}>
+          <div className="client-profile-card" style={{ ...cardStyle, textAlign:'center' }}>
             <div style={{ position:'relative', display:'inline-block', marginBottom:12, cursor:'pointer' }} onClick={()=>inputRef.current?.click()}>
               {photo
                 ? <img src={photo} alt="Profile" style={{ width:80, height:80, borderRadius:'50%', objectFit:'cover', border:`3px solid ${C.blue}` }}/>
@@ -373,7 +373,7 @@ export default function ClientProfile() {
             <div style={{ fontSize:12, color:C.muted, marginTop:3 }}>{form.city||''}{form.city&&form.state?', ':''}{form.state}</div>
           </div>
 
-          <div style={cardStyle}>
+          <div className="client-profile-card" style={cardStyle}>
             <div style={{ fontSize:13, fontWeight: 600, color:C.text, marginBottom:12 }}>{t('client.profileExtra.accountSummary')}</div>
             {[
               { label: t('client.profileExtra.servicesCompleted'), val:stats.total },
@@ -386,7 +386,7 @@ export default function ClientProfile() {
             ))}
           </div>
 
-          <div style={{ ...cardStyle, background:C.bg, textAlign:'center' }}>
+          <div className="client-profile-card" style={{ ...cardStyle, background:C.bg, textAlign:'center' }}>
             <div style={{ fontSize:12, color:C.muted, marginBottom:8 }}>{t('client.profileExtra.needHelp')}</div>
             <button style={{ fontSize:12, color:C.blue, fontWeight:600, background:'none', border:'none', cursor:'pointer' }}>{t('client.profileExtra.contactSupport')}</button>
           </div>

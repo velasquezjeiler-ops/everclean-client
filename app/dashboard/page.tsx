@@ -427,7 +427,28 @@ export default function ClientDashboard() {
                             <button type="button" onClick={() => setShowChat(showChat === booking.id ? null : booking.id)} style={{border:"1px solid #E2E8F0",background:showChat===booking.id?"#F0FDF4":"#fff",borderRadius:8,padding:"8px 10px",fontSize:12,fontWeight:700,color:"#0D3781"}}>
                               💬 {showChat === booking.id ? 'Close Chat' : cdt(lang, 'messagePro')}
                             </button>
-                            <button type="button" style={{border:"1px solid #E2E8F0",background:"#fff",borderRadius:8,padding:"8px 10px",fontSize:12,fontWeight:700,color:"#0D3781"}}>{cdt(lang, 'callPro')}</button>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                setMessaging(booking.id);
+                                const token = localStorage.getItem('token') || '';
+                                try {
+                                  await fetch(API + '/bookings/' + booking.id + '/call', {
+                                    method: 'POST',
+                                    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({}),
+                                  });
+                                  setMsgSent(prev => [...prev, booking.id + '_call']);
+                                } catch (e) {
+                                  console.error(e);
+                                }
+                                setMessaging(null);
+                              }}
+                              disabled={messaging === booking.id || msgSent.includes(booking.id + '_call')}
+                              style={{border:"1px solid #E2E8F0",background:msgSent.includes(booking.id + '_call')?"#F0FDF4":"#fff",borderRadius:8,padding:"8px 10px",fontSize:12,fontWeight:700,color:"#0D3781",opacity:messaging===booking.id?0.6:1}}
+                            >
+                              {msgSent.includes(booking.id + '_call') ? 'Calling...' : cdt(lang, 'callPro')}
+                            </button>
                           </div>
                           <div style={{fontSize:10,color:"#64748B",textAlign:"center",marginTop:6}}>{cdt(lang, 'protectedComms')}</div>
                           {showChat === booking.id && (
