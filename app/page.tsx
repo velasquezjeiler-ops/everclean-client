@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -19,11 +19,11 @@ const LOGIN_TEXT: Record<string, Record<string, string>> = {
     resetUpdated: 'Password updated. You can sign in now.', unableReset: 'Unable to reset password', unableCode: 'Unable to send reset code', codeSentEmail: 'Code sent by email.', codeSentSms: 'Code sent by SMS.', resetPassword: 'Reset password', emailMethod: 'Email', smsMethod: 'SMS', sending: 'Sending...', sendCode: 'Send security code', securityCode: 'Security code', codePlaceholder: '6-digit code', newPassword: 'New password', passwordPlaceholder: 'At least 8 characters', updating: 'Updating...', updatePassword: 'Update password',
   },
   es: {
-    heroTitle: 'La forma más inteligente de gestionar limpieza.', heroCopy: 'Reserva servicios, sigue a tu profesional en tiempo real y administra cada visita desde un solo panel.',
+    heroTitle: 'La forma mas inteligente de gestionar limpieza.', heroCopy: 'Reserva servicios, sigue a tu profesional en tiempo real y administra cada visita desde un solo panel.',
     featurePricing: 'Precios instantaneos por pies cuadrados y estado', featureTracking: 'Seguimiento del profesional en tiempo real', featureScheduling: 'Programacion y facturacion automatizadas', brandSubtitle: 'Limpieza profesional',
-    welcome: 'Bienvenido', subtitle: 'Inicia sesión en tu cuenta', forgot: '¿Olvidaste tu contraseña?', signingIn: 'Iniciando sesión...', signIn: 'Iniciar sesión',
-    newAccount: '¿Nuevo en EverClean?', createAccount: 'Crear una cuenta', footer: 'Plataforma profesional de limpieza', invalid: 'Credenciales inválidas', unable: 'No se pudo iniciar sesión',
-    resetUpdated: 'Contraseña actualizada. Ya puedes iniciar sesión.', unableReset: 'No se pudo restablecer la contraseña', unableCode: 'No se pudo enviar el código', codeSentEmail: 'Codigo enviado por correo.', codeSentSms: 'Codigo enviado por SMS.', resetPassword: 'Restablecer contrasena', emailMethod: 'Correo', smsMethod: 'SMS', sending: 'Enviando...', sendCode: 'Enviar codigo de seguridad', securityCode: 'Codigo de seguridad', codePlaceholder: 'Codigo de 6 digitos', newPassword: 'Nueva contrasena', passwordPlaceholder: 'Minimo 8 caracteres', updating: 'Actualizando...', updatePassword: 'Actualizar contrasena',
+    welcome: 'Bienvenido', subtitle: 'Inicia sesion en tu cuenta', forgot: 'Olvidaste tu contrasena?', signingIn: 'Iniciando sesion...', signIn: 'Iniciar sesion',
+    newAccount: 'Nuevo en EverClean?', createAccount: 'Crear una cuenta', footer: 'Plataforma profesional de limpieza', invalid: 'Credenciales invalidas', unable: 'No se pudo iniciar sesion',
+    resetUpdated: 'Contrasena actualizada. Ya puedes iniciar sesion.', unableReset: 'No se pudo restablecer la contrasena', unableCode: 'No se pudo enviar el codigo', codeSentEmail: 'Codigo enviado por correo.', codeSentSms: 'Codigo enviado por SMS.', resetPassword: 'Restablecer contrasena', emailMethod: 'Correo', smsMethod: 'SMS', sending: 'Enviando...', sendCode: 'Enviar codigo de seguridad', securityCode: 'Codigo de seguridad', codePlaceholder: 'Codigo de 6 digitos', newPassword: 'Nueva contrasena', passwordPlaceholder: 'Minimo 8 caracteres', updating: 'Actualizando...', updatePassword: 'Actualizar contrasena',
   },
 };
 
@@ -142,6 +142,9 @@ export default function LoginPage() {
       localStorage.setItem('token', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
       localStorage.setItem('role', data.role);
+      if (data.role === 'CLIENT') localStorage.setItem('everclean_client_token', data.accessToken);
+      if (data.role === 'PROFESSIONAL') localStorage.setItem('everclean_pro_token', data.accessToken);
+      if (data.role === 'ADMIN') localStorage.setItem('everclean_admin_token', data.accessToken);
       localStorage.setItem('userEmail', normalizedEmail);
       setEmail(normalizedEmail);
 
@@ -585,4 +588,7 @@ export default function LoginPage() {
     </main>
   );
 }
+
+
+
 

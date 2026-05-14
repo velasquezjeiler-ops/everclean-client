@@ -1,10 +1,14 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup.replit.app/api';
+﻿const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup.replit.app/api';
 
 let isRefreshing = false;
 let refreshQueue: Array<() => void> = [];
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
+  const role = localStorage.getItem('role');
+  if (role === 'CLIENT') return localStorage.getItem('everclean_client_token') || localStorage.getItem('token');
+  if (role === 'PROFESSIONAL') return localStorage.getItem('everclean_pro_token') || localStorage.getItem('token');
+  if (role === 'ADMIN') return localStorage.getItem('everclean_admin_token') || localStorage.getItem('token');
   return localStorage.getItem('token');
 }
 
@@ -29,6 +33,10 @@ async function refreshAccessToken(): Promise<boolean> {
     const data = await res.json();
     if (data.accessToken) {
       localStorage.setItem('token', data.accessToken);
+      const role = localStorage.getItem('role');
+      if (role === 'CLIENT') localStorage.setItem('everclean_client_token', data.accessToken);
+      if (role === 'PROFESSIONAL') localStorage.setItem('everclean_pro_token', data.accessToken);
+      if (role === 'ADMIN') localStorage.setItem('everclean_admin_token', data.accessToken);
       if (data.refreshToken) {
         localStorage.setItem('refreshToken', data.refreshToken);
       }
@@ -77,10 +85,13 @@ export async function apiFetch(
         refreshQueue.forEach(cb => cb());
         refreshQueue = [];
       } else {
-        // Refresh failed — redirect to login
+        // Refresh failed - redirect to login
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('role');
+        localStorage.removeItem('everclean_client_token');
+        localStorage.removeItem('everclean_pro_token');
+        localStorage.removeItem('everclean_admin_token');
         if (typeof window !== 'undefined') {
           window.location.href = '/';
         }
@@ -170,3 +181,5 @@ export const api = {
     stats: () => api.get('/bookings/admin/stats'),
   },
 };
+
+

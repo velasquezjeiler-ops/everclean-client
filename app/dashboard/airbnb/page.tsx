@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
 
@@ -22,7 +22,7 @@ const TXT: Record<string, any> = {
       ['Photo evidence uploaded','Pre-cleaning, inventory check, and post-cleaning photos'],
       ['Report sent to you','PDF inspection report delivered to your email'],
     ],
-    reasons:['Automatic scheduling - no manual coordination','AirCover-ready damage reports with photos','Inventory checklists: towels, coffee, toiletries','Consistent quality with same pro every time','2% lifetime commissions for referrals'],
+    reasons:['Automatic scheduling - no manual coordination','AirCover-ready damage reports with photos','Inventory checklists: towels, coffee, toiletries','Consistent quality with same pro every time','2% lifetime referral rewards'],
   },
   es: {
     kicker:'MODULO AIRBNB', title:'Administrador de rentas cortas', subtitle:'Programa limpiezas automaticamente despues de cada checkout. Incluye fotos y reportes para AirCover.',
@@ -107,8 +107,10 @@ export default function AirbnbPage() {
 
       <div className="airbnb-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:16}}>
         <div style={card({padding:24})}><h3 style={{margin:'0 0 16px',fontSize:15,fontWeight:800,color:C.ink}}>{tx.how}</h3>{tx.steps.map((s:any,i:number)=><div key={s[0]} style={{display:'flex',gap:12,marginBottom:14}}><span style={{width:24,height:24,borderRadius:'50%',background:C.navy,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,flexShrink:0}}>{i+1}</span><div><div style={{fontSize:13,fontWeight:800,color:C.ink}}>{s[0]}</div><div style={{fontSize:12,color:C.muted}}>{s[1]}</div></div></div>)}</div>
-        <div style={card({padding:24})}><h3 style={{margin:'0 0 4px',fontSize:15,fontWeight:800,color:C.ink}}>{tx.referral}</h3><p style={{margin:'0 0 16px',fontSize:12,color:C.muted}}>{tx.referralText}</p><div style={{background:'linear-gradient(135deg,#0D3781,#1565C0)',borderRadius:12,padding:20,marginBottom:16}}><div style={{fontSize:10,color:'rgba(255,255,255,0.6)',marginBottom:6,letterSpacing:'0.1em'}}>{tx.code}</div><div style={{fontSize:20,fontWeight:800,color:'#fff',letterSpacing:'0.08em',marginBottom:12}}>{refCode}</div><button onClick={()=>{navigator.clipboard.writeText(refCode);setRefCopied(true);setTimeout(()=>setRefCopied(false),2000);}} style={{padding:'8px 20px',borderRadius:9999,border:0,background:C.green,color:'#fff',fontSize:12,fontWeight:800,cursor:'pointer'}}>{refCopied?tx.copied:tx.copy}</button></div><div style={{background:'#FFF7ED',borderRadius:10,padding:16,border:'1px solid #FED7AA'}}><div style={{fontSize:13,fontWeight:800,color:'#92400E',marginBottom:8}}>{tx.why}</div>{tx.reasons.map((s:string,i:number)=><div key={i} style={{display:'flex',gap:8,marginBottom:i<tx.reasons.length-1?6:0,fontSize:12,color:'#92400E'}}><span style={{color:C.green,fontWeight:900}}>✓</span><span>{s}</span></div>)}</div></div>
+        <div style={card({padding:24})}><h3 style={{margin:'0 0 4px',fontSize:15,fontWeight:800,color:C.ink}}>{tx.referral}</h3><p style={{margin:'0 0 16px',fontSize:12,color:C.muted}}>{tx.referralText}</p><div style={{background:'linear-gradient(135deg,#0D3781,#1565C0)',borderRadius:12,padding:20,marginBottom:16}}><div style={{fontSize:10,color:'rgba(255,255,255,0.6)',marginBottom:6,letterSpacing:'0.1em'}}>{tx.code}</div><div style={{fontSize:20,fontWeight:800,color:'#fff',letterSpacing:'0.08em',marginBottom:12}}>{refCode}</div><button onClick={()=>{navigator.clipboard.writeText(refCode);setRefCopied(true);setTimeout(()=>setRefCopied(false),2000);}} style={{padding:'8px 20px',borderRadius:9999,border:0,background:C.green,color:'#fff',fontSize:12,fontWeight:800,cursor:'pointer'}}>{refCopied?tx.copied:tx.copy}</button></div><div style={{background:'#FFF7ED',borderRadius:10,padding:16,border:'1px solid #FED7AA'}}><div style={{fontSize:13,fontWeight:800,color:'#92400E',marginBottom:8}}>{tx.why}</div>{tx.reasons.map((s:string,i:number)=><div key={i} style={{display:'flex',gap:8,marginBottom:i<tx.reasons.length-1?6:0,fontSize:12,color:'#92400E'}}><span style={{color:C.green,fontWeight:900}}>OK</span><span>{s}</span></div>)}</div></div>
       </div>
     </div>
   );
 }
+
+

@@ -1,4 +1,4 @@
-// v2.1 - Quick Access enabled
+﻿// v2.1 - Quick Access enabled
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -89,7 +89,7 @@ function AddressMapCard({ booking, onClose, t, lang }: { booking: any; onClose: 
         </div>
         <div style={{ padding: '14px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: 20 }}>{SVC_ICONS[booking.service_type] || '🧹'}</span>
+            <span style={{ fontSize: 20 }}>{SVC_ICONS[booking.service_type] || 'EC'}</span>
             <div>
               <div style={{ fontWeight: 700, fontSize: 13, color: C.text }}>{t('services.' + booking.service_type) === 'services.' + booking.service_type ? (booking.service_type || '').replace(/_/g, ' ') : t('services.' + booking.service_type)}</div>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: s.bg, color: s.color, padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700 }}>
@@ -179,7 +179,7 @@ function RightPanel({ bookings, selectedBooking, onSelectBooking, t, lang }: { b
         </div>
       </div>
 
-      {/* Status — clickeable */}
+      {/* Status - clickable */}
       <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '12px 14px' }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>{lt(lang, 'status')}</div>
         {[
@@ -199,7 +199,7 @@ function RightPanel({ bookings, selectedBooking, onSelectBooking, t, lang }: { b
         ))}
       </div>
 
-      {/* Quick Access — links reales */}
+      {/* Quick Access - real links */}
       <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '12px 14px' }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>{lt(lang, 'quickAccess')}</div>
         {[
@@ -239,8 +239,8 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
   const { t, lang, setLang } = useTranslation();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
+    const token = localStorage.getItem('everclean_pro_token') || localStorage.getItem('token');
     if (!token) { router.push('/'); return; }
     if (role === 'CLIENT') { router.push('/dashboard'); return; }
     if (role === 'ADMIN') { window.location.href = 'https://everclean-admin.vercel.app'; return; }
@@ -388,7 +388,7 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      {/* Right Panel — con padding interno y max-width correcta */}
+      {/* Right Panel - internal padding and correct max-width */}
       <aside className="pro-right-desktop" style={{ width: 300, flexShrink: 0, padding: '20px 16px 20px 12px', borderLeft: `1px solid ${C.border}`, background: C.bg, overflowY: 'auto', minHeight: '100vh' }}>
         <RightPanel bookings={bookings} selectedBooking={selectedBooking} onSelectBooking={setSelectedBooking} t={t} lang={lang}/>
       </aside>
@@ -413,3 +413,5 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+

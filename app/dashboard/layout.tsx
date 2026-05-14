@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
@@ -271,7 +271,7 @@ function RightPanel({
           <Link key={item.href} href={item.href} className="client-quick-link">
             <span><item.Icon c={"#0D3781"} s={16} /></span>
             <p>{item.label}</p>
-            <b>›</b>
+            <b>{">"}</b>
           </Link>
         ))}
       </div>
@@ -280,7 +280,7 @@ function RightPanel({
         <div className="client-panel-title">{clt(lang, 'activeServices')}</div>
         {active.length === 0 ? (
           <div className="client-empty-mini">
-            <div>🧹</div>
+            <div>EC</div>
             <p>{clt(lang, 'noActiveServices')}</p>
           </div>
         ) : (
@@ -377,8 +377,8 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
+    const token = localStorage.getItem('everclean_client_token') || localStorage.getItem('token');
 
     if (!token) {
       router.push('/');
@@ -1135,7 +1135,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
           type="button"
           aria-label="Open menu"
         >
-          ≡
+          Menu
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
@@ -1169,3 +1169,6 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
     </div>
   );
 }
+
+
+
