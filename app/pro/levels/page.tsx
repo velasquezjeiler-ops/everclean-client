@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
@@ -219,7 +219,7 @@ export default function LevelsPage() {
               <div style={{ marginBottom: 8 }}><Badge label={level.short} color={level.color} /></div>
               <div style={{ fontSize: 17, fontWeight: 800, color: C.ink, marginBottom: 4 }}>{level.label}</div>
               <div style={{ fontSize: 12, color: C.muted, marginBottom: 12 }}>{range}</div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{tx.benefits}</div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{lang === 'es' ? 'Beneficios' : 'Benefits'}</div>
               {level.benefits.map((benefit: string) => (
                 <div key={benefit} style={{ display: 'flex', gap: 8, marginBottom: 7, fontSize: 12, color: C.ink, lineHeight: 1.35 }}>
                   <Check color={level.color} />

@@ -205,11 +205,7 @@ function CalendarStrip({ bookings, t, lang }: { bookings: any[]; t: (key: string
       {dayBookings.length > 0 ? (
         <div className="client-day-list">
           {dayBookings.map((booking) => (
-            <div key={booking.id}>
-              <strong>{serviceName(booking.service_type, t)}</strong>
-              <span>{bookingAddress(booking) || statusNote(booking.status, lang) || cdt(lang, 'serviceScheduled')}</span>
-              <StatusBadge status={booking.status} t={t} />
-            </div>
+            <div key={booking.id} className="client-day-service"><div className="client-day-service-main"><strong>{serviceName(booking.service_type, t)}</strong><span>{bookingAddress(booking) || statusNote(booking.status, lang) || cdt(lang, 'serviceScheduled')}</span></div><StatusBadge status={booking.status} t={t} /></div>
           ))}
         </div>
       ) : (
@@ -341,6 +337,11 @@ export default function ClientDashboard() {
         .client-day-btn { min-width: 44px; padding: 8px 4px; border-radius: 10px; border: none; background: transparent; cursor: pointer; text-align: center; font-size: 12px; color: #64748B; }
         .client-day-btn.active { background: #0D3781; color: #fff; }
         .client-day-btn strong { display: block; font-size: 16px; font-weight: 700; }
+        .client-day-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+        .client-day-service { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid #E2E8F0; border-radius: 10px; background: #F8FAFC; }
+        .client-day-service-main { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+        .client-day-service-main strong { font-size: 13px; color: #0D1B2A; line-height: 1.25; }
+        .client-day-service-main span { font-size: 12px; color: #64748B; line-height: 1.35; overflow-wrap: anywhere; }
         .client-empty-line { font-size: 13px; color: #64748B; text-align: center; padding: 16px 0; }
         @media (max-width: 640px) { .client-stats-row { grid-template-columns: 1fr; } }
       `}</style>
@@ -425,7 +426,7 @@ export default function ClientDashboard() {
                         <>
                           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:10}}>
                             <button type="button" onClick={() => setShowChat(showChat === booking.id ? null : booking.id)} style={{border:"1px solid #E2E8F0",background:showChat===booking.id?"#F0FDF4":"#fff",borderRadius:8,padding:"8px 10px",fontSize:12,fontWeight:700,color:"#0D3781"}}>
-                              💬 {showChat === booking.id ? 'Close Chat' : cdt(lang, 'messagePro')}
+                              {showChat === booking.id ? 'Close Chat' : cdt(lang, 'messagePro')}
                             </button>
                             <button
                               type="button"

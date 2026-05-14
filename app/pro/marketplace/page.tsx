@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
 import { notifyBookingEvent } from '../../../lib/notifications';
@@ -132,7 +132,7 @@ export default function ProMarketplace() {
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontSize: 22, fontWeight: 600, color: C.text, margin: '0 0 4px' }}>{t('pro.marketplace.title')}</h1>
         <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>
-          {t('pro.marketplace.rateLine')}: <strong style={{ color: C.navy }}>${proRate}/{t('units.hour')}</strong> · {t('pro.marketplace.auctionLine')}
+          {t('pro.marketplace.rateLine')}: <strong style={{ color: C.navy }}>${proRate}/{t('units.hour')}</strong> - {t('pro.marketplace.auctionLine')}
         </p>
       </div>
 
@@ -213,7 +213,7 @@ export default function ProMarketplace() {
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
                     {date && (
                       <span style={{ background: C.bg, color: C.muted, padding: '3px 9px', borderRadius: 9999, fontSize: 10 }}>
-                        {date.toLocaleDateString(locale, { month: 'short', day: 'numeric' })} · {date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+                        {date.toLocaleDateString(locale, { month: 'short', day: 'numeric' })} - {date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     )}
                     {job.hours && <span style={{ background: C.bg, color: C.muted, padding: '3px 9px', borderRadius: 9999, fontSize: 10 }}>{job.hours}{t('units.hours')}</span>}
@@ -245,4 +245,3 @@ export default function ProMarketplace() {
     </div>
   );
 }
-
