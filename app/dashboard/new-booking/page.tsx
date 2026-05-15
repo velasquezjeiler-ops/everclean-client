@@ -1230,15 +1230,6 @@ export default function NewBookingPage() {
               </div>
 
               <div className="booking-section">
-                <p className="booking-kicker">Standalone services</p>
-                <div className="booking-grid two">
-                  {[{ key: 'CAR_WASH', label: 'Car Wash', icon: 'Auto' }, { key: 'LAUNDRY_PICKUP', label: 'Laundry', icon: 'Laundry' }].map((s) => (
-                    <button key={s.key} onClick={() => chooseService(s.key)} className={`booking-option ${serviceType === s.key ? 'selected' : ''}`} type="button">
-                      <div className="booking-option-icon">{s.icon}</div>
-                      <strong>{s.label}</strong>
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {isCommercialCleaning && (
@@ -1456,36 +1447,54 @@ export default function NewBookingPage() {
 
                   {isCommercialCleaning && (
                     <div className="booking-breakdown">
-                      <div className="booking-breakdown-row"><span>State market</span><b>{stateName(state)}</b></div>
-                      <div className="booking-breakdown-row"><span>Billable area</span><b>{priceCalc.sqftUsed} sqft x ${priceCalc.effectiveRate?.toFixed(2)} = ${priceCalc.sqftCharge?.toFixed(2)}</b></div>
-                      <div className="booking-breakdown-row"><span>Restrooms</span><b>{priceCalc.restroomCount} x ${priceCalc.restroomFee?.toFixed(2)} = ${priceCalc.restroomCharge?.toFixed(2)}</b></div>
-                      <div className="booking-breakdown-row"><span>Breakrooms / kitchenettes</span><b>{priceCalc.breakroomCount} x ${priceCalc.breakroomFee?.toFixed(2)} = ${priceCalc.breakroomCharge?.toFixed(2)}</b></div>
-                      <div className="booking-breakdown-row"><span>Supplies / operational fee</span><b>${priceCalc.suppliesFee?.toFixed(2)}</b></div>
-                      <div className="booking-breakdown-row"><span>Subtotal before minimum</span><b>${priceCalc.subtotalBeforeMinimum?.toFixed(2)}</b></div>
-                      <div className="booking-breakdown-row"><span>Minimum</span><b>${priceCalc.minPrice.toFixed(2)} {priceCalc.minimumApplied ? 'applied' : 'not applied'}</b></div>
-                      <div className="booking-breakdown-row"><span>Frequency</span><b>{frequencyLabel(frequency)} / factor {priceCalc.frequencyFactor?.toFixed(2)}</b></div>
-                      <div className="booking-breakdown-row booking-breakdown-total"><span>Estimated price per visit</span><b>${priceCalc.price.toFixed(2)}</b></div>
+                      <div className="booking-breakdown-row" style={{color:'var(--muted)',fontSize:12,marginBottom:4}}>
+                        <span>{serviceLabel(serviceType)} · Commercial · {stateName(state)}</span>
+                      </div>
+                      {(() => {
+                        const taxRatesC: Record<string,number> = {NJ:0.06625,NY:0.08875,FL:0.08,TX:0.0825,PA:0.08,MN:0.08875,CT:0.0635,MD:0.06,OH:0.08};
+                        const taxRateC = taxRatesC[state] || 0;
+                        const svcPrice = priceCalc.price;
+                        const taxAmtC = Math.round(svcPrice * taxRateC * 100) / 100;
+                        const stripeC = Math.round((svcPrice + taxAmtC) * 0.029 * 100 + 30) / 100;
+                        const totalC = Math.round((svcPrice + taxAmtC + stripeC) * 100) / 100;
+                        return (<>
+                          <div className="booking-breakdown-row"><span>Service</span><b>${svcPrice.toFixed(2)}</b></div>
+                          {taxAmtC > 0 && <div className="booking-breakdown-row"><span>Sales tax ({(taxRateC*100).toFixed(2)}%)</span><b>${taxAmtC.toFixed(2)}</b></div>}
+                          <div className="booking-breakdown-row"><span>Processing fee</span><b>${stripeC.toFixed(2)}</b></div>
+                          <div className="booking-breakdown-row booking-breakdown-total" style={{marginTop:4,paddingTop:8,borderTop:'1px solid #E2E8F0'}}>
+                            <span>Total</span><b style={{fontSize:16}}>${totalC.toFixed(2)}</b>
+                          </div>
+                        </>);
+                      })()}
                     </div>
                   )}
 
                   {isResidentialCleaning && (() => {
                     const bd = priceCalc.pricingBreakdown as any;
+                    const taxRates: Record<string,number> = {NJ:0.06625,NY:0.08875,MN:0.06875,CT:0.0635,MD:0.06,OH:0.06};
+                    const taxRate = taxRates[state] || 0;
+                    const servicePrice = priceCalc.price;
+                    const taxAmt = Math.round(servicePrice * taxRate * 100) / 100;
+                    const stripeFee = Math.round((servicePrice + taxAmt) * 0.029 * 100 + 30) / 100;
+                    const grandTotal = Math.round((servicePrice + taxAmt + stripeFee) * 100) / 100;
+                    const beds = bd?.bedrooms || bedrooms || 0;
+                    const baths = bd?.bathrooms || bathrooms || 0;
                     return (
                       <div className="booking-breakdown">
-                        <div className="booking-breakdown-row"><span>Market</span><b>{bd?.marketLabel || stateName(state)}</b></div>
-                        <div className="booking-breakdown-row"><span>Pricing sqft</span><b>{bd?.pricingSqft || priceCalc.sqftUsed} sqft ({bd?.sqftSource === 'customer_declared' ? 'declared' : 'estimated'})</b></div>
-                        {bd?.declaredSqft > 0 && bd?.sqftSource !== 'customer_declared' && (
-                          <div className="booking-breakdown-row" style={{color:'#F59E0B'}}><span>⚠️ Declared sqft</span><b>{bd.declaredSqft} sqft (adjusted to estimate)</b></div>
+                        <div className="booking-breakdown-row" style={{color:'var(--muted)',fontSize:12,marginBottom:4}}>
+                          <span>{serviceLabel(serviceType)}{beds > 0 ? ` · ${beds} bed` : ''}{baths > 0 ? ` · ${baths} bath` : ''}</span>
+                        </div>
+                        <div className="booking-breakdown-row"><span>Service</span><b>${servicePrice.toFixed(2)}</b></div>
+                        {taxAmt > 0 && (
+                          <div className="booking-breakdown-row"><span>Sales tax ({(taxRate*100).toFixed(3).replace(/\.?0+$/,'')}%)</span><b>${taxAmt.toFixed(2)}</b></div>
                         )}
-                        <div className="booking-breakdown-row"><span>Area charge</span><b>{bd?.pricingSqft || priceCalc.sqftUsed} sqft × ${priceCalc.effectiveRate?.toFixed(2)} = ${priceCalc.sqftCharge?.toFixed(2)}</b></div>
-                        <div className="booking-breakdown-row"><span>Minimum</span><b>${priceCalc.minPrice.toFixed(2)} {priceCalc.minimumApplied ? 'applied' : 'not applied'}</b></div>
-                        <div className="booking-breakdown-row"><span>Frequency</span><b>{frequencyLabel(frequency)} / ×{priceCalc.frequencyFactor?.toFixed(2)}</b></div>
-                        <div className="booking-breakdown-row"><span>Cleaners</span><b>{bd?.cleanerCount === 2 ? '2 cleaners (team upgrade)' : '1 cleaner'}</b></div>
-                        <div className="booking-breakdown-row"><span>Service window</span><b>{bd?.selectedServiceWindow || priceCalc.hours}h{bd?.selectedServiceWindow && bd?.minimumVisitHours ? ' (min ' + bd.minimumVisitHours + 'h)' : ''}</b></div>
-                        {bd?.extraHoursCharge > 0 && <div className="booking-breakdown-row"><span>Extra hours</span><b>+${bd.extraHoursCharge.toFixed(2)} ({bd.additionalServiceHours}h × ${bd.extraHourlyRate}/h{bd.cleanerCount === 2 ? ' × 2' : ''})</b></div>}
-                        {priceCalc.addonTotal > 0 && <div className="booking-breakdown-row"><span>Add-ons</span><b>+${priceCalc.addonTotal.toFixed(2)}</b></div>}
-                        <div className="booking-breakdown-row booking-breakdown-total"><span>Total estimated</span><b>${priceCalc.price.toFixed(2)}</b></div>
-                        {bd?.finalServiceWindowHours && <div className="booking-breakdown-row"><span>Final service window</span><b>{bd.finalServiceWindowHours}h</b></div>}
+                        <div className="booking-breakdown-row"><span>Processing fee</span><b>${stripeFee.toFixed(2)}</b></div>
+                        <div className="booking-breakdown-row booking-breakdown-total" style={{marginTop:4,paddingTop:8,borderTop:'1px solid #E2E8F0'}}>
+                          <span>Total</span><b style={{fontSize:16}}>${grandTotal.toFixed(2)}</b>
+                        </div>
+                        {bd?.cleanerCount === 2 && (
+                          <div className="booking-breakdown-row" style={{fontSize:11,color:'var(--muted)'}}><span>Team of 2 cleaners included</span></div>
+                        )}
                       </div>
                     );
                   })()}
