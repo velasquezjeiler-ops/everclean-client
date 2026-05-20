@@ -221,7 +221,7 @@ function calcCleaningPrice({ serviceType, sqft, bedrooms, bathrooms, state = 'NJ
   const base  = Math.max(sqftUsed * cfg.rate * multiplier, cfg.min * multiplier);
   const price = parseFloat((base * (1 - disc)).toFixed(2));
   const hours = estimatedHours(sqftUsed);
-  return { clientPrice: price, hours, sqftUsed, sqftCorrected, tier, multiplier, maxPayout: parseFloat((price * 0.55).toFixed(2)) };
+  return { clientPrice: price, hours, sqftUsed, sqftCorrected, tier, multiplier, maxPayout: parseFloat((price * PRO_SPLIT).toFixed(2)) };
 }
 
 function calcCarWashPrice({ vehicleCode, pkg, addons = [] }) {
@@ -231,11 +231,84 @@ function calcCarWashPrice({ vehicleCode, pkg, addons = [] }) {
   if (!base) return null;
   const addonsTotal = addons.reduce((s, a) => s + (CAR_WASH_ADDONS[a] || 0), 0);
   const clientPrice = base + addonsTotal;
-  return { clientPrice, proBase: parseFloat((clientPrice * 0.55).toFixed(2)), platformFee: parseFloat((clientPrice * 0.45).toFixed(2)) };
+  return { clientPrice, proBase: parseFloat((clientPrice * PRO_SPLIT).toFixed(2)), platformFee: parseFloat((clientPrice * PLATFORM_SPLIT).toFixed(2)) };
 }
 
-function calcProPayout(hourlyRate, hours, clientPrice) {
-  return Math.min(parseFloat((hourlyRate * hours).toFixed(2)), parseFloat((clientPrice * 0.55).toFixed(2)));
+// ============================================================
+// EVERCLEAN FINANCIAL ENGINE v2.0
+// Split: 50% pro / 50% EverClean
+// PLATA: 0% bono | GOLD: +5% | PLATINUM: +10%
+// Instant Pay 10% total: Stripe ~3% + EverClean 7%
+//   PLATA:    10% de ganancias → recibe 90% base
+//   GOLD:     5% bono + 5% ganancias → recibe 95% base
+//   PLATINUM: 10% del bono → recibe 100% base
+// Margen dinámico: 40%-80% según tarifa del pro
+// ============================================================
+const PLATFORM_SPLIT  = 0.50;
+const PRO_SPLIT       = 0.50;
+const VIP_DISCOUNT    = 0.15;
+const STRIPE_PCT      = 0.029;
+const STRIPE_FIXED    = 0.30;
+const INSTANT_FEE     = 0.10;
+const INSTANT_EC_KEEP = 0.07;
+const LEVEL_BONUS = { PLATA: 0.00, GOLD: 0.05, PLATINUM: 0.10 };
+
+function normLevel(l) {
+  const map = { BRONZE:'PLATA', SILVER:'PLATA', ROOKIE:'PLATA',
+                ELITE:'PLATINUM', ORO:'GOLD', PLATINO:'PLATINUM' };
+  const u = (l || 'PLATA').toUpperCase();
+  return LEVEL_BONUS[u] !== undefined ? u : (map[u] || 'PLATA');
+}
+
+function calcProPayout(hourlyRate, hours, clientPrice, level = 'PLATA') {
+  const lvl = normLevel(level);
+  const bonusPct = LEVEL_BONUS[lvl] ?? 0;
+  const base = parseFloat((hourlyRate * hours).toFixed(2));
+  const bonus = parseFloat((base * bonusPct).toFixed(2));
+  const total = parseFloat((base + bonus).toFixed(2));
+  const maxPayout = parseFloat((clientPrice * PRO_SPLIT).toFixed(2));
+  return Math.min(total, maxPayout);
+}
+
+function calcInstantPayout(basePayout, level = 'PLATA', instantCount = 0) {
+  const lvl = normLevel(level);
+  const bonusPct = LEVEL_BONUS[lvl] ?? 0;
+  const base = parseFloat((basePayout / (1 + bonusPct)).toFixed(2));
+  const freeInstant = (lvl === 'GOLD' || lvl === 'PLATINUM')
+    && instantCount > 0 && (instantCount % 6 === 0);
+  const stripeFee = parseFloat((basePayout * STRIPE_PCT + STRIPE_FIXED).toFixed(2));
+  if (freeInstant) {
+    return {
+      finalPayout: parseFloat((basePayout - stripeFee).toFixed(2)),
+      instantFee: 0, stripeFee, ecKeeps: 0,
+      totalFee: stripeFee, freeInstant: true
+    };
+  }
+  const instantFeeAmt = parseFloat((basePayout * INSTANT_FEE).toFixed(2));
+  const ecKeeps = parseFloat((basePayout * INSTANT_EC_KEEP).toFixed(2));
+  let grossPayout;
+  if (lvl === 'PLATINUM') {
+    grossPayout = base;                                    // 100% base
+  } else if (lvl === 'GOLD') {
+    grossPayout = parseFloat((base * 0.95).toFixed(2));   // 95% base
+  } else {
+    grossPayout = parseFloat((base * 0.90).toFixed(2));   // 90% base
+  }
+  const finalPayout = parseFloat((grossPayout - stripeFee).toFixed(2));
+  return {
+    finalPayout, instantFee: instantFeeAmt, ecKeeps,
+    stripeFee, totalFee: parseFloat((instantFeeAmt + stripeFee).toFixed(2)),
+    freeInstant: false, level: lvl
+  };
+}
+
+function applyVIPDiscount(clientPrice) {
+  return parseFloat((clientPrice * (1 - VIP_DISCOUNT)).toFixed(2));
+}
+
+function calcMargin(clientPrice, proPayoutAmt) {
+  if (!clientPrice || clientPrice === 0) return 0;
+  return parseFloat(((clientPrice - proPayoutAmt) / clientPrice * 100).toFixed(1));
 }
 
 function hasCoords(lat, lng) {
@@ -463,12 +536,12 @@ app.get('/api/quote', async (req, res) => {
   if (service === 'LAUNDRY_PICKUP') {
     const lbs = Math.max(parseFloat(req.query.weight_lbs) || 10, 10);
     const clientPrice = Math.max(lbs * 3 + 30, 60);
-    return res.json({ type: 'laundry', service, clientPrice, weightLbs: lbs, proBase: parseFloat((clientPrice * 0.55).toFixed(2)), platformFee: parseFloat((clientPrice * 0.45).toFixed(2)) });
+    return res.json({ type: 'laundry', service, clientPrice, weightLbs: lbs, proBase: parseFloat((clientPrice * PRO_SPLIT).toFixed(2)), platformFee: parseFloat((clientPrice * PLATFORM_SPLIT).toFixed(2)) });
   }
   if (service === 'DRY_CLEANING') {
     const items = parseInt(req.query.item_count) || 1;
     const clientPrice = items * 12;
-    return res.json({ type: 'dry_cleaning', service, clientPrice, itemCount: items, proBase: parseFloat((clientPrice * 0.55).toFixed(2)), platformFee: parseFloat((clientPrice * 0.45).toFixed(2)) });
+    return res.json({ type: 'dry_cleaning', service, clientPrice, itemCount: items, proBase: parseFloat((clientPrice * PRO_SPLIT).toFixed(2)), platformFee: parseFloat((clientPrice * PLATFORM_SPLIT).toFixed(2)) });
   }
   return res.status(400).json({ error: `Unknown service: ${service}` });
 });
@@ -974,7 +1047,7 @@ app.post('/api/bookings', requireAuth, async (req, res) => {
       return res.status(400).json({ error: `Unknown service: ${svcType}` });
     }
 
-    const platformFee = parseFloat((clientPrice * 0.45).toFixed(2));
+    const platformFee = parseFloat((clientPrice * PLATFORM_SPLIT).toFixed(2));
 
     // Compatibilidad con schema existente: usar company_id si existe.
     // Admins can create bookings on behalf of an existing customer by passing
@@ -1127,7 +1200,7 @@ app.get('/api/bookings/available', requireAuth, requireRole('PROFESSIONAL'), asy
     const r = await pool.query(
       `SELECT b.*,
          EXTRACT(EPOCH FROM (NOW() - b.created_at)) / 60 AS minutes_posted,
-         LEAST($2::numeric * COALESCE(b.hours, 2), COALESCE(b.client_price,0) * 0.55) AS estimated_payout
+         LEAST($2::numeric * COALESCE(b.hours, 2), COALESCE(b.client_price,0) * 0.50) AS estimated_payout
        FROM bookings b
        WHERE b.status = 'PENDING_ASSIGNMENT'
          AND EXTRACT(EPOCH FROM (NOW() - b.created_at)) / 60 >= $1
