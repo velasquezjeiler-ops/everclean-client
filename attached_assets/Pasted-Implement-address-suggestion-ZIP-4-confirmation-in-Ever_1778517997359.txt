@@ -1,0 +1,94 @@
+Implement address suggestion / ZIP+4 confirmation in EverClean.
+
+Frontend:
+app/dashboard/new-booking/page.tsx
+
+Backend:
+api-server/server.mjs
+
+Current problem:
+The form accepts ZIP+4 manually, but it does not suggest or confirm a standardized address before booking.
+
+Required backend:
+Create or verify:
+
+POST /api/address-intelligence
+
+Request:
+{
+  "address": "11 COLLEGE DR",
+  "city": "JERSEY CITY",
+  "state": "NJ",
+  "zip_code": "07305-1055"
+}
+
+Response:
+{
+  "address_validated": true,
+  "formatted_address": "11 College Dr, Jersey City, NJ 07305-1055",
+  "address_line1": "11 College Dr",
+  "city": "Jersey City",
+  "state": "NJ",
+  "zip_code": "07305",
+  "zip_plus4": "1055",
+  "postal_code_full": "07305-1055",
+  "latitude": null,
+  "longitude": null,
+  "google_place_id": null,
+  "dpv_confirmation": null,
+  "address_confidence": "HIGH"
+}
+
+Required frontend:
+Before creating booking in handleSubmit:
+
+1. Call POST `${API}/address-intelligence`.
+2. If formatted_address or postal_code_full is returned, show a confirmation card:
+   "We found this standardized address. Please confirm."
+3. Show:
+   - formatted_address
+   - postal_code_full
+   - address_confidence
+4. Add buttons:
+   - Use this address
+   - Edit address
+5. Do not submit booking until user clicks "Use this address" or validation fails gracefully.
+6. When user confirms, populate:
+   - address
+   - city
+   - state
+   - zipCode = postal_code_full
+   - zip_plus4
+   - postal_code_full
+   - address_validated
+   - formatted_address
+   - latitude
+   - longitude
+   - google_place_id
+   - dpv_confirmation
+   - address_confidence
+
+Booking payload must send:
+zip_code = ZIP5 only
+zip_plus4
+postal_code_full
+address_validated
+formatted_address
+latitude
+longitude
+google_place_id
+dpv_confirmation
+address_confidence
+
+Test:
+Input:
+11 COLLEGE DR
+JERSEY CITY NJ
+07305-1055
+
+Expected:
+Show standardized address confirmation before booking.
+Payload sends:
+zip_code = 07305
+zip_plus4 = 1055
+postal_code_full = 07305-1055

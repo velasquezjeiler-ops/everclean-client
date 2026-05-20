@@ -1,0 +1,18 @@
+modules = ["nodejs-20"]
+
+[agent]
+expertMode = true
+
+[nix]
+packages = ["gh"]
+
+[deployment]
+run = ["sh", "-c", "cd api-server && node server.mjs"]
+
+[[ports]]
+localPort = 8080
+externalPort = 80
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 180000

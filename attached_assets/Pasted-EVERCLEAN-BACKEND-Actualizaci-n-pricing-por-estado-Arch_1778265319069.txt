@@ -1,0 +1,183 @@
+EVERCLEAN BACKEND — Actualización pricing por estado
+Archivo principal: api-server/server.mjs
+Stack: Express 5 + Prisma + Supabase
+
+═══════════════════════════════════════
+TAREA 1 — MIGRACIÓN PRISMA (schema.prisma)
+═══════════════════════════════════════
+Agregar campos nullable al modelo Booking en schema.prisma.
+NO eliminar campos existentes. Solo agregar los nuevos al final del modelo.
+
+Agregar estos campos:
+  final_estimated_price      Decimal?
+  pricing_state_code         String?
+  pricing_market_label       String?
+  pricing_note               String?
+  sqft_rate                  Decimal?
+  pricing_breakdown          Json?
+  commercial_restrooms       Int?
+  commercial_breakrooms      Int?
+  restroom_count             Int?
+  breakroom_count            Int?
+  restroom_fee               Decimal?
+  breakroom_fee              Decimal?
+  supplies_fee               Decimal?
+  commercial_subtotal_before_minimum  Decimal?
+  commercial_minimum         Decimal?
+  commercial_minimum_applied Boolean?
+
+Después de editar schema.prisma ejecutar:
+  npx prisma db push
+  (NO usar migrate dev — usar db push para Supabase)
+
+═══════════════════════════════════════
+TAREA 2 — ENDPOINT POST /api/bookings
+═══════════════════════════════════════
+Actualizar el endpoint de creación de bookings para que acepte
+y guarde los nuevos campos de pricing. El endpoint ya existe —
+solo hay que expandir el objeto data que se pasa a prisma.bookings.create()
+
+Agregar al objeto data estos campos opcionales:
+  final_estimated_price: body.final_estimated_price ?? null,
+  pricing_state_code:    body.pricing_state_code    ?? null,
+  pricing_market_label:  body.pricing_market_label  ?? null,
+  pricing_note:          body.pricing_note           ?? null,
+  sqft_rate:             body.sqft_rate              ?? null,
+  pricing_breakdown:     body.pricing_breakdown      ?? null,
+  commercial_restrooms:  body.commercial_restrooms   ?? null,
+  commercial_breakrooms: body.commercial_breakrooms  ?? null,
+  restroom_count:        body.restroom_count         ?? null,
+  breakroom_count:       body.breakroom_count        ?? null,
+  restroom_fee:          body.restroom_fee            ?? null,
+  breakroom_fee:         body.breakroom_fee           ?? null,
+  supplies_fee:          body.supplies_fee            ?? null,
+  commercial_subtotal_before_minimum: body.commercial_subtotal_before_minimum ?? null,
+  commercial_minimum:         body.commercial_minimum         ?? null,
+  commercial_minimum_applied: body.commercial_minimum_applied ?? null,
+
+═══════════════════════════════════════
+TAREA 3 — ENDPOINTS GET BOOKINGS
+═══════════════════════════════════════
+En todos los endpoints que devuelven bookings:
+  GET /api/bookings
+  GET /api/bookings/:id
+  GET /api/clients/me/bookings
+  GET /api/professionals/me/bookings
+
+Agregar los nuevos campos al select o simplemente
+asegurarse de que el select incluye todos los campos
+(si usa select: {} cambiar a no usar select restrictivo,
+o agregar los campos nuevos al select existente).
+
+Los campos que deben incluirse en la respuesta:
+  final_estimated_price
+  pricing_state_code
+  pricing_market_label
+  pricing_breakdown
+  commercial_restrooms
+  commercial_breakrooms
+
+═══════════════════════════════════════
+TAREA 4 — ENDPOINT POST /api/bookings/:id/eta
+═══════════════════════════════════════
+Si este endpoint no existe, crearlo ANTES de app.listen():
+
+app.post('/api/bookings/:id/eta', authenticateToken, async (req, res) => {
+  try {
+    const { eta_minutes, eta_message, pro_lat, pro_lng } = req.body;
+    const booking = await prisma.bookings.update({
+      where: { id: req.params.id },
+      data: {
+        eta_minutes: eta_minutes ?? null,
+        eta_message: eta_message ?? null,
+        pro_lat:     pro_lat     ?? null,
+        pro_lng:     pro_lng     ?? null,
+        eta_sent_at: new Date(),
+      },
+    });
+    res.json({ success: true, booking });
+  } catch (err) {
+    console.error('POST /bookings/:id/eta error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+Si los campos eta_minutes, eta_message, pro_lat, pro_lng, eta_sent_at
+no existen en schema.prisma, agregarlos también:
+  eta_minutes  Int?
+  eta_message  String?
+  pro_lat      Decimal?
+  pro_lng      Decimal?
+  eta_sent_at  DateTime?
+
+═══════════════════════════════════════
+TAREA 5 — ENDPOINT PATCH /api/companies/me
+═══════════════════════════════════════
+Si no existe, agregar este endpoint para que el cliente
+pueda guardar su perfil correctamente:
+
+app.patch('/api/companies/me', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, full_name, phone, billingAddress, billing_address,
+            address, billingCity, billing_city, city, billingState,
+            billing_state, state, billingZip, billing_zip, zip_code } = req.body;
+
+    const fullName = name || full_name;
+    const addr = billingAddress || billing_address || address;
+    const cty  = billingCity    || billing_city    || city;
+    const st   = billingState   || billing_state   || state;
+    const zip  = billingZip     || billing_zip     || zip_code;
+
+    if (fullName || phone) {
+      const d = {};
+      if (fullName) d.full_name = fullName;
+      if (phone)    d.phone     = phone;
+      await prisma.users.update({ where: { id: userId }, data: d });
+    }
+
+    const cd = {};
+    if (fullName) cd.name            = fullName;
+    if (addr)     cd.billing_address = addr;
+    if (cty)      cd.billing_city    = cty;
+    if (st)       cd.billing_state   = st;
+    if (zip)      cd.billing_zip     = zip;
+
+    if (Object.keys(cd).length > 0) {
+      await prisma.companies.upsert({
+        where:  { user_id: userId },
+        update: cd,
+        create: { user_id: userId, ...cd, name: fullName || 'Client' },
+      });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+═══════════════════════════════════════
+REGLAS IMPORTANTES
+═══════════════════════════════════════
+- NO eliminar endpoints existentes
+- NO cambiar lógica de autenticación
+- NO cambiar schema de modelos existentes — solo agregar campos nullable
+- Todos los campos nuevos son opcionales/nullable
+- Después de npx prisma db push, reiniciar servidor: node server.mjs
+- Si hay error de TypeScript o Prisma, corregir antes de continuar
+
+═══════════════════════════════════════
+ORDEN DE EJECUCIÓN
+═══════════════════════════════════════
+1. Editar schema.prisma — agregar campos nuevos
+2. npx prisma db push
+3. Editar server.mjs — Tareas 2, 3, 4, 5
+4. node server.mjs — verificar que inicia sin errores
+5. Probar:
+   curl -X POST https://commercial-clean-setup.replit.app/api/bookings \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer TOKEN" \
+     -d '{"service_type":"OFFICE_CLEANING","state":"NJ","sqft":750,
+          "commercial_restrooms":2,"final_estimated_price":210,
+          "pricing_state_code":"NJ","pricing_market_label":"New Jersey"}'
+   Debe retornar el booking creado con los campos de pricing incluidos.
